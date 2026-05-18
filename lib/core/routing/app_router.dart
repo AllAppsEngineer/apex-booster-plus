@@ -1,0 +1,17 @@
+import 'package:go_router/go_router.dart';
+import '../../presentation/screens/splash/splash_screen.dart';
+import '../../presentation/screens/welcome/welcome_screen.dart';
+
+final appRouter = GoRouter(
+  initialLocation: '/',
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const SplashScreen(),
+    ),
+    GoRoute(
+      path: '/welcome',
+      builder: (context, state) => const WelcomeScreen(),
+    ),
+  ],
+);
