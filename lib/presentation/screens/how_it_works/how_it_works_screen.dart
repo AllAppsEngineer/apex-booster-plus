@@ -111,7 +111,7 @@ class HowItWorksScreen extends StatelessWidget {
       child: SizedBox(
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: () => context.go('/permissions'),
+          onPressed: () => context.push('/permissions'),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.apexGreen,
             foregroundColor: AppColors.background,

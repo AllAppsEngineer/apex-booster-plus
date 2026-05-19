@@ -52,7 +52,13 @@ class PermissionsScreen extends StatelessWidget {
 
   Widget _buildBackNav(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.go('/how-it-works'),
+      onTap: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/how-it-works');
+          }
+        },
       child: const Icon(
         Icons.arrow_back_ios,
         color: AppColors.apexGreen,
