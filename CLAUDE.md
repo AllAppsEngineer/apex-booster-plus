@@ -966,43 +966,75 @@ Git iniciado.
 
 
 
-Commits já feitos:
+Fluxo básico atual:
 
 
 
-\- projeto Flutter base;
-
-\- CLAUDE.md inicial;
-
-\- fundação visual inicial;
-
-\- Welcome e HowItWorks;
-
-\- PermissionsScreen, caso já esteja no histórico Git.
+Splash → Welcome → HowItWorks → Permissions.
 
 
 
-Estado funcional atual:
+Telas existentes:
 
 
 
-\- Splash existe.
+\- SplashScreen
 
-\- Welcome existe.
+\- WelcomeScreen
 
-\- HowItWorks existe.
+\- HowItWorksScreen
 
-\- Permissions existe.
+\- PermissionsScreen
 
-\- go\_router está configurado.
 
-\- flutter analyze estava passando.
 
-\- flutter test estava passando.
+Componentes visuais já criados na Fase 1:
 
-\- fluxo básico existe:
 
-&#x20; Splash → Welcome → HowItWorks → Permissions.
+
+\- ApexBackground
+
+\- ApexBadge
+
+\- ApexFeatureCard
+
+
+
+Concluído:
+
+
+
+\- Projeto Flutter base criado.
+
+\- CLAUDE.md reforçado como contrato técnico, visual e estratégico do projeto.
+
+\- Fundação inicial criada com tema, cores, rotas e SplashScreen.
+
+\- WelcomeScreen criada.
+
+\- HowItWorksScreen criada.
+
+\- PermissionsScreen criada.
+
+\- Fase 1.5A concluída: SplashScreen e WelcomeScreen refinadas visualmente.
+
+\- Fase 1.5B concluída: HowItWorksScreen e PermissionsScreen refinadas visualmente.
+
+\- Fase 1.5C concluída: navegação do botão Voltar nativo Android corrigida no onboarding.
+
+\- Fluxo básico testado no celular físico Samsung S24 Ultra.
+
+\- Botão Voltar nativo Android validado:
+
+&#x20; - Permissions → HowItWorks
+
+&#x20; - HowItWorks → Welcome
+
+&#x20; - Welcome → pode sair do app
+
+\- flutter analyze passando.
+
+\- flutter test passando.
 
 
 
@@ -1010,23 +1042,35 @@ Estado visual atual:
 
 
 
-NÃO aprovado como premium.
+Aprovado como checkpoint da Fase 1, ainda não como visual final absoluto do produto.
 
 
 
-Motivo:
+Observação:
 
 
 
-A tentativa visual anterior ficou genérica, com fundo escuro insuficiente, cards simples/glow pesado e aparência ainda distante do padrão gamer premium exigido.
+A base visual atual é aceitável para encerrar o checkpoint do onboarding e seguir o plano com controle. Melhorias visuais finas ainda podem ocorrer futuramente, mas não devem bloquear indefinidamente o avanço do projeto.
 
 
 
-Próximo passo correto:
+Pendências conhecidas:
 
 
 
-Refazer a base visual da Fase 1 com uma especificação mais objetiva, sem mexer em features futuras.
+\- Splash nativa Android ainda mostra ícone genérico Flutter.
+
+\- Nome do app no launcher ainda precisa ser corrigido para APEX BOOSTER+.
+
+\- Ícone Android precisa ser configurado em etapa própria.
+
+\- Logo/asset oficial ainda não foi aprovado para uso definitivo.
+
+\- Localização multilíngue ainda não foi implementada.
+
+\- Home ainda não foi implementada.
+
+\- Features reais ainda não começaram.
 
 
 
@@ -1038,59 +1082,57 @@ Refazer a base visual da Fase 1 com uma especificação mais objetiva, sem mexer
 
 
 
-Próxima sessão:
+Próxima decisão obrigatória:
 
 
 
-Fase 1.5 — Reconstrução visual controlada do onboarding.
+Antes de iniciar qualquer implementação nova, decidir entre:
 
 
 
-Objetivo:
+1\. Fazer etapa isolada de identidade Android:
+
+&#x20;  - corrigir nome visível do app para APEX BOOSTER+;
+
+&#x20;  - configurar launcher icon;
+
+&#x20;  - ajustar splash nativa Android.
 
 
 
-Refinar somente Splash, Welcome, HowItWorks e Permissions para aproximar do padrão visual do PDF.
+2\. Avançar para a Fase 2 — Core Features:
+
+&#x20;  - Home;
+
+&#x20;  - Bottom Navigation;
+
+&#x20;  - Biblioteca;
+
+&#x20;  - Add Game;
+
+&#x20;  - Game Detail;
+
+&#x20;  - GFX Profile;
+
+&#x20;  - Apex Scan inicial.
 
 
 
-Escopo permitido da próxima sessão:
+3\. Fazer micro-refino visual pontual da Fase 1:
+
+&#x20;  - somente se houver problema visual objetivo;
+
+&#x20;  - sem reabrir toda a estrutura visual;
+
+&#x20;  - sem alterar escopo funcional.
 
 
 
-1\. Avaliar visual atual dos arquivos existentes.
+Regra:
 
-2\. Propor plano antes de codar.
 
-3\. Criar componentes reutilizáveis de design somente se necessário.
 
-4\. Aplicar em Splash, Welcome, HowItWorks e Permissions.
-
-5\. Não alterar fluxo.
-
-6\. Não alterar rotas.
-
-7\. Não adicionar dependências.
-
-8\. Não mexer em Home.
-
-9\. Não mexer em Billing.
-
-10\. Não mexer em Firebase.
-
-11\. Não mexer em Apex Scan.
-
-12\. Não mexer em Biblioteca.
-
-13\. Não mexer em ícone Android.
-
-14\. Não mexer em nome Android.
-
-15\. Rodar flutter analyze.
-
-16\. Rodar flutter test.
-
-17\. Testar no celular antes de commit.
+Nenhuma implementação nova deve começar sem escolher explicitamente uma dessas opções.
 
 
 
