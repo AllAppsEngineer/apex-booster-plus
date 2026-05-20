@@ -1,15 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
+import 'package:apex_booster_plus/data/repositories/in_memory_game_library_repository.dart';
+import 'package:apex_booster_plus/presentation/controllers/game_library_controller.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_badge.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_feature_card.dart';
 
-class BibliotecaTab extends StatelessWidget {
+class BibliotecaTab extends StatefulWidget {
   const BibliotecaTab({super.key});
 
   @override
+  State<BibliotecaTab> createState() => _BibliotecaTabState();
+}
+
+class _BibliotecaTabState extends State<BibliotecaTab> {
+  final _controller = GameLibraryController(InMemoryGameLibraryRepository());
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGames();
+  }
+
+  Future<void> _loadGames() async {
+    await _controller.loadGames();
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final state = _controller.state;
+
+    if (state.isLoading) {
+      return const ApexBackground(
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.cyberBlue),
+        ),
+      );
+    }
+
     return ApexBackground(
       child: SafeArea(
         child: SingleChildScrollView(
@@ -20,7 +50,7 @@ class BibliotecaTab extends StatelessWidget {
             children: [
               const _BibliotecaHeader(),
               const SizedBox(height: 28),
-              const _BibliotecaEmptyCard(),
+              if (state.games.isEmpty) const _BibliotecaEmptyCard(),
               const SizedBox(height: 16),
               ApexFeatureCard(
                 badge: 'FAV',
@@ -153,7 +183,7 @@ class _BibliotecaCTA extends StatelessWidget {
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Biblioteca será ativada em etapa futura.'),
+              content: Text('Adicionar jogo será ativado em etapa futura.'),
               duration: Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
             ),
