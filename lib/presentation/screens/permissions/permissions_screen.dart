@@ -156,19 +156,7 @@ class PermissionsScreen extends StatelessWidget {
         width: double.infinity,
         child: ElevatedButton(
           onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text(
-                  'Home entra na próxima sessão.',
-                  style: TextStyle(color: AppColors.white),
-                ),
-                backgroundColor: const Color(0xFF1C1C1C),
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            );
+            context.go('/home');
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.apexGreen,
