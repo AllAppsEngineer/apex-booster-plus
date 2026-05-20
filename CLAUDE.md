@@ -401,8 +401,17 @@ Telas já existentes na base atual:
 - WelcomeScreen
 - HowItWorksScreen
 - PermissionsScreen
+- HomeScreen (com Bottom Navigation — 5 abas)
+  - Aba Início (placeholder refinado visualmente)
+  - Aba Biblioteca (placeholder refinado visualmente)
+  - Aba Preparar (placeholder refinado visualmente)
+  - Aba Histórico (placeholder refinado visualmente)
+  - Aba Configurações (placeholder refinado visualmente)
 
 A existência dessas telas não significa aprovação visual final.
+
+As abas da Home são placeholders visuais honestos.
+Nenhuma funcionalidade real foi implementada nelas ainda.
 
 ---
 
@@ -489,7 +498,7 @@ Git iniciado.
 
 Fluxo básico atual:
 
-Splash → Welcome → HowItWorks → Permissions.
+Splash → Welcome → HowItWorks → Permissions → Home.
 
 Telas existentes:
 
@@ -497,6 +506,7 @@ Telas existentes:
 - WelcomeScreen
 - HowItWorksScreen
 - PermissionsScreen
+- HomeScreen (com Bottom Navigation — 5 abas)
 
 Componentes visuais já criados na Fase 1:
 
@@ -534,6 +544,12 @@ Concluído:
   - Segunda pressão em até 2 segundos sai do app via SystemNavigator.pop().
   - Nunca retorna ao onboarding.
   - Sem seta visual de voltar no topo da tela.
+- Fase 2B concluída: refinamento visual inicial das 5 abas da Home.
+  - Aba Início refinada como dashboard inicial gamer premium.
+  - Aba Biblioteca refinada como estrutura visual inicial de lista de jogos.
+  - Aba Preparar refinada como estrutura visual inicial da preparação de sessão.
+  - Aba Histórico refinada como estrutura visual inicial de histórico de sessões.
+  - Aba Configurações refinada como estrutura visual inicial de configurações do app.
 - flutter analyze passando.
 - flutter test passando.
 
@@ -544,45 +560,53 @@ Observação sobre a Fase 1.6B:
 
 Estado visual atual:
 
-Aprovado como checkpoint da Fase 1, ainda não como visual final absoluto do produto.
+Aprovado como checkpoint da Fase 2B: Home com 5 abas refinadas visualmente.
+Ainda não é o visual final absoluto do produto.
 
 Observação:
 
-A base visual atual é aceitável para encerrar o checkpoint do onboarding e seguir o plano com controle. Melhorias visuais finas ainda podem ocorrer futuramente, mas não devem bloquear indefinidamente o avanço do projeto.
+A base visual atual é aceitável para encerrar o checkpoint da Fase 2B e avançar para funcionalidades reais. Melhorias visuais finas ainda podem ocorrer, mas não devem bloquear o avanço.
 
 Pendências conhecidas:
 
 - Logo/asset oficial interno ainda não foi aprovado para uso definitivo nas telas Flutter.
 - Localização multilíngue ainda não foi implementada.
-- Home implementada com estrutura base, tabs placeholder e botão Voltar nativo corrigido.
-- Features reais das tabs ainda não começaram.
-- Billing ainda não foi implementado.
-- Firebase ainda não foi implementado.
+- Biblioteca real não implementada (Add Game, Game Detail, banco local).
+- GFX Profile funcional não implementado.
+- Apex Scan real não implementado (sem leitura de métricas do dispositivo).
+- Boost Engine não implementado.
+- Estrutura local de dados não implementada (Hive / shared_preferences).
+- Billing não implementado.
+- Firebase não implementado.
 
 ---
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
+Fase 2A e Fase 2B concluídas.
+
 Próxima decisão obrigatória:
 
 Antes de iniciar qualquer implementação nova, decidir entre:
 
-1. Avançar para a Fase 2 — Core Features:
-   - Home;
-   - Bottom Navigation;
-   - Biblioteca;
-   - Add Game;
-   - Game Detail;
-   - GFX Profile;
-   - Apex Scan inicial.
+1. Iniciar funcionalidade real da Biblioteca:
+   - Add Game (formulário básico de cadastro de jogo);
+   - Game Detail (tela de detalhe do jogo);
+   - banco local simples para persistência.
 
-2. Fazer micro-refino visual pontual da Fase 1:
-   - somente se houver problema visual objetivo;
+2. Iniciar estrutura local de dados:
+   - shared_preferences ou Hive;
+   - definir modelo de dados base (jogo, sessão, perfil GFX);
+   - preparar repositório local antes das features.
+
+3. Iniciar preparação de sessão:
+   - GFX Profile com preferências locais;
+   - estrutura do Boost Apex (visual e semântica, sem otimização falsa).
+
+4. Fazer micro-refino visual pontual:
+   - somente se houver problema visual objetivo identificado no celular;
    - sem reabrir toda a estrutura visual;
    - sem alterar escopo funcional.
-
-3. Atualizar documentação/estado do projeto:
-   - somente se o Git, histórico ou CLAUDE.md estiverem desalinhados com o estado real.
 
 Regra:
 
@@ -592,21 +616,20 @@ Nenhuma implementação nova deve começar sem escolher explicitamente uma dessa
 
 ## 16. PROIBIÇÕES TEMPORÁRIAS
 
-Até a Fase 2 começar oficialmente, é proibido:
+Na Fase 2, até aprovação individual de cada item, é proibido:
 
-- implementar Home;
-- implementar Bottom Navigation;
-- implementar Apex Scan;
-- implementar Biblioteca;
-- implementar GFX;
+- implementar Apex Scan real (leitura de métricas do dispositivo);
+- implementar GFX Profile funcional (persistência e aplicação de preferências);
 - implementar Boost Engine;
 - implementar Billing;
 - implementar Firebase;
+- implementar banco local (Hive / shared_preferences) sem aprovação da estrutura de dados;
 - adicionar logo asset sem aprovação;
-- criar dependências novas;
+- criar dependências novas sem aprovação explícita;
 - commitar visual não aprovado;
 - alterar nome Android sem aprovação explícita;
-- alterar launcher icon sem aprovação explícita.
+- alterar launcher icon sem aprovação explícita;
+- avançar para Fase 3 sem Fase 2 funcional aprovada.
 
 ---
 
