@@ -1,52 +1,86 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../widgets/apex_background.dart';
+import 'tabs/inicio_tab.dart';
+import 'tabs/biblioteca_tab.dart';
+import 'tabs/preparar_tab.dart';
+import 'tabs/historico_tab.dart';
+import 'tabs/configuracoes_tab.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedIndex = 0;
+
+  static const List<Widget> _tabs = [
+    InicioTab(),
+    BibliotecaTab(),
+    PrepararTab(),
+    HistoricoTab(),
+    ConfiguracoesTab(),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: ApexBackground(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 32),
-                Text(
-                  'INÍCIO',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.apexGreen,
-                    letterSpacing: 3.0,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ).animate().fadeIn(duration: 400.ms),
-                const SizedBox(height: 12),
-                Text(
-                  'Início',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: AppColors.white,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ).animate().fadeIn(delay: 100.ms, duration: 500.ms),
-                const SizedBox(height: 16),
-                Text(
-                  'O núcleo do app está sendo preparado.\nAs funcionalidades chegam no próximo bloco.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textGray,
-                    height: 1.6,
-                  ),
-                ).animate().fadeIn(delay: 200.ms, duration: 500.ms),
-              ],
-            ),
-          ),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _tabs,
+      ),
+      bottomNavigationBar: _buildBottomNav(),
+    );
+  }
+
+  Widget _buildBottomNav() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF0D0D0D),
+        border: Border(
+          top: BorderSide(color: Color(0xFF1A1A1A), width: 1),
         ),
+      ),
+      child: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.transparent,
+        selectedItemColor: AppColors.apexGreen,
+        unselectedItemColor: AppColors.textGray,
+        currentIndex: _selectedIndex,
+        onTap: (i) => setState(() => _selectedIndex = i),
+        selectedFontSize: 11,
+        unselectedFontSize: 11,
+        elevation: 0,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Início',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.sports_esports_outlined),
+            activeIcon: Icon(Icons.sports_esports),
+            label: 'Biblioteca',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.flash_on_outlined),
+            activeIcon: Icon(Icons.flash_on),
+            label: 'Preparar',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history_outlined),
+            activeIcon: Icon(Icons.history),
+            label: 'Histórico',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings_outlined),
+            activeIcon: Icon(Icons.settings),
+            label: 'Config.',
+          ),
+        ],
       ),
     );
   }
