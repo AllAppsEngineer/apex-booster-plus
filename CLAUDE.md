@@ -524,6 +524,16 @@ Concluído:
   - Permissions → HowItWorks
   - HowItWorks → Welcome
   - Welcome → pode sair do app
+- Fase 2A.1 concluída: Home mínima criada com estrutura base e placeholders das tabs.
+- Fase 2A.4 concluída: Permissions → Home conectadas usando context.go('/home').
+  - Home virou a nova raiz do stack de navegação.
+  - Retorno ao onboarding a partir da Home está corretamente bloqueado.
+- Fase 2A.5 concluída: comportamento do botão Voltar nativo Android corrigido na HomeScreen.
+  - Qualquer aba diferente de Início volta para a aba Início sem sair do app.
+  - Na aba Início, exibe SnackBar "Pressione voltar novamente para sair." na primeira pressão.
+  - Segunda pressão em até 2 segundos sai do app via SystemNavigator.pop().
+  - Nunca retorna ao onboarding.
+  - Sem seta visual de voltar no topo da tela.
 - flutter analyze passando.
 - flutter test passando.
 
@@ -544,8 +554,8 @@ Pendências conhecidas:
 
 - Logo/asset oficial interno ainda não foi aprovado para uso definitivo nas telas Flutter.
 - Localização multilíngue ainda não foi implementada.
-- Home ainda não foi implementada.
-- Features reais ainda não começaram.
+- Home implementada com estrutura base, tabs placeholder e botão Voltar nativo corrigido.
+- Features reais das tabs ainda não começaram.
 - Billing ainda não foi implementado.
 - Firebase ainda não foi implementado.
 
