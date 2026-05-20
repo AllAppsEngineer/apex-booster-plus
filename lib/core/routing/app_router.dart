@@ -3,6 +3,7 @@ import '../../presentation/screens/splash/splash_screen.dart';
 import '../../presentation/screens/welcome/welcome_screen.dart';
 import '../../presentation/screens/how_it_works/how_it_works_screen.dart';
 import '../../presentation/screens/permissions/permissions_screen.dart';
+import '../../presentation/screens/home/home_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -22,6 +23,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/permissions',
       builder: (context, state) => const PermissionsScreen(),
+    ),
+    GoRoute(
+      path: '/home',
+      builder: (context, state) => const HomeScreen(),
     ),
   ],
 );
