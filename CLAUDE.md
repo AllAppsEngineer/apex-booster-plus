@@ -407,13 +407,14 @@ Telas já existentes na base atual:
   - Aba Preparar (placeholder refinado visualmente)
   - Aba Histórico (placeholder refinado visualmente)
   - Aba Configurações (placeholder refinado visualmente)
+- GameDetailScreen
 
 A existência dessas telas não significa aprovação visual final.
 
 Estado funcional das abas da Home:
 
 - Aba Início: placeholder visual refinado. Sem funcionalidade real.
-- Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome, favoritar/desfavoritar, remover, persistência local com shared_preferences).
+- Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome, favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo).
 - Aba Preparar: placeholder visual. Sem funcionalidade real.
 - Aba Histórico: placeholder visual. Sem funcionalidade real.
 - Aba Configurações: placeholder visual. Sem funcionalidade real.
@@ -567,6 +568,17 @@ Concluído:
   - Remoção persiste.
   - Empty state aparece quando não há jogos.
   - BibliotecaTab usa SharedPreferencesGameLibraryRepository.
+- Fase 2D.1 concluída: tela de detalhe básico do jogo criada.
+  - GameDetailScreen criada com exibição de nome, favorito, packageName
+    (com mensagem honesta quando ausente), perfil local (com mensagem
+    honesta quando ausente), createdAt e updatedAt.
+  - Rota /game-detail/:id criada no app_router.dart.
+  - BibliotecaTab navega para detalhe ao tocar em um jogo real.
+  - Detalhe carrega o jogo salvo pelo id instanciando
+    SharedPreferencesGameLibraryRepository diretamente em initState.
+  - Estado "Jogo não encontrado" tratado.
+  - Back inline e back nativo retornam corretamente à Biblioteca.
+  - Navegação usa push para preservar stack da Biblioteca.
 - flutter analyze passando.
 - flutter test passando.
 
@@ -587,23 +599,30 @@ Arquivos relevantes criados na Fase 2C:
 - test/data/shared_preferences_game_library_repository_test.dart
 - test/presentation/ (testes do GameLibraryController)
 
+Arquivos relevantes criados ou alterados na Fase 2D.1:
+
+- lib/presentation/screens/game_detail/game_detail_screen.dart
+- lib/core/routing/app_router.dart (rota /game-detail/:id adicionada)
+- lib/presentation/screens/home/tabs/biblioteca_tab.dart (navegação para detalhe adicionada)
+
 Estado visual atual:
 
-Aprovado como checkpoint da Fase 2C.7B: Biblioteca com funcionalidade real e persistência local.
+Aprovado como checkpoint da Fase 2D.1: Biblioteca com detalhe básico do jogo funcional.
 Ainda não é o visual final absoluto do produto.
 
 Observação:
 
-A Biblioteca funciona com adição manual, favoritar, remover e persistência entre sessões. O checkpoint 2C.7B é o estado mínimo viável da Biblioteca antes de avançar para Game Detail ou seleção de apps reais.
+A Biblioteca funciona com adição manual, favoritar, remover, persistência entre sessões e navegação para detalhe do jogo. O checkpoint 2D.1 é o estado mínimo viável do detalhe antes de avançar para edição, launcher real ou GFX Profile.
 
 Pendências conhecidas:
 
 - Logo/asset oficial interno ainda não foi aprovado para uso definitivo nas telas Flutter.
 - Localização multilíngue ainda não foi implementada.
-- Tela Game Detail não implementada.
 - Tela Add Game separada não implementada (adição atual é diálogo inline na BibliotecaTab).
 - Ícone real do app instalado não implementado (packageName é inserido manualmente pelo usuário).
 - Leitura de apps Android instalados não implementada.
+- Edição do jogo (nome, packageName) não implementada.
+- Abertura/launcher real do jogo a partir do detalhe não implementada.
 - GFX Profile funcional não implementado.
 - Apex Scan real não implementado (sem leitura de métricas do dispositivo).
 - Boost Engine não implementado.
@@ -617,16 +636,15 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B e 2C (até persistência local da Biblioteca) concluídas.
+Fases 2A, 2B, 2C e 2D.1 concluídas.
 
 Próxima decisão obrigatória:
 
 Antes de iniciar qualquer implementação nova, decidir entre:
 
-1. Refinar Biblioteca com tela Game Detail:
-   - tela dedicada ao jogo selecionado;
-   - exibir nome, ícone (placeholder), packageName, perfil GFX associado;
-   - navegação BibliotecaTab → GameDetail.
+1. Adicionar edição do jogo no detalhe:
+   - permitir editar nome e packageName diretamente na GameDetailScreen;
+   - persistir alterações via SharedPreferencesGameLibraryRepository.
 
 2. Iniciar seleção real de apps Android instalados:
    - capturar apps instalados no dispositivo;
