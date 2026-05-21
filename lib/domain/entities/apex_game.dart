@@ -65,6 +65,30 @@ class ApexGame {
         localProfileName,
       );
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'packageName': packageName,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'isFavorite': isFavorite,
+      'localProfileName': localProfileName,
+    };
+  }
+
+  static ApexGame fromJson(Map<String, dynamic> map) {
+    return ApexGame(
+      id: map['id'] as String,
+      name: map['name'] as String,
+      packageName: map['packageName'] as String?,
+      createdAt: DateTime.parse(map['createdAt'] as String),
+      updatedAt: DateTime.parse(map['updatedAt'] as String),
+      isFavorite: (map['isFavorite'] as bool?) ?? false,
+      localProfileName: map['localProfileName'] as String?,
+    );
+  }
+
   @override
   String toString() {
     return 'ApexGame('
