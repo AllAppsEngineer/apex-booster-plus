@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
-import 'package:apex_booster_plus/data/repositories/in_memory_game_library_repository.dart';
+import 'package:apex_booster_plus/data/repositories/shared_preferences_game_library_repository.dart';
 import 'package:apex_booster_plus/domain/entities/apex_game.dart';
 import 'package:apex_booster_plus/presentation/controllers/game_library_controller.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
@@ -16,17 +17,22 @@ class BibliotecaTab extends StatefulWidget {
 }
 
 class _BibliotecaTabState extends State<BibliotecaTab> {
-  final _controller = GameLibraryController(InMemoryGameLibraryRepository());
+  late GameLibraryController _controller;
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    _loadGames();
+    _initialize();
   }
 
-  Future<void> _loadGames() async {
+  Future<void> _initialize() async {
+    final prefs = await SharedPreferences.getInstance();
+    _controller = GameLibraryController(
+      SharedPreferencesGameLibraryRepository(prefs),
+    );
     await _controller.loadGames();
-    if (mounted) setState(() {});
+    if (mounted) setState(() => _initialized = true);
   }
 
   Future<void> _openAddGameDialog(BuildContext context) async {
@@ -52,6 +58,14 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_initialized) {
+      return const ApexBackground(
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.cyberBlue),
+        ),
+      );
+    }
+
     final state = _controller.state;
 
     if (state.isLoading) {
