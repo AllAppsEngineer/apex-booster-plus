@@ -414,7 +414,7 @@ A existência dessas telas não significa aprovação visual final.
 Estado funcional das abas da Home:
 
 - Aba Início: placeholder visual refinado. Sem funcionalidade real.
-- Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome, favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe, seleção de GFX Profile local via bottom sheet no detalhe, seleção restrita de apps Android instalados via AppPickerSheet com intent MAIN/LAUNCHER — entrada manual permanece como fallback).
+- Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome, favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe, seleção de GFX Profile local via bottom sheet no detalhe, seleção restrita de apps Android instalados via AppPickerSheet com intent MAIN/LAUNCHER — entrada manual permanece como fallback, exibição de ícone real do app instalado via AppIconWidget quando packageName disponível — fallback genérico quando ausente, app desinstalado ou erro).
 - Aba Preparar: placeholder visual. Sem funcionalidade real.
 - Aba Histórico: placeholder visual. Sem funcionalidade real.
 - Aba Configurações: placeholder visual. Sem funcionalidade real.
@@ -610,8 +610,22 @@ Concluído:
   - Escolha preenche automaticamente nome e packageName no diálogo de adicionar jogo.
   - Entrada manual permanece como fallback quando o usuário prefere digitar.
   - Persistência continua via SharedPreferencesGameLibraryRepository (sem alteração no repositório).
-  - Ícone real do app instalado não implementado nesta fase.
   - Launcher real / abertura do jogo não implementado nesta fase.
+- Fase 2G.2 concluída: ícone real do app selecionado exibido na Biblioteca e no detalhe.
+  - AppIconWidget criado (widget reutilizável com fallback genérico).
+  - MethodChannel Android/Kotlin expandido: getAppIcon retorna bytes PNG do ícone por packageName.
+  - InstalledAppsDatasource expandido com getAppIcon.
+  - Cache em memória por sessão para evitar recarregamento repetido.
+  - Ícone real exibido no card da Biblioteca e na GameDetailScreen quando packageName disponível.
+  - Fallback genérico mantido quando: sem packageName, app desinstalado, erro ou ícone inválido.
+  - Fluxo "ADICIONAR JOGO" manual tenta vínculo automático por nome quando há match claro e único.
+  - Quando há múltiplas correspondências, não escolhe automaticamente.
+  - Não usa QUERY_ALL_PACKAGES.
+  - Não adiciona uses-permission sensível.
+  - Não solicita permissão runtime.
+  - Ícone não é salvo em shared_preferences.
+  - Ícone não é persistido como bytes/base64 em disco.
+  - Launcher real / abertura do jogo não implementado.
 - flutter analyze passando.
 - flutter test passando.
 
@@ -657,21 +671,29 @@ Arquivos relevantes criados ou alterados na Fase 2F.2:
 - lib/presentation/widgets/app_picker_sheet.dart (criado)
 - lib/presentation/screens/home/tabs/biblioteca_tab.dart (alterado — AppPickerSheet integrado)
 
+Arquivos relevantes criados ou alterados na Fase 2G.2:
+
+- android/app/src/main/kotlin/com/allappsengineer/apex_booster_plus/MainActivity.kt (alterado — getAppIcon adicionado ao MethodChannel)
+- lib/data/datasources/installed_apps_datasource.dart (alterado — getAppIcon adicionado)
+- lib/presentation/screens/game_detail/game_detail_screen.dart (alterado — AppIconWidget integrado no detalhe)
+- lib/presentation/screens/home/tabs/biblioteca_tab.dart (alterado — AppIconWidget integrado nos cards)
+- lib/presentation/widgets/app_picker_sheet.dart (alterado — AppIconWidget integrado no picker)
+- lib/presentation/widgets/app_icon_widget.dart (criado)
+
 Estado visual atual:
 
-Aprovado como checkpoint da Fase 2F.2: seleção restrita de apps Android instalados funcional na Biblioteca.
+Aprovado como checkpoint da Fase 2G.2: ícone real do app selecionado exibido na Biblioteca e no detalhe.
 Validado manualmente pelo usuário. Ainda não é o visual final absoluto do produto.
 
 Observação:
 
-A Biblioteca funciona com adição manual, favoritar, remover, persistência entre sessões, navegação para detalhe, edição de nome e packageName, seleção de GFX Profile local, e seleção restrita de apps instalados via AppPickerSheet (intent MAIN/LAUNCHER). Entrada manual permanece como fallback. Ícone real do app e launcher real do jogo ainda não foram implementados.
+A Biblioteca funciona com adição manual, favoritar, remover, persistência entre sessões, navegação para detalhe, edição de nome e packageName, seleção de GFX Profile local, seleção restrita de apps instalados via AppPickerSheet (intent MAIN/LAUNCHER), e exibição de ícone real do app via AppIconWidget quando packageName disponível. Entrada manual permanece como fallback. Ícone não é persistido em disco — cache em memória por sessão. Launcher real do jogo ainda não foi implementado.
 
 Pendências conhecidas:
 
 - Logo/asset oficial interno ainda não foi aprovado para uso definitivo nas telas Flutter.
 - Localização multilíngue ainda não foi implementada.
 - Tela Add Game separada não implementada (adição atual é diálogo inline na BibliotecaTab).
-- Ícone real do app instalado não implementado (thumbnail do app no card e detalhe).
 - Abertura/launcher real do jogo a partir do detalhe não implementada.
 - GFX Profile avançado não implementado (perfis futuros: Fluidez, Competitivo, Ultra Visual, Personalizado).
 - Apex Scan real não implementado (sem leitura de métricas do dispositivo).
@@ -686,34 +708,33 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1 e 2F.2 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2 e 2G.2 concluídas.
 
 Próxima decisão obrigatória:
 
 Antes de iniciar qualquer implementação nova, decidir entre:
 
-1. Exibir ícone real do app selecionado:
-   - exibir thumbnail/ícone do app no card da Biblioteca e no detalhe do jogo;
-   - requer retorno do ícone via MethodChannel (bytes do ícone Android);
-   - requer avaliação de performance e cache de imagem.
-
-2. Criar launcher real controlado para abrir o jogo:
+1. Criar launcher real controlado para abrir o jogo:
    - abrir o app pelo packageName via Intent Android;
    - requer MethodChannel ou plugin de launch;
    - exibir feedback visual de abertura.
 
-3. Refinar o picker de apps:
+2. Refinar o picker de apps:
    - adicionar busca por nome no AppPickerSheet;
    - somente se houver necessidade de usabilidade identificada.
 
-4. Iniciar Apex Scan conceitual/local:
+3. Iniciar Apex Scan conceitual/local:
    - diagnóstico baseado em dados disponíveis sem permissões extras;
    - sem leitura de métricas reais do sistema nesta fase;
    - orientação e score visual honesto.
 
-5. Micro-refino visual pontual:
+4. Micro-refino visual pontual:
    - somente se houver problema visual objetivo identificado no celular;
    - sem reabrir toda a estrutura visual;
+   - sem alterar escopo funcional.
+
+5. Atualizar documentação/roadmap:
+   - registrar estado real para referência futura;
    - sem alterar escopo funcional.
 
 Regra:
