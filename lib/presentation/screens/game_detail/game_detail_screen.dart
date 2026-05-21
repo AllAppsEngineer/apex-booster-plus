@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_game_library_repository.dart';
 import 'package:apex_booster_plus/domain/entities/apex_game.dart';
+import 'package:apex_booster_plus/domain/entities/gfx_profile.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 
 class GameDetailScreen extends StatefulWidget {
@@ -74,6 +75,38 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
     if (mounted) setState(() => _game = updated);
   }
 
+  Future<void> _openProfileSelector() async {
+    final game = _game;
+    final repo = _repo;
+    if (game == null || repo == null) return;
+
+    // Returns: profile.label to select, '' to clear, null if dismissed
+    final result = await showModalBottomSheet<String?>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _GfxProfileSheet(currentLabel: game.localProfileName),
+    );
+
+    if (result == null) return;
+    if (!mounted) return;
+
+    final ApexGame updated;
+    if (result.isEmpty) {
+      updated = game.copyWith(
+        clearLocalProfileName: true,
+        updatedAt: DateTime.now(),
+      );
+    } else {
+      updated = game.copyWith(
+        localProfileName: result,
+        updatedAt: DateTime.now(),
+      );
+    }
+
+    await repo.updateGame(updated);
+    if (mounted) setState(() => _game = updated);
+  }
+
   @override
   Widget build(BuildContext context) {
     final canEdit = !_loading && _game != null;
@@ -99,7 +132,10 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
                       )
                     : _game == null
                         ? _GameNotFound(onBack: () => context.pop())
-                        : _GameDetailContent(game: _game!),
+                        : _GameDetailContent(
+                            game: _game!,
+                            onSelectProfile: _openProfileSelector,
+                          ),
               ),
             ],
           ),
@@ -229,8 +265,9 @@ class _GameNotFound extends StatelessWidget {
 
 class _GameDetailContent extends StatelessWidget {
   final ApexGame game;
+  final VoidCallback? onSelectProfile;
 
-  const _GameDetailContent({required this.game});
+  const _GameDetailContent({required this.game, this.onSelectProfile});
 
   String _formatDate(DateTime dt) {
     final d = dt.day.toString().padLeft(2, '0');
@@ -261,12 +298,13 @@ class _GameDetailContent extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _InfoRow(
-            title: 'Perfil local',
+            title: 'Perfil GFX',
             icon: Icons.tune_rounded,
             value: game.localProfileName,
             emptyMessage: 'Nenhum perfil configurado',
             accentColor: AppColors.energyOrange,
             delay: 180.ms,
+            onTap: onSelectProfile,
           ),
           const SizedBox(height: 10),
           _InfoRow(
@@ -417,6 +455,7 @@ class _InfoRow extends StatelessWidget {
   final String? emptyMessage;
   final Color accentColor;
   final Duration delay;
+  final VoidCallback? onTap;
 
   const _InfoRow({
     required this.title,
@@ -425,6 +464,7 @@ class _InfoRow extends StatelessWidget {
     this.emptyMessage,
     required this.accentColor,
     this.delay = Duration.zero,
+    this.onTap,
   });
 
   @override
@@ -432,62 +472,269 @@ class _InfoRow extends StatelessWidget {
     final hasValue = value != null && value!.isNotEmpty;
     final displayValue = hasValue ? value! : (emptyMessage ?? '—');
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: hasValue
-              ? accentColor.withValues(alpha: 0.2)
-              : AppColors.white.withValues(alpha: 0.07),
-          width: 1,
-        ),
+    final decoration = BoxDecoration(
+      color: AppColors.white.withValues(alpha: 0.04),
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(
+        color: hasValue
+            ? accentColor.withValues(alpha: 0.2)
+            : AppColors.white.withValues(alpha: 0.07),
+        width: 1,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
+    );
+
+    final rowContent = Row(
+      children: [
+        Icon(
+          icon,
+          color: hasValue
+              ? accentColor
+              : AppColors.textGray.withValues(alpha: 0.4),
+          size: 18,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textGray,
+                      fontSize: 11,
+                      letterSpacing: 0.5,
+                    ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                displayValue,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: hasValue
+                          ? AppColors.white
+                          : AppColors.textGray.withValues(alpha: 0.55),
+                      fontSize: 13,
+                      fontStyle:
+                          hasValue ? FontStyle.normal : FontStyle.italic,
+                    ),
+              ),
+            ],
+          ),
+        ),
+        if (onTap != null) ...[
+          const SizedBox(width: 4),
           Icon(
-            icon,
-            color: hasValue
-                ? accentColor
-                : AppColors.textGray.withValues(alpha: 0.4),
+            Icons.chevron_right_rounded,
+            color: accentColor.withValues(alpha: 0.7),
             size: 18,
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textGray,
-                        fontSize: 11,
-                        letterSpacing: 0.5,
-                      ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  displayValue,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: hasValue
-                            ? AppColors.white
-                            : AppColors.textGray.withValues(alpha: 0.55),
-                        fontSize: 13,
-                        fontStyle:
-                            hasValue ? FontStyle.normal : FontStyle.italic,
-                      ),
-                ),
-              ],
-            ),
-          ),
         ],
-      ),
-    )
+      ],
+    );
+
+    final Widget built;
+    if (onTap != null) {
+      built = Ink(
+        width: double.infinity,
+        decoration: decoration,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          splashColor: accentColor.withValues(alpha: 0.1),
+          highlightColor: accentColor.withValues(alpha: 0.05),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: rowContent,
+          ),
+        ),
+      );
+    } else {
+      built = Container(
+        width: double.infinity,
+        decoration: decoration,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: rowContent,
+      );
+    }
+
+    return built
         .animate()
         .fadeIn(delay: delay, duration: 400.ms)
         .slideX(begin: 0.03, end: 0, delay: delay, duration: 300.ms);
+  }
+}
+
+// ─── GFX Profile bottom sheet ─────────────────────────────────────────────────
+
+class _GfxProfileSheet extends StatelessWidget {
+  final String? currentLabel;
+
+  const _GfxProfileSheet({required this.currentLabel});
+
+  @override
+  Widget build(BuildContext context) {
+    final current = GfxProfile.fromLabel(currentLabel);
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF111318),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.textGray.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.tune_rounded,
+                    color: AppColors.energyOrange,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Perfil GFX',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                'Preferência salva localmente. Não altera jogos de terceiros.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textGray,
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                    ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Divider(
+              height: 1,
+              color: AppColors.white.withValues(alpha: 0.07),
+            ),
+            for (final profile in GfxProfile.values)
+              _ProfileOption(
+                profile: profile,
+                isSelected: current == profile,
+                onTap: () => Navigator.of(context).pop(profile.label),
+              ),
+            _ProfileNoneOption(
+              isSelected: current == null,
+              onTap: () => Navigator.of(context).pop(''),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileOption extends StatelessWidget {
+  final GfxProfile profile;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ProfileOption({
+    required this.profile,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Icon(profile.icon, color: profile.accentColor, size: 20),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                profile.label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.white,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                    ),
+              ),
+            ),
+            if (isSelected)
+              const Icon(
+                Icons.check_rounded,
+                color: AppColors.apexGreen,
+                size: 20,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileNoneOption extends StatelessWidget {
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ProfileNoneOption({
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Icon(
+              Icons.remove_circle_outline_rounded,
+              color: AppColors.textGray.withValues(alpha: 0.5),
+              size: 20,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                'Nenhum',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textGray,
+                      fontStyle: FontStyle.italic,
+                    ),
+              ),
+            ),
+            if (isSelected)
+              const Icon(
+                Icons.check_rounded,
+                color: AppColors.apexGreen,
+                size: 20,
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
