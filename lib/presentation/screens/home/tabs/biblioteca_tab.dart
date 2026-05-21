@@ -92,7 +92,12 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
               else
                 _GameList(
                   games: state.games,
-                  onTap: (id) => context.push('/game-detail/$id'),
+                  onTap: (id) async {
+                    await context.push('/game-detail/$id');
+                    if (!mounted) return;
+                    await _controller.loadGames();
+                    if (mounted) setState(() {});
+                  },
                   onToggleFavorite: (id) async {
                     await _controller.toggleFavorite(id);
                     if (mounted) setState(() {});

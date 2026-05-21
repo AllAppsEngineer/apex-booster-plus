@@ -19,6 +19,7 @@ class GameDetailScreen extends StatefulWidget {
 class _GameDetailScreenState extends State<GameDetailScreen> {
   ApexGame? _game;
   bool _loading = true;
+  SharedPreferencesGameLibraryRepository? _repo;
 
   @override
   void initState() {
@@ -32,8 +33,8 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
       return;
     }
     final prefs = await SharedPreferences.getInstance();
-    final repo = SharedPreferencesGameLibraryRepository(prefs);
-    final game = await repo.getGameById(widget.gameId);
+    _repo = SharedPreferencesGameLibraryRepository(prefs);
+    final game = await _repo!.getGameById(widget.gameId);
     if (mounted) {
       setState(() {
         _game = game;
@@ -42,8 +43,41 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
     }
   }
 
+  Future<void> _openEditDialog() async {
+    final game = _game;
+    final repo = _repo;
+    if (game == null || repo == null) return;
+
+    final result = await showDialog<(String, String)>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.75),
+      builder: (_) => _EditGameDialog(
+        initialName: game.name,
+        initialPackageName: game.packageName ?? '',
+      ),
+    );
+
+    if (result == null) return;
+    if (!mounted) return;
+
+    final (newName, newPkg) = result;
+    final trimmedPkg = newPkg.trim();
+
+    final updated = game.copyWith(
+      name: newName,
+      packageName: trimmedPkg.isEmpty ? null : trimmedPkg,
+      clearPackageName: trimmedPkg.isEmpty,
+      updatedAt: DateTime.now(),
+    );
+
+    await repo.updateGame(updated);
+    if (mounted) setState(() => _game = updated);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final canEdit = !_loading && _game != null;
+
     return Scaffold(
       backgroundColor: const Color(0xFF050505),
       body: ApexBackground(
@@ -51,7 +85,10 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _BackHeader(onBack: () => context.pop()),
+              _BackHeader(
+                onBack: () => context.pop(),
+                onEdit: canEdit ? _openEditDialog : null,
+              ),
               Expanded(
                 child: _loading
                     ? const Center(
@@ -76,13 +113,14 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
 
 class _BackHeader extends StatelessWidget {
   final VoidCallback onBack;
+  final VoidCallback? onEdit;
 
-  const _BackHeader({required this.onBack});
+  const _BackHeader({required this.onBack, this.onEdit});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 12, 16, 4),
+      padding: const EdgeInsets.fromLTRB(4, 12, 8, 4),
       child: Row(
         children: [
           IconButton(
@@ -101,6 +139,17 @@ class _BackHeader extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
           ),
+          const Spacer(),
+          if (onEdit != null)
+            IconButton(
+              onPressed: onEdit,
+              icon: const Icon(
+                Icons.edit_rounded,
+                color: AppColors.cyberBlue,
+                size: 20,
+              ),
+              tooltip: 'Editar',
+            ),
         ],
       ),
     );
@@ -439,5 +488,174 @@ class _InfoRow extends StatelessWidget {
         .animate()
         .fadeIn(delay: delay, duration: 400.ms)
         .slideX(begin: 0.03, end: 0, delay: delay, duration: 300.ms);
+  }
+}
+
+// ─── Edit dialog ─────────────────────────────────────────────────────────────
+
+class _EditGameDialog extends StatefulWidget {
+  final String initialName;
+  final String initialPackageName;
+
+  const _EditGameDialog({
+    required this.initialName,
+    required this.initialPackageName,
+  });
+
+  @override
+  State<_EditGameDialog> createState() => _EditGameDialogState();
+}
+
+class _EditGameDialogState extends State<_EditGameDialog> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _pkgController;
+  String? _nameError;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.initialName);
+    _pkgController = TextEditingController(text: widget.initialPackageName);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _pkgController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      setState(() => _nameError = 'Nome obrigatório');
+      return;
+    }
+    Navigator.of(context).pop((name, _pkgController.text.trim()));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF111318),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: AppColors.cyberBlue.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      title: const Text(
+        'Editar jogo',
+        style: TextStyle(
+          color: AppColors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _DialogField(
+            controller: _nameController,
+            label: 'Nome do jogo',
+            autofocus: true,
+            errorText: _nameError,
+            onChanged: (_) {
+              if (_nameError != null) setState(() => _nameError = null);
+            },
+          ),
+          const SizedBox(height: 12),
+          _DialogField(
+            controller: _pkgController,
+            label: 'Package name (opcional)',
+          ),
+        ],
+      ),
+      actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text(
+            'Cancelar',
+            style: TextStyle(color: AppColors.textGray),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: _submit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.cyberBlue,
+            foregroundColor: AppColors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            elevation: 0,
+          ),
+          child: const Text(
+            'Salvar',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DialogField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final bool autofocus;
+  final String? errorText;
+  final ValueChanged<String>? onChanged;
+
+  const _DialogField({
+    required this.controller,
+    required this.label,
+    this.autofocus = false,
+    this.errorText,
+    this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      autofocus: autofocus,
+      style: const TextStyle(color: AppColors.white),
+      cursorColor: AppColors.cyberBlue,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        hintText: label,
+        hintStyle: const TextStyle(color: AppColors.textGray, fontSize: 14),
+        errorText: errorText,
+        errorStyle:
+            const TextStyle(color: AppColors.energyOrange, fontSize: 12),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide:
+              BorderSide(color: AppColors.cyberBlue.withValues(alpha: 0.3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide:
+              const BorderSide(color: AppColors.cyberBlue, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppColors.energyOrange),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide:
+              const BorderSide(color: AppColors.energyOrange, width: 1.5),
+        ),
+        filled: true,
+        fillColor: AppColors.white.withValues(alpha: 0.05),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      ),
+    );
   }
 }
