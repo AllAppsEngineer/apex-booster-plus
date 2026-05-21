@@ -13,9 +13,13 @@ class InstalledAppsDatasource {
     if (_appsCache != null) return List.unmodifiable(_appsCache!);
     final List<dynamic> raw =
         await _channel.invokeMethod('getInstalledApps');
-    _appsCache = raw
+    final list = raw
         .map((e) => InstalledApp.fromMap(Map<String, dynamic>.from(e as Map)))
         .toList();
+    list.sort(
+      (a, b) => a.appName.toLowerCase().compareTo(b.appName.toLowerCase()),
+    );
+    _appsCache = list;
     return List.unmodifiable(_appsCache!);
   }
 

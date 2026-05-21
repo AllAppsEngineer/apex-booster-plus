@@ -32,6 +32,7 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
   List<InstalledApp> _filtered = [];
   bool _loading = true;
   bool _failed = false;
+  bool _hasText = false;
 
   @override
   void initState() {
@@ -51,8 +52,8 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
       final apps = await _datasource.getInstalledApps();
       if (!mounted) return;
       setState(() {
-        _allApps = apps;
-        _filtered = apps;
+        _allApps = List.of(apps);
+        _filtered = List.of(apps);
         _loading = false;
       });
     } catch (_) {
@@ -64,12 +65,27 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
     }
   }
 
+  Future<void> _retry() async {
+    setState(() {
+      _failed = false;
+      _loading = true;
+    });
+    await _load();
+  }
+
   void _onSearch() {
     final q = _searchController.text.toLowerCase().trim();
     setState(() {
+      _hasText = _searchController.text.isNotEmpty;
       _filtered = q.isEmpty
-          ? _allApps
-          : _allApps.where((a) => a.appName.toLowerCase().contains(q)).toList();
+          ? List.of(_allApps)
+          : _allApps
+              .where(
+                (a) =>
+                    a.appName.toLowerCase().contains(q) ||
+                    a.packageName.toLowerCase().contains(q),
+              )
+              .toList();
     });
   }
 
@@ -123,7 +139,11 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
         children: [
           Row(
             children: [
-              const Icon(Icons.apps_rounded, color: AppColors.cyberBlue, size: 18),
+              const Icon(
+                Icons.apps_rounded,
+                color: AppColors.cyberBlue,
+                size: 18,
+              ),
               const SizedBox(width: 10),
               Text(
                 'Escolher app instalado',
@@ -136,7 +156,7 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Apps do usuário com ícone no launcher.',
+            'Selecione o jogo instalado no seu dispositivo.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textGray,
                   fontSize: 11,
@@ -157,13 +177,24 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
         style: const TextStyle(color: AppColors.white, fontSize: 14),
         cursorColor: AppColors.cyberBlue,
         decoration: InputDecoration(
-          hintText: 'Buscar por nome',
+          hintText: 'Buscar por nome ou pacote',
           hintStyle: const TextStyle(color: AppColors.textGray, fontSize: 14),
           prefixIcon: const Icon(
             Icons.search_rounded,
             color: AppColors.textGray,
             size: 18,
           ),
+          suffixIcon: _hasText
+              ? IconButton(
+                  icon: const Icon(
+                    Icons.clear_rounded,
+                    color: AppColors.textGray,
+                    size: 16,
+                  ),
+                  onPressed: _searchController.clear,
+                  tooltip: 'Limpar busca',
+                )
+              : null,
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
             borderSide:
@@ -194,22 +225,23 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
       );
     }
     if (_failed) {
-      return _PickerErrorState(onManual: _useManual);
+      return _PickerErrorState(onManual: _useManual, onRetry: _retry);
     }
     if (_filtered.isEmpty) {
-      return Center(
-        child: Text(
-          'Nenhum app encontrado.',
-          style: TextStyle(
-            color: AppColors.textGray.withValues(alpha: 0.6),
-            fontSize: 13,
-            fontStyle: FontStyle.italic,
-          ),
-        ),
-      );
+      final query = _searchController.text.trim();
+      if (query.isNotEmpty) {
+        return _EmptySearchState(query: query, onManual: _useManual);
+      }
+      return _EmptyAppsState(onManual: _useManual);
     }
-    return ListView.builder(
+    return ListView.separated(
       itemCount: _filtered.length,
+      separatorBuilder: (_, __) => Divider(
+        height: 1,
+        indent: 20,
+        endIndent: 20,
+        color: AppColors.white.withValues(alpha: 0.05),
+      ),
       itemBuilder: (_, index) {
         final app = _filtered[index];
         return _AppPickerItem(app: app, onTap: () => _select(app));
@@ -275,12 +307,106 @@ class _AppPickerItem extends StatelessWidget {
   }
 }
 
+// ─── Empty search state ───────────────────────────────────────────────────────
+
+class _EmptySearchState extends StatelessWidget {
+  final String query;
+  final VoidCallback onManual;
+
+  const _EmptySearchState({required this.query, required this.onManual});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.search_off_rounded,
+            color: AppColors.textGray.withValues(alpha: 0.4),
+            size: 44,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Nenhum resultado para "$query".',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Tente outro nome ou use a entrada manual.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textGray,
+                  fontSize: 12,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          _ManualButton(onManual: onManual),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Empty apps state ─────────────────────────────────────────────────────────
+
+class _EmptyAppsState extends StatelessWidget {
+  final VoidCallback onManual;
+
+  const _EmptyAppsState({required this.onManual});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.apps_rounded,
+            color: AppColors.textGray.withValues(alpha: 0.4),
+            size: 44,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Nenhum app instalado encontrado.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Use a entrada manual para adicionar o jogo.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textGray,
+                  fontSize: 12,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          _ManualButton(onManual: onManual),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Error state ──────────────────────────────────────────────────────────────
 
 class _PickerErrorState extends StatelessWidget {
   final VoidCallback onManual;
+  final VoidCallback onRetry;
 
-  const _PickerErrorState({required this.onManual});
+  const _PickerErrorState({required this.onManual, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -305,9 +431,10 @@ class _PickerErrorState extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           SizedBox(
+            width: double.infinity,
             height: 44,
             child: ElevatedButton(
-              onPressed: onManual,
+              onPressed: onRetry,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.cyberBlue,
                 foregroundColor: AppColors.white,
@@ -318,12 +445,47 @@ class _PickerErrorState extends StatelessWidget {
                 elevation: 0,
               ),
               child: const Text(
-                'Usar entrada manual',
+                'Tentar novamente',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ),
           ),
+          const SizedBox(height: 12),
+          _ManualButton(onManual: onManual),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Shared manual button ─────────────────────────────────────────────────────
+
+class _ManualButton extends StatelessWidget {
+  final VoidCallback onManual;
+
+  const _ManualButton({required this.onManual});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 44,
+      child: OutlinedButton(
+        onPressed: onManual,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.textGray,
+          side: BorderSide(
+            color: AppColors.textGray.withValues(alpha: 0.3),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+        ),
+        child: const Text(
+          'Usar entrada manual',
+          style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+        ),
       ),
     );
   }
