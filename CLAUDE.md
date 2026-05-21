@@ -414,7 +414,7 @@ A existência dessas telas não significa aprovação visual final.
 Estado funcional das abas da Home:
 
 - Aba Início: placeholder visual refinado. Sem funcionalidade real.
-- Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome, favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe).
+- Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome, favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe, seleção de GFX Profile local via bottom sheet no detalhe).
 - Aba Preparar: placeholder visual. Sem funcionalidade real.
 - Aba Histórico: placeholder visual. Sem funcionalidade real.
 - Aba Configurações: placeholder visual. Sem funcionalidade real.
@@ -588,6 +588,15 @@ Concluído:
   - Alterações persistidas via SharedPreferencesGameLibraryRepository.
   - Biblioteca reflete nome atualizado ao retornar do detalhe.
   - Cancelamento não altera dados.
+- Fase 2E.1 concluída: GFX Profile local simples implementado na GameDetailScreen.
+  - Enum GfxProfile criado com 4 valores: Equilibrado, Desempenho, Qualidade, Economia.
+  - "Nenhum" é a ausência de perfil (localProfileName == null), oferecida como opção de limpeza no bottom sheet.
+  - Seleção feita via bottom sheet na GameDetailScreen.
+  - GFX Profile usa o campo localProfileName do ApexGame (existente desde a Fase 2C.1) para salvar a preferência escolhida.
+  - updatedAt atualizado ao salvar perfil.
+  - Disclaimer visível no bottom sheet: "Preferência salva localmente. Não altera jogos de terceiros."
+  - Perfil selecionado exibido no detalhe do jogo.
+  - Persiste ao fechar e reabrir o app via SharedPreferencesGameLibraryRepository (sem alteração no repositório).
 - flutter analyze passando.
 - flutter test passando.
 
@@ -619,14 +628,19 @@ Arquivos relevantes criados ou alterados na Fase 2D.3:
 - lib/presentation/screens/game_detail/game_detail_screen.dart (diálogo de edição adicionado)
 - lib/presentation/screens/home/tabs/biblioteca_tab.dart (reflete nome atualizado ao retornar)
 
+Arquivos relevantes criados ou alterados na Fase 2E.1:
+
+- lib/domain/entities/gfx_profile.dart (criado — enum GfxProfile)
+- lib/presentation/screens/game_detail/game_detail_screen.dart (alterado — bottom sheet GFX Profile adicionado)
+
 Estado visual atual:
 
-Aprovado como checkpoint da Fase 2D.3: Biblioteca com detalhe e edição básica do jogo funcional.
+Aprovado como checkpoint da Fase 2E.1: GFX Profile local simples funcional na GameDetailScreen.
 Validado manualmente pelo usuário. Ainda não é o visual final absoluto do produto.
 
 Observação:
 
-A Biblioteca funciona com adição manual, favoritar, remover, persistência entre sessões, navegação para detalhe e edição de nome e packageName via diálogo inline. O checkpoint 2D.3 é o estado mínimo viável antes de avançar para seleção real de apps, launcher real ou GFX Profile.
+A Biblioteca funciona com adição manual, favoritar, remover, persistência entre sessões, navegação para detalhe, edição de nome e packageName, e seleção de GFX Profile local. O checkpoint 2E.1 é o estado mínimo viável do GFX Profile antes de avançar para seleção real de apps instalados, launcher real ou Apex Scan conceitual.
 
 Pendências conhecidas:
 
@@ -636,7 +650,7 @@ Pendências conhecidas:
 - Ícone real do app instalado não implementado (packageName é inserido manualmente pelo usuário).
 - Leitura de apps Android instalados não implementada.
 - Abertura/launcher real do jogo a partir do detalhe não implementada.
-- GFX Profile funcional não implementado.
+- GFX Profile avançado não implementado (perfis futuros: Fluidez, Competitivo, Ultra Visual, Personalizado).
 - Apex Scan real não implementado (sem leitura de métricas do dispositivo).
 - Boost Engine não implementado.
 - Histórico real não implementado.
@@ -649,7 +663,7 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1 e 2D.3 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3 e 2E.1 concluídas.
 
 Próxima decisão obrigatória:
 
@@ -661,15 +675,19 @@ Antes de iniciar qualquer implementação nova, decidir entre:
    - requer aprovação de nova dependência (ex: device_apps);
    - requer avaliação de permissão QUERY_ALL_PACKAGES.
 
-2. Iniciar GFX Profile local simples:
-   - salvar preferências de perfil por jogo com shared_preferences;
-   - sem alteração real de jogos de terceiros;
-   - disclaimer obrigatório em toda tela GFX.
+2. Iniciar Apex Scan conceitual/local:
+   - diagnóstico baseado em dados disponíveis sem permissões extras;
+   - sem leitura de métricas reais do sistema nesta fase;
+   - orientação e score visual honesto.
 
 3. Fazer micro-refino visual pontual:
    - somente se houver problema visual objetivo identificado no celular;
    - sem reabrir toda a estrutura visual;
    - sem alterar escopo funcional.
+
+4. Refinamento do GFX Profile local:
+   - expandir perfis (Fluidez, Competitivo, Ultra Visual, Personalizado);
+   - somente se houver necessidade funcional identificada.
 
 Regra:
 
@@ -682,7 +700,6 @@ Nenhuma implementação nova deve começar sem escolher explicitamente uma dessa
 Na Fase 2, até aprovação individual de cada item, é proibido:
 
 - implementar Apex Scan real (leitura de métricas do dispositivo);
-- implementar GFX Profile funcional (persistência e aplicação de preferências);
 - implementar Boost Engine;
 - implementar Billing;
 - implementar Firebase;
@@ -845,10 +862,17 @@ Não pode:
 
 ## 24. GFX PROFILE
 
-Perfis planejados:
+Perfis implementados na Fase 2E.1:
+
+- Equilibrado
+- Desempenho
+- Qualidade
+- Economia
+- Nenhum (remoção do perfil — ausência de localProfileName)
+
+Perfis planejados para fases futuras (não implementados):
 
 - Fluidez
-- Equilibrado
 - Competitivo
 - Ultra Visual
 - Personalizado
