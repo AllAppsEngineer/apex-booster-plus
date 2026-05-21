@@ -75,7 +75,24 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
               if (state.games.isEmpty)
                 const _BibliotecaEmptyCard()
               else
-                _GameList(games: state.games),
+                _GameList(
+                  games: state.games,
+                  onToggleFavorite: (id) async {
+                    await _controller.toggleFavorite(id);
+                    if (mounted) setState(() {});
+                  },
+                  onRemove: (id, name) async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      barrierColor: Colors.black.withValues(alpha: 0.75),
+                      builder: (_) => _RemoveGameDialog(gameName: name),
+                    );
+                    if (confirmed != true) return;
+                    if (!mounted) return;
+                    await _controller.removeGame(id);
+                    if (mounted) setState(() {});
+                  },
+                ),
               const SizedBox(height: 16),
               ApexFeatureCard(
                 badge: 'FAV',
@@ -199,9 +216,15 @@ class _BibliotecaEmptyCard extends StatelessWidget {
 }
 
 class _GameList extends StatelessWidget {
-  final List<dynamic> games;
+  final List<ApexGame> games;
+  final void Function(String id) onToggleFavorite;
+  final void Function(String id, String name) onRemove;
 
-  const _GameList({required this.games});
+  const _GameList({
+    required this.games,
+    required this.onToggleFavorite,
+    required this.onRemove,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -221,9 +244,11 @@ class _GameList extends StatelessWidget {
           final game = entry.value;
           return Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: _GameListItem(
-              name: game.name as String,
+            child: _GameCard(
+              game: game,
               delay: (index * 60).ms,
+              onToggleFavorite: () => onToggleFavorite(game.id),
+              onRemove: () => onRemove(game.id, game.name),
             ),
           );
         }),
@@ -232,11 +257,18 @@ class _GameList extends StatelessWidget {
   }
 }
 
-class _GameListItem extends StatelessWidget {
-  final String name;
+class _GameCard extends StatelessWidget {
+  final ApexGame game;
   final Duration delay;
+  final VoidCallback onToggleFavorite;
+  final VoidCallback onRemove;
 
-  const _GameListItem({required this.name, required this.delay});
+  const _GameCard({
+    required this.game,
+    required this.delay,
+    required this.onToggleFavorite,
+    required this.onRemove,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -253,18 +285,20 @@ class _GameListItem extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: AppColors.cyberBlue.withValues(alpha: 0.2),
+          color: game.isFavorite
+              ? AppColors.apexGreen.withValues(alpha: 0.35)
+              : AppColors.cyberBlue.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          const ApexBadge(label: 'JOGO', color: AppColors.cyberBlue),
-          const SizedBox(width: 14),
+          const ApexBadge(label: 'GAME', color: AppColors.cyberBlue),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
-              name,
+              game.name,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.white,
                     fontWeight: FontWeight.w600,
@@ -274,10 +308,32 @@ class _GameListItem extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          Icon(
-            Icons.gamepad_outlined,
-            color: AppColors.cyberBlue.withValues(alpha: 0.5),
-            size: 18,
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: onToggleFavorite,
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: Icon(
+                game.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
+                color: game.isFavorite
+                    ? AppColors.apexGreen
+                    : AppColors.textGray.withValues(alpha: 0.6),
+                size: 20,
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: onRemove,
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: Icon(
+                Icons.delete_outline_rounded,
+                color: AppColors.textGray.withValues(alpha: 0.5),
+                size: 20,
+              ),
+            ),
           ),
         ],
       ),
@@ -421,6 +477,80 @@ class _AddGameDialogState extends State<_AddGameDialog> {
               fontWeight: FontWeight.bold,
               fontSize: 13,
             ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RemoveGameDialog extends StatelessWidget {
+  final String gameName;
+
+  const _RemoveGameDialog({required this.gameName});
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF111318),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: AppColors.cyberBlue.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      title: const Text(
+        'Remover jogo',
+        style: TextStyle(
+          color: AppColors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+      ),
+      content: RichText(
+        text: TextSpan(
+          style: const TextStyle(
+            color: AppColors.textGray,
+            fontSize: 14,
+            height: 1.5,
+          ),
+          children: [
+            const TextSpan(text: 'Remover '),
+            TextSpan(
+              text: gameName,
+              style: const TextStyle(
+                color: AppColors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const TextSpan(text: ' da biblioteca?'),
+          ],
+        ),
+      ),
+      actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text(
+            'Cancelar',
+            style: TextStyle(color: AppColors.textGray),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.energyOrange,
+            foregroundColor: AppColors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            elevation: 0,
+          ),
+          child: const Text(
+            'Remover',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
         ),
       ],
