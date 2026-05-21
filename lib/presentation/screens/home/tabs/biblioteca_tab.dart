@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_game_library_repository.dart';
@@ -91,6 +92,7 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
               else
                 _GameList(
                   games: state.games,
+                  onTap: (id) => context.push('/game-detail/$id'),
                   onToggleFavorite: (id) async {
                     await _controller.toggleFavorite(id);
                     if (mounted) setState(() {});
@@ -231,11 +233,13 @@ class _BibliotecaEmptyCard extends StatelessWidget {
 
 class _GameList extends StatelessWidget {
   final List<ApexGame> games;
+  final void Function(String id) onTap;
   final void Function(String id) onToggleFavorite;
   final void Function(String id, String name) onRemove;
 
   const _GameList({
     required this.games,
+    required this.onTap,
     required this.onToggleFavorite,
     required this.onRemove,
   });
@@ -261,6 +265,7 @@ class _GameList extends StatelessWidget {
             child: _GameCard(
               game: game,
               delay: (index * 60).ms,
+              onTap: () => onTap(game.id),
               onToggleFavorite: () => onToggleFavorite(game.id),
               onRemove: () => onRemove(game.id, game.name),
             ),
@@ -274,12 +279,14 @@ class _GameList extends StatelessWidget {
 class _GameCard extends StatelessWidget {
   final ApexGame game;
   final Duration delay;
+  final VoidCallback onTap;
   final VoidCallback onToggleFavorite;
   final VoidCallback onRemove;
 
   const _GameCard({
     required this.game,
     required this.delay,
+    required this.onTap,
     required this.onToggleFavorite,
     required this.onRemove,
   });
@@ -308,18 +315,28 @@ class _GameCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          const ApexBadge(label: 'GAME', color: AppColors.cyberBlue),
-          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              game.name,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
+            child: GestureDetector(
+              onTap: onTap,
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                children: [
+                  const ApexBadge(label: 'GAME', color: AppColors.cyberBlue),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      game.name,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+                ],
+              ),
             ),
           ),
           const SizedBox(width: 4),

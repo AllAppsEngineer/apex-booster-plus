@@ -4,6 +4,7 @@ import '../../presentation/screens/welcome/welcome_screen.dart';
 import '../../presentation/screens/how_it_works/how_it_works_screen.dart';
 import '../../presentation/screens/permissions/permissions_screen.dart';
 import '../../presentation/screens/home/home_screen.dart';
+import '../../presentation/screens/game_detail/game_detail_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -27,6 +28,12 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/home',
       builder: (context, state) => const HomeScreen(),
+    ),
+    GoRoute(
+      path: '/game-detail/:id',
+      builder: (context, state) => GameDetailScreen(
+        gameId: state.pathParameters['id'] ?? '',
+      ),
     ),
   ],
 );
