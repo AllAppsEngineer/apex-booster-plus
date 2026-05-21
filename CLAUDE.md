@@ -414,7 +414,7 @@ A existência dessas telas não significa aprovação visual final.
 Estado funcional das abas da Home:
 
 - Aba Início: placeholder visual refinado. Sem funcionalidade real.
-- Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome, favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo).
+- Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome, favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe).
 - Aba Preparar: placeholder visual. Sem funcionalidade real.
 - Aba Histórico: placeholder visual. Sem funcionalidade real.
 - Aba Configurações: placeholder visual. Sem funcionalidade real.
@@ -579,6 +579,15 @@ Concluído:
   - Estado "Jogo não encontrado" tratado.
   - Back inline e back nativo retornam corretamente à Biblioteca.
   - Navegação usa push para preservar stack da Biblioteca.
+- Fase 2D.3 concluída: edição básica do jogo implementada na GameDetailScreen.
+  - Edição feita por diálogo inline, sem tela separada.
+  - Campos editáveis: nome e packageName.
+  - Nome obrigatório (não pode ficar vazio).
+  - packageName opcional (pode ficar vazio).
+  - updatedAt atualizado ao salvar.
+  - Alterações persistidas via SharedPreferencesGameLibraryRepository.
+  - Biblioteca reflete nome atualizado ao retornar do detalhe.
+  - Cancelamento não altera dados.
 - flutter analyze passando.
 - flutter test passando.
 
@@ -605,14 +614,19 @@ Arquivos relevantes criados ou alterados na Fase 2D.1:
 - lib/core/routing/app_router.dart (rota /game-detail/:id adicionada)
 - lib/presentation/screens/home/tabs/biblioteca_tab.dart (navegação para detalhe adicionada)
 
+Arquivos relevantes criados ou alterados na Fase 2D.3:
+
+- lib/presentation/screens/game_detail/game_detail_screen.dart (diálogo de edição adicionado)
+- lib/presentation/screens/home/tabs/biblioteca_tab.dart (reflete nome atualizado ao retornar)
+
 Estado visual atual:
 
-Aprovado como checkpoint da Fase 2D.1: Biblioteca com detalhe básico do jogo funcional.
-Ainda não é o visual final absoluto do produto.
+Aprovado como checkpoint da Fase 2D.3: Biblioteca com detalhe e edição básica do jogo funcional.
+Validado manualmente pelo usuário. Ainda não é o visual final absoluto do produto.
 
 Observação:
 
-A Biblioteca funciona com adição manual, favoritar, remover, persistência entre sessões e navegação para detalhe do jogo. O checkpoint 2D.1 é o estado mínimo viável do detalhe antes de avançar para edição, launcher real ou GFX Profile.
+A Biblioteca funciona com adição manual, favoritar, remover, persistência entre sessões, navegação para detalhe e edição de nome e packageName via diálogo inline. O checkpoint 2D.3 é o estado mínimo viável antes de avançar para seleção real de apps, launcher real ou GFX Profile.
 
 Pendências conhecidas:
 
@@ -621,7 +635,6 @@ Pendências conhecidas:
 - Tela Add Game separada não implementada (adição atual é diálogo inline na BibliotecaTab).
 - Ícone real do app instalado não implementado (packageName é inserido manualmente pelo usuário).
 - Leitura de apps Android instalados não implementada.
-- Edição do jogo (nome, packageName) não implementada.
 - Abertura/launcher real do jogo a partir do detalhe não implementada.
 - GFX Profile funcional não implementado.
 - Apex Scan real não implementado (sem leitura de métricas do dispositivo).
@@ -636,28 +649,24 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C e 2D.1 concluídas.
+Fases 2A, 2B, 2C, 2D.1 e 2D.3 concluídas.
 
 Próxima decisão obrigatória:
 
 Antes de iniciar qualquer implementação nova, decidir entre:
 
-1. Adicionar edição do jogo no detalhe:
-   - permitir editar nome e packageName diretamente na GameDetailScreen;
-   - persistir alterações via SharedPreferencesGameLibraryRepository.
-
-2. Iniciar seleção real de apps Android instalados:
+1. Iniciar seleção real de apps Android instalados:
    - capturar apps instalados no dispositivo;
    - exibir lista de apps para adicionar à Biblioteca;
    - requer aprovação de nova dependência (ex: device_apps);
    - requer avaliação de permissão QUERY_ALL_PACKAGES.
 
-3. Iniciar GFX Profile local simples:
+2. Iniciar GFX Profile local simples:
    - salvar preferências de perfil por jogo com shared_preferences;
    - sem alteração real de jogos de terceiros;
    - disclaimer obrigatório em toda tela GFX.
 
-4. Fazer micro-refino visual pontual:
+3. Fazer micro-refino visual pontual:
    - somente se houver problema visual objetivo identificado no celular;
    - sem reabrir toda a estrutura visual;
    - sem alterar escopo funcional.
