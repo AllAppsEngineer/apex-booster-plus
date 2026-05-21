@@ -7,6 +7,7 @@ import 'package:apex_booster_plus/data/repositories/shared_preferences_game_libr
 import 'package:apex_booster_plus/domain/entities/apex_game.dart';
 import 'package:apex_booster_plus/domain/entities/gfx_profile.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
+import 'package:apex_booster_plus/presentation/widgets/app_icon_widget.dart';
 
 class GameDetailScreen extends StatefulWidget {
   final String gameId;
@@ -355,26 +356,35 @@ class _GameHeaderCard extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              _Badge(label: 'GAME', color: AppColors.cyberBlue),
-              if (game.isFavorite) ...[
-                const SizedBox(width: 8),
-                _FavoriteBadge(),
-              ],
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            game.name,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppColors.white,
-                  fontWeight: FontWeight.bold,
-                  height: 1.2,
+          AppIconWidget(packageName: game.packageName, size: 52),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    _Badge(label: 'GAME', color: AppColors.cyberBlue),
+                    if (game.isFavorite) ...[
+                      const SizedBox(width: 8),
+                      _FavoriteBadge(),
+                    ],
+                  ],
                 ),
+                const SizedBox(height: 10),
+                Text(
+                  game.name,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.bold,
+                        height: 1.2,
+                      ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

@@ -3,12 +3,15 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
+import 'package:apex_booster_plus/data/datasources/installed_apps_datasource.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_game_library_repository.dart';
 import 'package:apex_booster_plus/domain/entities/apex_game.dart';
+import 'package:apex_booster_plus/domain/entities/installed_app.dart';
 import 'package:apex_booster_plus/presentation/controllers/game_library_controller.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_badge.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_feature_card.dart';
+import 'package:apex_booster_plus/presentation/widgets/app_icon_widget.dart';
 import 'package:apex_booster_plus/presentation/widgets/app_picker_sheet.dart';
 
 class BibliotecaTab extends StatefulWidget {
@@ -37,6 +40,41 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
     if (mounted) setState(() => _initialized = true);
   }
 
+  static String _normalize(String s) =>
+      s.toLowerCase().trim().replaceAll(RegExp(r'[^a-z0-9]'), '');
+
+  Future<InstalledApp?> _tryAutoLink(String typedName) async {
+    final normalized = _normalize(typedName);
+    if (normalized.isEmpty) return null;
+
+    List<InstalledApp> apps;
+    try {
+      apps = await InstalledAppsDatasource().getInstalledApps();
+    } catch (_) {
+      return null;
+    }
+
+    final matches = apps
+        .where((a) => _normalize(a.appName) == normalized)
+        .toList();
+
+    if (matches.isEmpty) return null;
+    if (matches.length == 1) return matches.first;
+
+    // 2+ exact matches — let the user decide
+    if (!mounted) return null;
+    final chosen = await showModalBottomSheet<InstalledApp?>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => SizedBox(
+        height: MediaQuery.of(ctx).size.height * 0.55,
+        child: _AppMatchSheet(matches: matches),
+      ),
+    );
+    return chosen; // null = save as manual
+  }
+
   Future<void> _openAddGameDialog({
     String initialName = '',
     String initialPackageName = '',
@@ -55,11 +93,21 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
 
     final (name, rawPkg) = result;
     final pkg = rawPkg?.trim();
+    String? resolvedPkg = (pkg == null || pkg.isEmpty) ? null : pkg;
+
+    // Auto-link only when the user left the package field empty
+    if (resolvedPkg == null) {
+      final matched = await _tryAutoLink(name);
+      if (matched != null) resolvedPkg = matched.packageName;
+    }
+
+    if (!mounted) return;
+
     final now = DateTime.now();
     final game = ApexGame(
       id: now.millisecondsSinceEpoch.toString(),
       name: name,
-      packageName: (pkg == null || pkg.isEmpty) ? null : pkg,
+      packageName: resolvedPkg,
       createdAt: now,
       updatedAt: now,
     );
@@ -371,7 +419,7 @@ class _GameCard extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               child: Row(
                 children: [
-                  const ApexBadge(label: 'GAME', color: AppColors.cyberBlue),
+                  AppIconWidget(packageName: game.packageName, size: 36),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -738,5 +786,189 @@ class _AppPickerButton extends StatelessWidget {
         ),
       ),
     ).animate().fadeIn(delay: 400.ms, duration: 500.ms);
+  }
+}
+
+// ─── App match sheet (multiple exact matches for auto-link) ───────────────────
+
+class _AppMatchSheet extends StatelessWidget {
+  final List<InstalledApp> matches;
+
+  const _AppMatchSheet({required this.matches});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF111318),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 12, bottom: 4),
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.textGray.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.search_rounded,
+                        color: AppColors.cyberBlue,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Mais de um app encontrado',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: AppColors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Escolha qual app vincular ou continue como manual.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textGray,
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: AppColors.white.withValues(alpha: 0.07)),
+            Expanded(
+              child: ListView(
+                children: [
+                  for (final app in matches)
+                    _MatchItem(
+                      app: app,
+                      onTap: () => Navigator.of(context).pop(app),
+                    ),
+                  _ManualItem(onTap: () => Navigator.of(context).pop(null)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MatchItem extends StatelessWidget {
+  final InstalledApp app;
+  final VoidCallback onTap;
+
+  const _MatchItem({required this.app, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Row(
+          children: [
+            AppIconWidget(packageName: app.packageName, size: 36),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    app.appName,
+                    style: const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    app.packageName,
+                    style: TextStyle(
+                      color: AppColors.textGray.withValues(alpha: 0.7),
+                      fontSize: 11,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.cyberBlue.withValues(alpha: 0.5),
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ManualItem extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _ManualItem({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.textGray.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.textGray.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Icon(
+                Icons.edit_outlined,
+                color: AppColors.textGray.withValues(alpha: 0.6),
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                'Continuar como manual',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textGray,
+                      fontStyle: FontStyle.italic,
+                    ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

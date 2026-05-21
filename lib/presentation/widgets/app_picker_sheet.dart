@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
 import 'package:apex_booster_plus/data/datasources/installed_apps_datasource.dart';
 import 'package:apex_booster_plus/domain/entities/installed_app.dart';
+import 'package:apex_booster_plus/presentation/widgets/app_icon_widget.dart';
 
 sealed class AppPickerResult {
   const AppPickerResult();
@@ -233,22 +234,7 @@ class _AppPickerItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: Row(
           children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppColors.cyberBlue.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: AppColors.cyberBlue.withValues(alpha: 0.2),
-                ),
-              ),
-              child: const Icon(
-                Icons.videogame_asset_rounded,
-                color: AppColors.cyberBlue,
-                size: 18,
-              ),
-            ),
+            AppIconWidget(packageName: app.packageName, size: 36),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
