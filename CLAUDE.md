@@ -183,13 +183,13 @@ Dependências já aceitas na base atual:
 
 - go_router
 - flutter_animate
+- shared_preferences (aprovado apenas para persistência simples da Biblioteca nesta fase)
 
 Dependências planejadas, mas NÃO liberadas automaticamente:
 
 - flutter_bloc
 - get_it
 - hive_flutter
-- shared_preferences
 - intl
 - flutter_localizations
 - in_app_purchase
@@ -410,8 +410,13 @@ Telas já existentes na base atual:
 
 A existência dessas telas não significa aprovação visual final.
 
-As abas da Home são placeholders visuais honestos.
-Nenhuma funcionalidade real foi implementada nelas ainda.
+Estado funcional das abas da Home:
+
+- Aba Início: placeholder visual refinado. Sem funcionalidade real.
+- Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome, favoritar/desfavoritar, remover, persistência local com shared_preferences).
+- Aba Preparar: placeholder visual. Sem funcionalidade real.
+- Aba Histórico: placeholder visual. Sem funcionalidade real.
+- Aba Configurações: placeholder visual. Sem funcionalidade real.
 
 ---
 
@@ -550,6 +555,18 @@ Concluído:
   - Aba Preparar refinada como estrutura visual inicial da preparação de sessão.
   - Aba Histórico refinada como estrutura visual inicial de histórico de sessões.
   - Aba Configurações refinada como estrutura visual inicial de configurações do app.
+- Fase 2C.1 concluída: domínio ApexGame criado com serialização toJson/fromJson.
+- Fase 2C.2 concluída: contrato GameLibraryRepository criado.
+- Fase 2C.3 concluída: repositório em memória (InMemoryGameLibraryRepository) criado.
+- Fase 2C.4 concluída: GameLibraryState e GameLibraryController criados.
+- Fase 2C.5 concluída: BibliotecaTab conectada ao controller com adição manual de jogo por nome.
+- Fase 2C.6 concluída: lista real refinada com favoritar/desfavoritar e remover em memória.
+- Fase 2C.7B concluída: persistência local da Biblioteca implementada com shared_preferences.
+  - Jogos adicionados persistem ao fechar e reabrir o app.
+  - Favorito persiste.
+  - Remoção persiste.
+  - Empty state aparece quando não há jogos.
+  - BibliotecaTab usa SharedPreferencesGameLibraryRepository.
 - flutter analyze passando.
 - flutter test passando.
 
@@ -558,24 +575,41 @@ Observação sobre a Fase 1.6B:
 - A tentativa de esconder o ícone genérico Flutter apenas por ajuste de splash nativa Android foi descartada/revertida porque não resolveu o problema principal.
 - A solução validada foi a Fase 1.6C: configurar o launcher icon real.
 
+Arquivos relevantes criados na Fase 2C:
+
+- lib/domain/entities/apex_game.dart
+- lib/domain/repositories/game_library_repository.dart
+- lib/data/repositories/in_memory_game_library_repository.dart
+- lib/data/repositories/shared_preferences_game_library_repository.dart
+- lib/presentation/controllers/game_library_state.dart
+- lib/presentation/controllers/game_library_controller.dart
+- lib/presentation/screens/home/tabs/biblioteca_tab.dart
+- test/data/shared_preferences_game_library_repository_test.dart
+- test/presentation/ (testes do GameLibraryController)
+
 Estado visual atual:
 
-Aprovado como checkpoint da Fase 2B: Home com 5 abas refinadas visualmente.
+Aprovado como checkpoint da Fase 2C.7B: Biblioteca com funcionalidade real e persistência local.
 Ainda não é o visual final absoluto do produto.
 
 Observação:
 
-A base visual atual é aceitável para encerrar o checkpoint da Fase 2B e avançar para funcionalidades reais. Melhorias visuais finas ainda podem ocorrer, mas não devem bloquear o avanço.
+A Biblioteca funciona com adição manual, favoritar, remover e persistência entre sessões. O checkpoint 2C.7B é o estado mínimo viável da Biblioteca antes de avançar para Game Detail ou seleção de apps reais.
 
 Pendências conhecidas:
 
 - Logo/asset oficial interno ainda não foi aprovado para uso definitivo nas telas Flutter.
 - Localização multilíngue ainda não foi implementada.
-- Biblioteca real não implementada (Add Game, Game Detail, banco local).
+- Tela Game Detail não implementada.
+- Tela Add Game separada não implementada (adição atual é diálogo inline na BibliotecaTab).
+- Ícone real do app instalado não implementado (packageName é inserido manualmente pelo usuário).
+- Leitura de apps Android instalados não implementada.
 - GFX Profile funcional não implementado.
 - Apex Scan real não implementado (sem leitura de métricas do dispositivo).
 - Boost Engine não implementado.
-- Estrutura local de dados não implementada (Hive / shared_preferences).
+- Histórico real não implementado.
+- Configurações reais não implementadas.
+- Hive não implementado (shared_preferences cobre a necessidade atual).
 - Billing não implementado.
 - Firebase não implementado.
 
@@ -583,25 +617,27 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fase 2A e Fase 2B concluídas.
+Fases 2A, 2B e 2C (até persistência local da Biblioteca) concluídas.
 
 Próxima decisão obrigatória:
 
 Antes de iniciar qualquer implementação nova, decidir entre:
 
-1. Iniciar funcionalidade real da Biblioteca:
-   - Add Game (formulário básico de cadastro de jogo);
-   - Game Detail (tela de detalhe do jogo);
-   - banco local simples para persistência.
+1. Refinar Biblioteca com tela Game Detail:
+   - tela dedicada ao jogo selecionado;
+   - exibir nome, ícone (placeholder), packageName, perfil GFX associado;
+   - navegação BibliotecaTab → GameDetail.
 
-2. Iniciar estrutura local de dados:
-   - shared_preferences ou Hive;
-   - definir modelo de dados base (jogo, sessão, perfil GFX);
-   - preparar repositório local antes das features.
+2. Iniciar seleção real de apps Android instalados:
+   - capturar apps instalados no dispositivo;
+   - exibir lista de apps para adicionar à Biblioteca;
+   - requer aprovação de nova dependência (ex: device_apps);
+   - requer avaliação de permissão QUERY_ALL_PACKAGES.
 
-3. Iniciar preparação de sessão:
-   - GFX Profile com preferências locais;
-   - estrutura do Boost Apex (visual e semântica, sem otimização falsa).
+3. Iniciar GFX Profile local simples:
+   - salvar preferências de perfil por jogo com shared_preferences;
+   - sem alteração real de jogos de terceiros;
+   - disclaimer obrigatório em toda tela GFX.
 
 4. Fazer micro-refino visual pontual:
    - somente se houver problema visual objetivo identificado no celular;
@@ -623,7 +659,7 @@ Na Fase 2, até aprovação individual de cada item, é proibido:
 - implementar Boost Engine;
 - implementar Billing;
 - implementar Firebase;
-- implementar banco local (Hive / shared_preferences) sem aprovação da estrutura de dados;
+- implementar Hive sem aprovação explícita (shared_preferences está aprovado apenas para persistência simples da Biblioteca);
 - adicionar logo asset sem aprovação;
 - criar dependências novas sem aprovação explícita;
 - commitar visual não aprovado;
