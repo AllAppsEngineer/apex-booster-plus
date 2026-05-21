@@ -9,6 +9,7 @@ import 'package:apex_booster_plus/presentation/controllers/game_library_controll
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_badge.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_feature_card.dart';
+import 'package:apex_booster_plus/presentation/widgets/app_picker_sheet.dart';
 
 class BibliotecaTab extends StatefulWidget {
   const BibliotecaTab({super.key});
@@ -36,25 +37,59 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
     if (mounted) setState(() => _initialized = true);
   }
 
-  Future<void> _openAddGameDialog(BuildContext context) async {
-    final name = await showDialog<String>(
+  Future<void> _openAddGameDialog({
+    String initialName = '',
+    String initialPackageName = '',
+  }) async {
+    final result = await showDialog<(String, String?)?>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.75),
-      builder: (_) => const _AddGameDialog(),
+      builder: (_) => _AddGameDialog(
+        initialName: initialName,
+        initialPackageName: initialPackageName,
+      ),
     );
 
-    if (name == null || name.isEmpty) return;
+    if (result == null) return;
     if (!mounted) return;
 
+    final (name, rawPkg) = result;
+    final pkg = rawPkg?.trim();
     final now = DateTime.now();
     final game = ApexGame(
       id: now.millisecondsSinceEpoch.toString(),
       name: name,
+      packageName: (pkg == null || pkg.isEmpty) ? null : pkg,
       createdAt: now,
       updatedAt: now,
     );
     await _controller.addGame(game);
     if (mounted) setState(() {});
+  }
+
+  Future<void> _openPickerSheet() async {
+    final result = await showModalBottomSheet<AppPickerResult?>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => SizedBox(
+        height: MediaQuery.of(ctx).size.height * 0.82,
+        child: const AppPickerSheet(),
+      ),
+    );
+
+    if (result == null || !mounted) return;
+
+    if (result is AppPickerUseManual) {
+      await _openAddGameDialog();
+      return;
+    }
+    if (result is AppPickerSelected) {
+      await _openAddGameDialog(
+        initialName: result.app.appName,
+        initialPackageName: result.app.packageName,
+      );
+    }
   }
 
   @override
@@ -133,7 +168,11 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
               ),
               const SizedBox(height: 32),
               _BibliotecaCTA(
-                onPressed: () => _openAddGameDialog(context),
+                onPressed: _openAddGameDialog,
+              ),
+              const SizedBox(height: 10),
+              _AppPickerButton(
+                onPressed: _openPickerSheet,
               ),
             ],
           ),
@@ -142,6 +181,8 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
     );
   }
 }
+
+// ─── Header ───────────────────────────────────────────────────────────────────
 
 class _BibliotecaHeader extends StatelessWidget {
   const _BibliotecaHeader();
@@ -173,6 +214,8 @@ class _BibliotecaHeader extends StatelessWidget {
     );
   }
 }
+
+// ─── Empty card ───────────────────────────────────────────────────────────────
 
 class _BibliotecaEmptyCard extends StatelessWidget {
   const _BibliotecaEmptyCard();
@@ -235,6 +278,8 @@ class _BibliotecaEmptyCard extends StatelessWidget {
         .slideY(begin: 0.04, end: 0, duration: 400.ms);
   }
 }
+
+// ─── Game list ────────────────────────────────────────────────────────────────
 
 class _GameList extends StatelessWidget {
   final List<ApexGame> games;
@@ -351,7 +396,9 @@ class _GameCard extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(6),
               child: Icon(
-                game.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
+                game.isFavorite
+                    ? Icons.star_rounded
+                    : Icons.star_outline_rounded,
                 color: game.isFavorite
                     ? AppColors.apexGreen
                     : AppColors.textGray.withValues(alpha: 0.6),
@@ -380,21 +427,48 @@ class _GameCard extends StatelessWidget {
   }
 }
 
+// ─── Add game dialog ──────────────────────────────────────────────────────────
+
 class _AddGameDialog extends StatefulWidget {
-  const _AddGameDialog();
+  final String initialName;
+  final String initialPackageName;
+
+  const _AddGameDialog({
+    this.initialName = '',
+    this.initialPackageName = '',
+  });
 
   @override
   State<_AddGameDialog> createState() => _AddGameDialogState();
 }
 
 class _AddGameDialogState extends State<_AddGameDialog> {
-  final _nameController = TextEditingController();
-  String? _fieldError;
+  late final TextEditingController _nameController;
+  late final TextEditingController _pkgController;
+  String? _nameError;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.initialName);
+    _pkgController = TextEditingController(text: widget.initialPackageName);
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _pkgController.dispose();
     super.dispose();
+  }
+
+  void _submit() {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      setState(() => _nameError = 'Nome obrigatório');
+      return;
+    }
+    final pkg = _pkgController.text.trim();
+    Navigator.of(context).pop((name, pkg.isEmpty ? null : pkg));
   }
 
   @override
@@ -420,60 +494,19 @@ class _AddGameDialogState extends State<_AddGameDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextField(
+          _DialogField(
             controller: _nameController,
-            autofocus: true,
-            style: const TextStyle(color: AppColors.white),
-            cursorColor: AppColors.cyberBlue,
-            decoration: InputDecoration(
-              hintText: 'Nome do jogo',
-              hintStyle: const TextStyle(
-                color: AppColors.textGray,
-                fontSize: 14,
-              ),
-              errorText: _fieldError,
-              errorStyle: const TextStyle(
-                color: AppColors.energyOrange,
-                fontSize: 12,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: AppColors.cyberBlue.withValues(alpha: 0.3),
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(
-                  color: AppColors.cyberBlue,
-                  width: 1.5,
-                ),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(
-                  color: AppColors.energyOrange,
-                ),
-              ),
-              focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(
-                  color: AppColors.energyOrange,
-                  width: 1.5,
-                ),
-              ),
-              filled: true,
-              fillColor: AppColors.white.withValues(alpha: 0.05),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 12,
-              ),
-            ),
+            label: 'Nome do jogo',
+            autofocus: widget.initialName.isEmpty,
+            errorText: _nameError,
             onChanged: (_) {
-              if (_fieldError != null) {
-                setState(() => _fieldError = null);
-              }
+              if (_nameError != null) setState(() => _nameError = null);
             },
+          ),
+          const SizedBox(height: 12),
+          _DialogField(
+            controller: _pkgController,
+            label: 'Package name (opcional)',
           ),
         ],
       ),
@@ -487,38 +520,84 @@ class _AddGameDialogState extends State<_AddGameDialog> {
           ),
         ),
         ElevatedButton(
-          onPressed: () {
-            final name = _nameController.text.trim();
-            if (name.isEmpty) {
-              setState(() => _fieldError = 'Nome obrigatório');
-              return;
-            }
-            Navigator.of(context).pop(name);
-          },
+          onPressed: _submit,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.cyberBlue,
             foregroundColor: AppColors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 10,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             elevation: 0,
           ),
           child: const Text(
             'Adicionar',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
         ),
       ],
     );
   }
 }
+
+class _DialogField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final bool autofocus;
+  final String? errorText;
+  final ValueChanged<String>? onChanged;
+
+  const _DialogField({
+    required this.controller,
+    required this.label,
+    this.autofocus = false,
+    this.errorText,
+    this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      autofocus: autofocus,
+      style: const TextStyle(color: AppColors.white),
+      cursorColor: AppColors.cyberBlue,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        hintText: label,
+        hintStyle: const TextStyle(color: AppColors.textGray, fontSize: 14),
+        errorText: errorText,
+        errorStyle:
+            const TextStyle(color: AppColors.energyOrange, fontSize: 12),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide:
+              BorderSide(color: AppColors.cyberBlue.withValues(alpha: 0.3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide:
+              const BorderSide(color: AppColors.cyberBlue, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppColors.energyOrange),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide:
+              const BorderSide(color: AppColors.energyOrange, width: 1.5),
+        ),
+        filled: true,
+        fillColor: AppColors.white.withValues(alpha: 0.05),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      ),
+    );
+  }
+}
+
+// ─── Remove game dialog ───────────────────────────────────────────────────────
 
 class _RemoveGameDialog extends StatelessWidget {
   final String gameName;
@@ -594,6 +673,8 @@ class _RemoveGameDialog extends StatelessWidget {
   }
 }
 
+// ─── CTAs ─────────────────────────────────────────────────────────────────────
+
 class _BibliotecaCTA extends StatelessWidget {
   final VoidCallback onPressed;
 
@@ -624,5 +705,38 @@ class _BibliotecaCTA extends StatelessWidget {
         ),
       ),
     ).animate().fadeIn(delay: 300.ms, duration: 500.ms);
+  }
+}
+
+class _AppPickerButton extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _AppPickerButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: const Icon(Icons.apps_rounded, size: 16),
+        label: const Text(
+          'ESCOLHER APP INSTALADO',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+            letterSpacing: 1.2,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.cyberBlue,
+          side: BorderSide(color: AppColors.cyberBlue.withValues(alpha: 0.4)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+    ).animate().fadeIn(delay: 400.ms, duration: 500.ms);
   }
 }
