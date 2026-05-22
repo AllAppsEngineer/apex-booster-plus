@@ -3,9 +3,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
+import 'package:apex_booster_plus/data/datasources/installed_apps_datasource.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_game_library_repository.dart';
 import 'package:apex_booster_plus/domain/entities/apex_game.dart';
 import 'package:apex_booster_plus/domain/entities/gfx_profile.dart';
+import 'package:apex_booster_plus/domain/entities/installed_app.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/presentation/widgets/app_icon_widget.dart';
 
@@ -50,12 +52,29 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
     final repo = _repo;
     if (game == null || repo == null) return;
 
+    List<InstalledApp> installedApps;
+    try {
+      installedApps = await InstalledAppsDatasource().getInstalledApps();
+    } catch (_) {
+      installedApps = const [];
+    }
+
+    final allGames = await repo.getGames();
+    final otherPackages = allGames
+        .where((g) => g.id != game.id && g.packageName != null)
+        .map((g) => g.packageName!)
+        .toSet();
+
+    if (!mounted) return;
+
     final result = await showDialog<(String, String)>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.75),
       builder: (_) => _EditGameDialog(
         initialName: game.name,
         initialPackageName: game.packageName ?? '',
+        installedApps: installedApps,
+        otherGamePackages: otherPackages,
       ),
     );
 
@@ -753,10 +772,14 @@ class _ProfileNoneOption extends StatelessWidget {
 class _EditGameDialog extends StatefulWidget {
   final String initialName;
   final String initialPackageName;
+  final List<InstalledApp> installedApps;
+  final Set<String> otherGamePackages;
 
   const _EditGameDialog({
     required this.initialName,
     required this.initialPackageName,
+    this.installedApps = const [],
+    this.otherGamePackages = const {},
   });
 
   @override
@@ -767,6 +790,7 @@ class _EditGameDialogState extends State<_EditGameDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _pkgController;
   String? _nameError;
+  String? _pkgError;
 
   @override
   void initState() {
@@ -788,7 +812,20 @@ class _EditGameDialogState extends State<_EditGameDialog> {
       setState(() => _nameError = 'Nome obrigatório');
       return;
     }
-    Navigator.of(context).pop((name, _pkgController.text.trim()));
+
+    final pkg = _pkgController.text.trim();
+    if (pkg.isNotEmpty) {
+      if (!widget.installedApps.any((a) => a.packageName == pkg)) {
+        setState(() => _pkgError = 'App não encontrado nos instalados');
+        return;
+      }
+      if (widget.otherGamePackages.contains(pkg)) {
+        setState(() => _pkgError = 'Já instalado');
+        return;
+      }
+    }
+
+    Navigator.of(context).pop((name, pkg));
   }
 
   @override
@@ -827,6 +864,10 @@ class _EditGameDialogState extends State<_EditGameDialog> {
           _DialogField(
             controller: _pkgController,
             label: 'Package name (opcional)',
+            errorText: _pkgError,
+            onChanged: (_) {
+              if (_pkgError != null) setState(() => _pkgError = null);
+            },
           ),
         ],
       ),
