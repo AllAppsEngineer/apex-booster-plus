@@ -61,7 +61,6 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
     if (matches.isEmpty) return null;
     if (matches.length == 1) return matches.first;
 
-    // 2+ exact matches — let the user decide
     if (!mounted) return null;
     final chosen = await showModalBottomSheet<InstalledApp?>(
       context: context,
@@ -72,19 +71,33 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
         child: _AppMatchSheet(matches: matches),
       ),
     );
-    return chosen; // null = save as manual
+    return chosen;
   }
 
   Future<void> _openAddGameDialog({
     String initialName = '',
     String initialPackageName = '',
   }) async {
-    final result = await showDialog<(String, String?)?>(
+    List<InstalledApp> installedApps;
+    try {
+      installedApps = await InstalledAppsDatasource().getInstalledApps();
+    } catch (_) {
+      installedApps = const [];
+    }
+
+    if (!mounted) return;
+
+    final result = await showModalBottomSheet<(String, String?)?>(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.75),
-      builder: (_) => _AddGameDialog(
-        initialName: initialName,
-        initialPackageName: initialPackageName,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => SizedBox(
+        height: MediaQuery.of(ctx).size.height * 0.85,
+        child: _AddGameSheet(
+          initialName: initialName,
+          initialPackageName: initialPackageName,
+          installedApps: installedApps,
+        ),
       ),
     );
 
@@ -95,13 +108,38 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
     final pkg = rawPkg?.trim();
     String? resolvedPkg = (pkg == null || pkg.isEmpty) ? null : pkg;
 
-    // Auto-link only when the user left the package field empty
     if (resolvedPkg == null) {
       final matched = await _tryAutoLink(name);
       if (matched != null) resolvedPkg = matched.packageName;
     }
 
     if (!mounted) return;
+
+    if (resolvedPkg == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Nenhum app encontrado. Use 'ESCOLHER APP INSTALADO'."),
+        ),
+      );
+      return;
+    }
+
+    final existingGames = _controller.state.games;
+
+    if (existingGames.any((g) => g.packageName == resolvedPkg)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Já instalado')),
+      );
+      return;
+    }
+
+    final normalizedInput = _normalize(name);
+    if (existingGames.any((g) => _normalize(g.name) == normalizedInput)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Já instalado')),
+      );
+      return;
+    }
 
     final now = DateTime.now();
     final game = ApexGame(
@@ -475,35 +513,111 @@ class _GameCard extends StatelessWidget {
   }
 }
 
-// ─── Add game dialog ──────────────────────────────────────────────────────────
+// ─── Add game sheet ───────────────────────────────────────────────────────────
 
-class _AddGameDialog extends StatefulWidget {
+class _AddGameSheet extends StatefulWidget {
   final String initialName;
   final String initialPackageName;
+  final List<InstalledApp> installedApps;
 
-  const _AddGameDialog({
+  const _AddGameSheet({
     this.initialName = '',
     this.initialPackageName = '',
+    this.installedApps = const [],
   });
 
   @override
-  State<_AddGameDialog> createState() => _AddGameDialogState();
+  State<_AddGameSheet> createState() => _AddGameSheetState();
 }
 
-class _AddGameDialogState extends State<_AddGameDialog> {
+class _AddGameSheetState extends State<_AddGameSheet> {
   late final TextEditingController _nameController;
   late final TextEditingController _pkgController;
   String? _nameError;
+  String? _pkgError;
+  List<InstalledApp> _suggestions = [];
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.initialName);
     _pkgController = TextEditingController(text: widget.initialPackageName);
+    _nameController.addListener(_updateSuggestions);
+    _pkgController.addListener(_updateSuggestions);
+    if (widget.initialName.isNotEmpty) _updateSuggestions();
+  }
+
+  void _updateSuggestions() {
+    final query = _nameController.text.trim();
+    final pkg = _pkgController.text.trim();
+
+    if (pkg.isNotEmpty || query.isEmpty) {
+      setState(() {
+        _nameError = null;
+        _pkgError = null;
+        _suggestions = const [];
+      });
+      return;
+    }
+
+    final q = query.toLowerCase();
+
+    int rankApp(InstalledApp a) {
+      final name = a.appName.toLowerCase();
+      final p = a.packageName.toLowerCase();
+      if (name.startsWith(q)) return 0;
+      if (name.contains(q)) return 1;
+      if (p.startsWith(q)) return 2;
+      return 3;
+    }
+
+    final seen = <String>{};
+    final ranked = widget.installedApps
+        .where((a) {
+          final name = a.appName.toLowerCase();
+          final p = a.packageName.toLowerCase();
+          return name.contains(q) || p.contains(q);
+        })
+        .where((a) => seen.add(a.packageName))
+        .toList()
+      ..sort((a, b) {
+        final diff = rankApp(a).compareTo(rankApp(b));
+        return diff != 0
+            ? diff
+            : a.appName.toLowerCase().compareTo(b.appName.toLowerCase());
+      });
+
+    setState(() {
+      _nameError = null;
+      _pkgError = null;
+      _suggestions = ranked;
+    });
+  }
+
+  void _selectSuggestion(InstalledApp app) {
+    _nameController.removeListener(_updateSuggestions);
+    _pkgController.removeListener(_updateSuggestions);
+
+    _nameController.text = app.appName;
+    _nameController.selection = TextSelection.fromPosition(
+      TextPosition(offset: _nameController.text.length),
+    );
+    _pkgController.text = app.packageName;
+
+    _nameController.addListener(_updateSuggestions);
+    _pkgController.addListener(_updateSuggestions);
+
+    setState(() {
+      _nameError = null;
+      _pkgError = null;
+      _suggestions = const [];
+    });
   }
 
   @override
   void dispose() {
+    _nameController.removeListener(_updateSuggestions);
+    _pkgController.removeListener(_updateSuggestions);
     _nameController.dispose();
     _pkgController.dispose();
     super.dispose();
@@ -516,91 +630,158 @@ class _AddGameDialogState extends State<_AddGameDialog> {
       return;
     }
     final pkg = _pkgController.text.trim();
+    if (pkg.isNotEmpty &&
+        !widget.installedApps.any((a) => a.packageName == pkg)) {
+      setState(() => _pkgError = 'App não encontrado nos instalados');
+      return;
+    }
     Navigator.of(context).pop((name, pkg.isEmpty ? null : pkg));
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: const Color(0xFF111318),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: AppColors.cyberBlue.withValues(alpha: 0.3),
-          width: 1,
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF111318),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 12, bottom: 4),
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.textGray.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                child: Text(
+                  'Adicionar jogo',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: _SheetField(
+                  controller: _nameController,
+                  label: 'Nome do jogo',
+                  autofocus: widget.initialName.isEmpty,
+                  errorText: _nameError,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: _SheetField(
+                  controller: _pkgController,
+                  label: 'Package name (opcional)',
+                  errorText: _pkgError,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: _suggestions.isEmpty
+                    ? const SizedBox.shrink()
+                    : Container(
+                        margin: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+                        decoration: BoxDecoration(
+                          color: AppColors.white.withValues(alpha: 0.03),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppColors.cyberBlue.withValues(alpha: 0.15),
+                          ),
+                        ),
+                        child: ListView.separated(
+                          padding: EdgeInsets.zero,
+                          itemCount: _suggestions.length,
+                          separatorBuilder: (_, __) => Divider(
+                            height: 1,
+                            color: AppColors.white.withValues(alpha: 0.05),
+                          ),
+                          itemBuilder: (_, i) => _SuggestionItem(
+                            app: _suggestions[i],
+                            onTap: () => _selectSuggestion(_suggestions[i]),
+                          ),
+                        ),
+                      ),
+              ),
+              Divider(
+                height: 1,
+                color: AppColors.white.withValues(alpha: 0.07),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(null),
+                      child: const Text(
+                        'Cancelar',
+                        style: TextStyle(color: AppColors.textGray),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.cyberBlue,
+                        foregroundColor: AppColors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Adicionar',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      title: const Text(
-        'Adicionar jogo',
-        style: TextStyle(
-          color: AppColors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _DialogField(
-            controller: _nameController,
-            label: 'Nome do jogo',
-            autofocus: widget.initialName.isEmpty,
-            errorText: _nameError,
-            onChanged: (_) {
-              if (_nameError != null) setState(() => _nameError = null);
-            },
-          ),
-          const SizedBox(height: 12),
-          _DialogField(
-            controller: _pkgController,
-            label: 'Package name (opcional)',
-          ),
-        ],
-      ),
-      actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(null),
-          child: const Text(
-            'Cancelar',
-            style: TextStyle(color: AppColors.textGray),
-          ),
-        ),
-        ElevatedButton(
-          onPressed: _submit,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.cyberBlue,
-            foregroundColor: AppColors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            elevation: 0,
-          ),
-          child: const Text(
-            'Adicionar',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-          ),
-        ),
-      ],
     );
   }
 }
 
-class _DialogField extends StatelessWidget {
+// ─── Sheet field ──────────────────────────────────────────────────────────────
+
+class _SheetField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final bool autofocus;
   final String? errorText;
-  final ValueChanged<String>? onChanged;
 
-  const _DialogField({
+  const _SheetField({
     required this.controller,
     required this.label,
     this.autofocus = false,
     this.errorText,
-    this.onChanged,
   });
 
   @override
@@ -610,7 +791,6 @@ class _DialogField extends StatelessWidget {
       autofocus: autofocus,
       style: const TextStyle(color: AppColors.white),
       cursorColor: AppColors.cyberBlue,
-      onChanged: onChanged,
       decoration: InputDecoration(
         hintText: label,
         hintStyle: const TextStyle(color: AppColors.textGray, fontSize: 14),
@@ -640,6 +820,64 @@ class _DialogField extends StatelessWidget {
         fillColor: AppColors.white.withValues(alpha: 0.05),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      ),
+    );
+  }
+}
+
+// ─── Suggestion item ──────────────────────────────────────────────────────────
+
+class _SuggestionItem extends StatelessWidget {
+  final InstalledApp app;
+  final VoidCallback onTap;
+
+  const _SuggestionItem({required this.app, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        child: Row(
+          children: [
+            AppIconWidget(packageName: app.packageName, size: 28),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    app.appName,
+                    style: const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    app.packageName,
+                    style: TextStyle(
+                      color: AppColors.textGray.withValues(alpha: 0.6),
+                      fontSize: 10,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.north_west_rounded,
+              color: AppColors.cyberBlue.withValues(alpha: 0.4),
+              size: 14,
+            ),
+          ],
+        ),
       ),
     );
   }
