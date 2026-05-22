@@ -248,7 +248,7 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
                 badge: 'GFX',
                 title: 'Perfis locais',
                 subtitle:
-                    'Preferências visuais serão salvas por jogo nas próximas etapas.',
+                    'Configure preferências GFX locais no detalhe de cada jogo.',
                 accentColor: AppColors.energyOrange,
                 delay: 200.ms,
               ),
@@ -342,7 +342,7 @@ class _BibliotecaEmptyCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Sua biblioteca está sendo preparada',
+            'Nenhum jogo adicionado ainda.',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppColors.white,
                   fontWeight: FontWeight.bold,
@@ -350,7 +350,7 @@ class _BibliotecaEmptyCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Em breve você poderá adicionar seus jogos e iniciar sessões pelo Apex Booster +.',
+            'Toque em ADICIONAR JOGO para começar sua biblioteca gamer.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.textGray,
                   fontSize: 13,
@@ -386,7 +386,7 @@ class _GameList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '${games.length} ${games.length == 1 ? 'jogo' : 'jogos'} na sessão',
+          '${games.length} ${games.length == 1 ? 'jogo' : 'jogos'} na biblioteca',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: AppColors.textGray,
                 fontSize: 12,
