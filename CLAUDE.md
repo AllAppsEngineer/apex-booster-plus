@@ -414,7 +414,7 @@ A existência dessas telas não significa aprovação visual final.
 Estado funcional das abas da Home:
 
 - Aba Início: placeholder visual refinado. Sem funcionalidade real.
-- Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome via BottomSheet com autocomplete inteligente desde a primeira letra, sugestões por ranking de relevância, lista rolável sem limite artificial, seleção de sugestão preenche nome + packageName, packageName manual validado contra apps instalados, jogos fantasmas bloqueados, duplicados bloqueados com mensagem "Já instalado", favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe com validação: packageName inválido bloqueado, packageName duplicado em outro jogo bloqueado, packageName vazio permitido com fallback de ícone, packageName igual ao jogo atual permitido, edição apenas do nome preservada sem validação desnecessária, seleção de GFX Profile local via bottom sheet no detalhe, seleção restrita de apps Android instalados via AppPickerSheet com intent MAIN/LAUNCHER — entrada manual permanece como fallback, exibição de ícone real do app instalado via AppIconWidget quando packageName disponível — fallback genérico quando ausente, app desinstalado ou erro).
+- Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome via BottomSheet com autocomplete inteligente desde a primeira letra, sugestões por ranking de relevância, lista rolável sem limite artificial, seleção de sugestão preenche nome + packageName, packageName manual validado contra apps instalados, jogos fantasmas bloqueados, duplicados bloqueados com mensagem "Já instalado", favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe com validação: packageName inválido bloqueado, packageName duplicado em outro jogo bloqueado, packageName vazio permitido com fallback de ícone, packageName igual ao jogo atual permitido, edição apenas do nome preservada sem validação desnecessária, seleção de GFX Profile local via bottom sheet no detalhe, seleção restrita de apps Android instalados via AppPickerSheet com intent MAIN/LAUNCHER — entrada manual permanece como fallback, exibição de ícone real do app instalado via AppIconWidget quando packageName disponível — fallback genérico quando ausente, app desinstalado ou erro, microcopy final ajustado: contagem exibe "na biblioteca", empty state honesto "Nenhum jogo adicionado ainda.", subtítulo orienta ação real, copy do card Perfis locais reflete que GFX Profile já existe no detalhe de cada jogo).
 - Aba Preparar: placeholder visual. Sem funcionalidade real.
 - Aba Histórico: placeholder visual. Sem funcionalidade real.
 - Aba Configurações: placeholder visual. Sem funcionalidade real.
@@ -657,6 +657,16 @@ Concluído:
   - Launcher real / abertura do jogo não implementado.
   - Boost real não implementado.
   - Alteração real de FPS/resolução/GPU não implementada.
+- Fase 2J.2 concluída: microcopy final da Biblioteca.
+  - Contagem corrigida de "na sessão" para "na biblioteca".
+  - Empty state honesto: "Nenhum jogo adicionado ainda."
+  - Subtítulo do empty state orienta ação real: "Toque em ADICIONAR JOGO para começar sua biblioteca gamer."
+  - Copy do card Perfis locais reflete que GFX Profile já existe no detalhe de cada jogo.
+  - Nenhuma lógica alterada.
+  - Nenhuma estrutura visual alterada.
+  - Launcher real / abertura do jogo não implementado.
+  - Boost real não implementado.
+  - Alteração real de FPS/resolução/GPU não implementada.
 - flutter analyze passando.
 - flutter test passando.
 
@@ -719,15 +729,20 @@ Arquivos relevantes alterados na Fase 2I.2:
 
 - lib/presentation/screens/game_detail/game_detail_screen.dart (alterado — validação de packageName adicionada ao diálogo de edição)
 
+Arquivos relevantes alterados na Fase 2J.2:
+
+- lib/presentation/screens/home/tabs/biblioteca_tab.dart (alterado — microcopy final: "na biblioteca", empty state honesto, copy do card Perfis locais)
+
 Estado visual atual:
 
 Aprovado como checkpoint da Fase 2H.2: fluxo ADICIONAR JOGO com BottomSheet e autocomplete inteligente.
 Fase 2I.2 adicionou validação funcional na edição do detalhe sem alterar o visual aprovado.
+Fase 2J.2 ajustou apenas microcopy da Biblioteca sem alterar lógica ou estrutura visual.
 Validado manualmente pelo usuário. Ainda não é o visual final absoluto do produto.
 
 Observação:
 
-A Biblioteca funciona com adição via BottomSheet com autocomplete inteligente (sugestões desde a primeira letra, ranking por relevância, lista rolável), validação de packageName manual contra apps instalados, bloqueio de jogos fantasmas, bloqueio de duplicados com mensagem "Já instalado", favoritar, remover, persistência entre sessões, navegação para detalhe, edição de nome e packageName com validação completa no detalhe (packageName inválido bloqueado, duplicado em outro jogo bloqueado, vazio permitido com fallback de ícone, igual ao jogo atual permitido), seleção de GFX Profile local, seleção restrita de apps instalados via AppPickerSheet (intent MAIN/LAUNCHER), e exibição de ícone real do app via AppIconWidget quando packageName disponível. Entrada manual permanece como fallback. Ícone não é persistido em disco — cache em memória por sessão. Launcher real do jogo ainda não foi implementado.
+A Biblioteca funciona com adição via BottomSheet com autocomplete inteligente (sugestões desde a primeira letra, ranking por relevância, lista rolável), validação de packageName manual contra apps instalados, bloqueio de jogos fantasmas, bloqueio de duplicados com mensagem "Já instalado", favoritar, remover, persistência entre sessões, navegação para detalhe, edição de nome e packageName com validação completa no detalhe (packageName inválido bloqueado, duplicado em outro jogo bloqueado, vazio permitido com fallback de ícone, igual ao jogo atual permitido), seleção de GFX Profile local, seleção restrita de apps instalados via AppPickerSheet (intent MAIN/LAUNCHER), e exibição de ícone real do app via AppIconWidget quando packageName disponível. Entrada manual permanece como fallback. Ícone não é persistido em disco — cache em memória por sessão. Contagem exibe "na biblioteca". Empty state honesto. Launcher real do jogo ainda não foi implementado.
 
 Pendências conhecidas:
 
@@ -748,7 +763,7 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2 e 2I.2 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2 e 2J.2 concluídas.
 
 Próxima decisão obrigatória:
 
