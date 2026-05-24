@@ -1,5 +1,6 @@
 package com.allappsengineer.apex_booster_plus
 
+import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -85,6 +86,26 @@ class MainActivity : FlutterActivity() {
                         result.success(null)
                     } catch (e: Exception) {
                         result.success(null)
+                    }
+                }
+
+                "launchApp" -> {
+                    val pkg = call.argument<String>("packageName")
+                    if (pkg.isNullOrEmpty()) {
+                        result.error("INVALID_PACKAGE", "packageName is required", null)
+                        return@setMethodCallHandler
+                    }
+                    try {
+                        val intent = packageManager.getLaunchIntentForPackage(pkg)
+                        if (intent == null) {
+                            result.error("APP_NOT_FOUND", "No launcher intent for $pkg", null)
+                        } else {
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            startActivity(intent)
+                            result.success(null)
+                        }
+                    } catch (e: Exception) {
+                        result.error("LAUNCH_ERROR", e.message, null)
                     }
                 }
 

@@ -39,4 +39,13 @@ class InstalledAppsDatasource {
       return null;
     }
   }
+
+  /// Throws [PlatformException] with code 'APP_NOT_FOUND' if the app has no
+  /// launcher intent, or code 'LAUNCH_ERROR' on unexpected failure.
+  Future<void> launchApp(String packageName) async {
+    await _channel.invokeMethod<void>(
+      'launchApp',
+      {'packageName': packageName},
+    );
+  }
 }

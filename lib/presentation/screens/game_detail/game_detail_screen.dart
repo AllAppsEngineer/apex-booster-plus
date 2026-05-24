@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -95,6 +96,37 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
     if (mounted) setState(() => _game = updated);
   }
 
+  Future<void> _launchGame() async {
+    final pkg = _game?.packageName;
+    if (pkg == null || pkg.isEmpty) return;
+
+    final error = await showModalBottomSheet<Object?>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isDismissible: false,
+      enableDrag: false,
+      builder: (_) => _PrepLaunchSheet(
+        packageName: pkg,
+        profileName: _game?.localProfileName,
+      ),
+    );
+
+    if (!mounted) return;
+    if (error == null) return;
+
+    final message = error is PlatformException && error.code == 'APP_NOT_FOUND'
+        ? 'App não encontrado. Verifique se ainda está instalado.'
+        : 'Não foi possível abrir o jogo.';
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.energyOrange,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   Future<void> _openProfileSelector() async {
     final game = _game;
     final repo = _repo;
@@ -157,6 +189,11 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
                             onSelectProfile: _openProfileSelector,
                           ),
               ),
+              if (!_loading && _game != null)
+                _LaunchGameButton(
+                  hasPackage: _game!.packageName?.isNotEmpty == true,
+                  onTap: _launchGame,
+                ),
             ],
           ),
         ),
@@ -953,6 +990,213 @@ class _DialogField extends StatelessWidget {
         fillColor: AppColors.white.withValues(alpha: 0.05),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      ),
+    );
+  }
+}
+
+// ─── Launch game button ───────────────────────────────────────────────────────
+
+class _LaunchGameButton extends StatelessWidget {
+  final bool hasPackage;
+  final VoidCallback onTap;
+
+  const _LaunchGameButton({required this.hasPackage, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+      child: SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: ElevatedButton.icon(
+          onPressed: hasPackage ? onTap : null,
+          icon: const Icon(Icons.sports_esports_rounded, size: 20),
+          label: Text(
+            hasPackage ? 'ABRIR JOGO' : 'SEM APP VINCULADO',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              letterSpacing: 1.2,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.apexGreen,
+            foregroundColor: Colors.black,
+            disabledBackgroundColor:
+                AppColors.textGray.withValues(alpha: 0.12),
+            disabledForegroundColor:
+                AppColors.textGray.withValues(alpha: 0.45),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            elevation: 0,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Prep launch sheet (Checklist Apex / Preparação de Sessão) ────────────────
+
+class _Step {
+  final String label;
+  final bool isCheck;
+  const _Step(this.label, {required this.isCheck});
+}
+
+const _kStepDelay = Duration(milliseconds: 380);
+
+class _PrepLaunchSheet extends StatefulWidget {
+  final String packageName;
+  final String? profileName;
+
+  const _PrepLaunchSheet({required this.packageName, this.profileName});
+
+  @override
+  State<_PrepLaunchSheet> createState() => _PrepLaunchSheetState();
+}
+
+class _PrepLaunchSheetState extends State<_PrepLaunchSheet> {
+  int _visibleCount = 1;
+  late final List<_Step> _steps;
+
+  @override
+  void initState() {
+    super.initState();
+    final profileLabel = (widget.profileName?.isNotEmpty == true)
+        ? widget.profileName!
+        : 'padrão';
+    _steps = [
+      _Step('Core Apex: OK', isCheck: true),
+      _Step('Jogo localizado: OK', isCheck: true),
+      _Step('Perfil $profileLabel: OK', isCheck: true),
+      _Step('Rota validada: OK', isCheck: true),
+      _Step('Sessão armada: OK', isCheck: true),
+      _Step('Abrindo jogo...', isCheck: false),
+    ];
+    _runSequence();
+  }
+
+  Future<void> _runSequence() async {
+    for (int i = 1; i < _steps.length; i++) {
+      await Future.delayed(_kStepDelay);
+      if (!mounted) return;
+      setState(() => _visibleCount = i + 1);
+    }
+    await Future.delayed(_kStepDelay);
+    if (!mounted) return;
+    try {
+      await InstalledAppsDatasource().launchApp(widget.packageName);
+      if (mounted) Navigator.of(context).pop<Object?>(null);
+    } on PlatformException catch (e) {
+      if (mounted) Navigator.of(context).pop<Object?>(e);
+    } catch (e) {
+      if (mounted) Navigator.of(context).pop<Object?>(e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF111318),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.textGray.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.rocket_launch_rounded,
+                    color: AppColors.apexGreen,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Apex Boost Mode',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              for (int i = 0; i < _visibleCount; i++)
+                _PrepStepRow(
+                  label: _steps[i].label,
+                  isCheck: _steps[i].isCheck,
+                )
+                    .animate(key: ValueKey(i))
+                    .fadeIn(duration: 280.ms)
+                    .slideX(begin: 0.04, end: 0, duration: 230.ms),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PrepStepRow extends StatelessWidget {
+  final String label;
+  final bool isCheck;
+
+  const _PrepStepRow({required this.label, required this.isCheck});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: isCheck
+                ? const Icon(
+                    Icons.check_circle_rounded,
+                    color: AppColors.apexGreen,
+                    size: 20,
+                  )
+                : const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.apexGreen,
+                    ),
+                  ),
+          ),
+          const SizedBox(width: 14),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: isCheck ? AppColors.white : AppColors.textGray,
+                  fontSize: 13,
+                ),
+          ),
+        ],
       ),
     );
   }
