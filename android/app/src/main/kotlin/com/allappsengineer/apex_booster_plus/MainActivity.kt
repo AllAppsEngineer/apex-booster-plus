@@ -1,5 +1,7 @@
 package com.allappsengineer.apex_booster_plus
 
+import android.app.ActivityManager
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
@@ -109,6 +111,32 @@ class MainActivity : FlutterActivity() {
                     }
                 }
 
+                else -> result.notImplemented()
+            }
+        }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.allappsengineer.apex_booster_plus/metrics"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getMemoryInfo" -> {
+                    try {
+                        val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+                        val memInfo = ActivityManager.MemoryInfo()
+                        am.getMemoryInfo(memInfo)
+                        result.success(
+                            mapOf(
+                                "availableBytes" to memInfo.availMem,
+                                "totalBytes" to memInfo.totalMem,
+                                "lowMemory" to memInfo.lowMemory,
+                                "thresholdBytes" to memInfo.threshold,
+                            )
+                        )
+                    } catch (e: Exception) {
+                        result.error("MEMORY_ERROR", e.message, null)
+                    }
+                }
                 else -> result.notImplemented()
             }
         }
