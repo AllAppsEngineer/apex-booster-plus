@@ -414,7 +414,7 @@ A existência dessas telas não significa aprovação visual final.
 Estado funcional das abas da Home:
 
 - Aba Início: placeholder visual refinado. Sem funcionalidade real.
-- Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome via BottomSheet com autocomplete inteligente desde a primeira letra, sugestões por ranking de relevância, lista rolável sem limite artificial, seleção de sugestão preenche nome + packageName, packageName manual validado contra apps instalados, jogos fantasmas bloqueados, duplicados bloqueados com mensagem "Já instalado", favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe com validação: packageName inválido bloqueado, packageName duplicado em outro jogo bloqueado, packageName vazio permitido com fallback de ícone, packageName igual ao jogo atual permitido, edição apenas do nome preservada sem validação desnecessária, seleção de GFX Profile local via bottom sheet no detalhe, seleção restrita de apps Android instalados via AppPickerSheet com intent MAIN/LAUNCHER — entrada manual permanece como fallback, exibição de ícone real do app instalado via AppIconWidget quando packageName disponível — fallback genérico quando ausente, app desinstalado ou erro, microcopy final ajustado: contagem exibe "na biblioteca", empty state honesto "Nenhum jogo adicionado ainda.", subtítulo orienta ação real, copy do card Perfis locais reflete que GFX Profile já existe no detalhe de cada jogo).
+- Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome via BottomSheet com autocomplete inteligente desde a primeira letra, sugestões por ranking de relevância, lista rolável sem limite artificial, seleção de sugestão preenche nome + packageName, packageName manual validado contra apps instalados, jogos fantasmas bloqueados, duplicados bloqueados com mensagem "Já instalado", favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe com validação: packageName inválido bloqueado, packageName duplicado em outro jogo bloqueado, packageName vazio permitido com fallback de ícone, packageName igual ao jogo atual permitido, edição apenas do nome preservada sem validação desnecessária, seleção de GFX Profile local via bottom sheet no detalhe, seleção restrita de apps Android instalados via AppPickerSheet com intent MAIN/LAUNCHER — entrada manual permanece como fallback, exibição de ícone real do app instalado via AppIconWidget quando packageName disponível — fallback genérico quando ausente, app desinstalado ou erro, microcopy final ajustado: contagem exibe "na biblioteca", empty state honesto "Nenhum jogo adicionado ainda.", subtítulo orienta ação real, copy do card Perfis locais reflete que GFX Profile já existe no detalhe de cada jogo, launcher real implementado na GameDetailScreen via botão ABRIR JOGO com Apex Boost Mode visual antes da abertura).
 - Aba Preparar: placeholder visual. Sem funcionalidade real.
 - Aba Histórico: placeholder visual. Sem funcionalidade real.
 - Aba Configurações: placeholder visual. Sem funcionalidade real.
@@ -667,6 +667,18 @@ Concluído:
   - Launcher real / abertura do jogo não implementado.
   - Boost real não implementado.
   - Alteração real de FPS/resolução/GPU não implementada.
+- Fase 2K.2 concluída: launcher real controlado com Apex Boost Mode.
+  - Launcher real implementado: app/jogo aberto pelo packageName via Intent Android.
+  - MethodChannel existente expandido com case launchApp na MainActivity.kt.
+  - InstalledAppsDatasource expandido com método launchApp.
+  - GameDetailScreen recebeu botão ABRIR JOGO com fluxo visual Apex Boost Mode antes da abertura.
+  - Apex Boost Mode exibe preparação visual honesta sem prometer FPS, RAM, GPU, Ping ou otimização real.
+  - Tratamento de erro implementado: mensagem exibida se app não for encontrado ou não puder ser aberto.
+  - AndroidManifest não foi alterado.
+  - QUERY_ALL_PACKAGES não foi adicionado.
+  - Nenhuma permissão nova foi adicionada.
+  - Boost real não implementado.
+  - Alteração real de FPS/RAM/GPU/Ping não implementada.
 - flutter analyze passando.
 - flutter test passando.
 
@@ -733,23 +745,29 @@ Arquivos relevantes alterados na Fase 2J.2:
 
 - lib/presentation/screens/home/tabs/biblioteca_tab.dart (alterado — microcopy final: "na biblioteca", empty state honesto, copy do card Perfis locais)
 
+Arquivos relevantes alterados na Fase 2K.2:
+
+- android/app/src/main/kotlin/com/allappsengineer/apex_booster_plus/MainActivity.kt (alterado — case launchApp adicionado ao MethodChannel)
+- lib/data/datasources/installed_apps_datasource.dart (alterado — método launchApp adicionado)
+- lib/presentation/screens/game_detail/game_detail_screen.dart (alterado — botão ABRIR JOGO e fluxo Apex Boost Mode adicionados)
+
 Estado visual atual:
 
 Aprovado como checkpoint da Fase 2H.2: fluxo ADICIONAR JOGO com BottomSheet e autocomplete inteligente.
 Fase 2I.2 adicionou validação funcional na edição do detalhe sem alterar o visual aprovado.
 Fase 2J.2 ajustou apenas microcopy da Biblioteca sem alterar lógica ou estrutura visual.
+Fase 2K.2 adicionou launcher real com Apex Boost Mode visual na GameDetailScreen.
 Validado manualmente pelo usuário. Ainda não é o visual final absoluto do produto.
 
 Observação:
 
-A Biblioteca funciona com adição via BottomSheet com autocomplete inteligente (sugestões desde a primeira letra, ranking por relevância, lista rolável), validação de packageName manual contra apps instalados, bloqueio de jogos fantasmas, bloqueio de duplicados com mensagem "Já instalado", favoritar, remover, persistência entre sessões, navegação para detalhe, edição de nome e packageName com validação completa no detalhe (packageName inválido bloqueado, duplicado em outro jogo bloqueado, vazio permitido com fallback de ícone, igual ao jogo atual permitido), seleção de GFX Profile local, seleção restrita de apps instalados via AppPickerSheet (intent MAIN/LAUNCHER), e exibição de ícone real do app via AppIconWidget quando packageName disponível. Entrada manual permanece como fallback. Ícone não é persistido em disco — cache em memória por sessão. Contagem exibe "na biblioteca". Empty state honesto. Launcher real do jogo ainda não foi implementado.
+A Biblioteca funciona com adição via BottomSheet com autocomplete inteligente (sugestões desde a primeira letra, ranking por relevância, lista rolável), validação de packageName manual contra apps instalados, bloqueio de jogos fantasmas, bloqueio de duplicados com mensagem "Já instalado", favoritar, remover, persistência entre sessões, navegação para detalhe, edição de nome e packageName com validação completa no detalhe (packageName inválido bloqueado, duplicado em outro jogo bloqueado, vazio permitido com fallback de ícone, igual ao jogo atual permitido), seleção de GFX Profile local, seleção restrita de apps instalados via AppPickerSheet (intent MAIN/LAUNCHER), e exibição de ícone real do app via AppIconWidget quando packageName disponível. Entrada manual permanece como fallback. Ícone não é persistido em disco — cache em memória por sessão. Contagem exibe "na biblioteca". Empty state honesto. Launcher real implementado na GameDetailScreen: botão ABRIR JOGO abre o app pelo packageName via Intent Android, precedido por sequência visual honesta Apex Boost Mode. Tratamento de erro presente se app não puder ser aberto.
 
 Pendências conhecidas:
 
 - Logo/asset oficial interno ainda não foi aprovado para uso definitivo nas telas Flutter.
 - Localização multilíngue ainda não foi implementada.
 - Tela Add Game separada não implementada (adição atual é diálogo inline na BibliotecaTab).
-- Abertura/launcher real do jogo a partir do detalhe não implementada.
 - GFX Profile avançado não implementado (perfis futuros: Fluidez, Competitivo, Ultra Visual, Personalizado).
 - Apex Scan real não implementado (sem leitura de métricas do dispositivo).
 - Boost Engine não implementado.
@@ -763,32 +781,28 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2 e 2J.2 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2 e 2K.2 concluídas.
 
 Próxima decisão obrigatória:
 
 Antes de iniciar qualquer implementação nova, decidir entre:
 
-1. Criar launcher real controlado para abrir o jogo:
-   - abrir o app pelo packageName via Intent Android;
-   - requer MethodChannel ou plugin de launch;
-   - exibir feedback visual de abertura.
-
-2. Revisar fluxo completo da Biblioteca antes de avançar para launcher:
+1. Revisar fluxo completo da Biblioteca e launcher antes de avançar:
    - validar experiência end-to-end no celular físico;
-   - identificar inconsistências visuais ou de fluxo antes de adicionar launcher.
+   - identificar inconsistências visuais ou de fluxo;
+   - confirmar comportamento do botão ABRIR JOGO e Apex Boost Mode no dispositivo real.
 
-3. Iniciar Apex Scan conceitual/local:
+2. Iniciar Apex Scan conceitual/local:
    - diagnóstico baseado em dados disponíveis sem permissões extras;
    - sem leitura de métricas reais do sistema nesta fase;
    - orientação e score visual honesto.
 
-4. Micro-refino visual pontual:
+3. Micro-refino visual pontual:
    - somente se houver problema visual objetivo identificado no celular;
    - sem reabrir toda a estrutura visual;
    - sem alterar escopo funcional.
 
-5. Atualizar documentação/roadmap:
+4. Atualizar documentação/roadmap:
    - registrar estado real para referência futura;
    - sem alterar escopo funcional.
 
