@@ -715,6 +715,12 @@ Concluído:
   - AndroidManifest não alterado. MainActivity não alterada.
   - Aba Preparar não alterada.
   - flutter analyze passando. flutter test passando (64/64).
+- Fase 2N concluída: decisão visual do Apex Scan registrada.
+  - Visual atual do card Apex Scan no Detalhe do Jogo aprovado e mantido como está.
+  - Indicadores visuais (FPS, RAM, GPU, Ping, Otimização, Boost, Performance) permanecem como efeito visual de produto.
+  - _PerformanceModulesSection não removida nesta etapa.
+  - Nenhum arquivo Dart, Kotlin ou AndroidManifest alterado.
+  - Esses indicadores NÃO representam métricas reais de sistema implementadas.
 
 Observação sobre a Fase 1.6B:
 
@@ -797,8 +803,9 @@ Arquivos alterados na Fase 2M.4A:
 
 Estado visual atual:
 
-Aprovado como checkpoint da Fase 2M.4A: Apex Scan visual implementado no Detalhe do Jogo.
-flutter analyze e flutter test passando (64/64). Validação visual no celular físico: pendente.
+Aprovado como checkpoint da Fase 2N: visual do Apex Scan no Detalhe do Jogo mantido como está.
+Indicadores visuais (FPS, RAM, GPU, Ping, Otimização, Boost, Performance) são efeito visual de produto — não são métricas reais implementadas.
+flutter analyze e flutter test passando (64/64).
 Ainda não é o visual final absoluto do produto.
 
 Observação:
@@ -826,19 +833,16 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2 e 2M.4A concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A e 2N concluídas.
 
 Próximo passo imediato:
-- Fase 2N — Revisão visual curta do Detalhe do Jogo (validação do card Apex Scan no celular físico).
-
-Próxima prioridade estratégica após Fase 2N:
 - Fase 2-O — Apex Metrics Real v1
   - Iniciar métricas reais e honestas no Apex Scan.
   - RAM real: leitura de memória disponível do dispositivo.
   - Latência Apex: teste de rede próprio (sem prometer ping de jogo externo).
   - FPS real e GPU real: fora da v1, em estudo futuro.
   - Sem prometer boost real sem ação técnica correspondente.
-  - Não implementada. Aguarda conclusão de Fase 2N.
+  - Não implementada. Aguarda aprovação de escopo.
 
 Nota estratégica:
 - Fase 2M.4B (integração do Apex Scan na aba Preparar): adiada. A aba Preparar pode esperar. O próximo salto de valor real é a Fase 2-O.
@@ -1080,6 +1084,12 @@ Motor local criado. Puro Dart. Sem permissões.
 - UI do Detalhe do Jogo implementada (Fase 2M.4A): card premium/gamer com animação, status local e indicadores visuais.
 - Apex Scan ainda não aparece na aba Preparar.
 - Métricas reais ainda não implementadas. Planejadas na Fase 2-O: RAM real + Latência Apex como primeira leva honesta de dados do dispositivo. FPS e GPU reais fora do escopo da v1.
+
+Decisão da Fase 2N: visual do Apex Scan mantido como está no Detalhe do Jogo.
+Os indicadores visuais (FPS, RAM, GPU, Ping, Otimização, Boost aplicado,
+Performance melhorada) são efeito visual de produto nesta fase —
+não representam métricas reais de sistema implementadas.
+Próximo passo real de métricas: Fase 2-O (RAM real + Latência Apex).
 
 ---
 
