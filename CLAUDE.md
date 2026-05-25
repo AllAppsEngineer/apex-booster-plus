@@ -703,9 +703,18 @@ Concluído:
   - Não usa PACKAGE_USAGE_STATS, SYSTEM_ALERT_WINDOW, AccessibilityService.
   - Não mede FPS, RAM, GPU, Ping real.
   - Não usa AndroidManifest, MainActivity, MethodChannel.
-  - UI do Apex Scan ainda não implementada.
   - Apex Scan ainda não aparece na aba Preparar.
-  - Apex Scan ainda não aparece no Detalhe do Jogo.
+- Fase 2M.4A concluída: Apex Scan visual no Detalhe do Jogo implementado.
+  - Card Apex Scan adicionado à GameDetailScreen.
+  - Visual premium/gamer com animação, glow sutil e checks de status.
+  - Status local exibido: "Pronto para iniciar", "Cadastro incompleto" ou "App não encontrado".
+  - Indicadores visuais no módulo Apex Scan.
+  - Motor local ApexScanService utilizado (sem alteração).
+  - Sem métricas reais de FPS, RAM, GPU, Ping ou otimização.
+  - Sem novas permissões.
+  - AndroidManifest não alterado. MainActivity não alterada.
+  - Aba Preparar não alterada.
+  - flutter analyze passando. flutter test passando (64/64).
 
 Observação sobre a Fase 1.6B:
 
@@ -782,15 +791,19 @@ Arquivos relevantes criados na Fase 2M.2:
 - lib/domain/services/apex_scan_service.dart (criado)
 - test/domain/services/apex_scan_service_test.dart (criado)
 
+Arquivos alterados na Fase 2M.4A:
+
+- lib/presentation/screens/game_detail/game_detail_screen.dart (alterado — card Apex Scan adicionado)
+
 Estado visual atual:
 
-Aprovado como checkpoint da Fase 2L.1: revisão end-to-end completa de Biblioteca + Detalhe + Apex Boost Mode + Launcher.
-Fluxo validado manualmente no Samsung S24 Ultra. Biblioteca e Launcher estáveis para avançar.
+Aprovado como checkpoint da Fase 2M.4A: Apex Scan visual implementado no Detalhe do Jogo.
+flutter analyze e flutter test passando (64/64). Validação visual no celular físico: pendente.
 Ainda não é o visual final absoluto do produto.
 
 Observação:
 
-A Biblioteca funciona com adição via BottomSheet com autocomplete inteligente (sugestões desde a primeira letra, ranking por relevância, lista rolável), validação de packageName manual contra apps instalados, bloqueio de jogos fantasmas, bloqueio de duplicados com mensagem "Já instalado", favoritar, remover, persistência entre sessões, navegação para detalhe, edição de nome e packageName com validação completa no detalhe (packageName inválido bloqueado, duplicado em outro jogo bloqueado, vazio permitido com fallback de ícone, igual ao jogo atual permitido), seleção de GFX Profile local, seleção restrita de apps instalados via AppPickerSheet (intent MAIN/LAUNCHER), e exibição de ícone real do app via AppIconWidget quando packageName disponível. Entrada manual permanece como fallback. Ícone não é persistido em disco — cache em memória por sessão. Contagem exibe "na biblioteca". Empty state honesto. Launcher real implementado na GameDetailScreen: botão ABRIR JOGO abre o app pelo packageName via Intent Android, precedido por sequência visual honesta Apex Boost Mode. Tratamento de erro presente se app não puder ser aberto.
+A Biblioteca funciona com adição via BottomSheet com autocomplete inteligente (sugestões desde a primeira letra, ranking por relevância, lista rolável), validação de packageName manual contra apps instalados, bloqueio de jogos fantasmas, bloqueio de duplicados com mensagem "Já instalado", favoritar, remover, persistência entre sessões, navegação para detalhe, edição de nome e packageName com validação completa no detalhe (packageName inválido bloqueado, duplicado em outro jogo bloqueado, vazio permitido com fallback de ícone, igual ao jogo atual permitido), seleção de GFX Profile local, seleção restrita de apps instalados via AppPickerSheet (intent MAIN/LAUNCHER), e exibição de ícone real do app via AppIconWidget quando packageName disponível. Entrada manual permanece como fallback. Ícone não é persistido em disco — cache em memória por sessão. Contagem exibe "na biblioteca". Empty state honesto. Launcher real implementado na GameDetailScreen: botão ABRIR JOGO abre o app pelo packageName via Intent Android, precedido por sequência visual honesta Apex Boost Mode. Tratamento de erro presente se app não puder ser aberto. Apex Scan visual implementado na GameDetailScreen: card premium/gamer com animação, glow sutil, checks de status local e indicadores visuais. Status exibido: "Pronto para iniciar", "Cadastro incompleto" ou "App não encontrado". Motor local ApexScanService utilizado sem alteração. Sem métricas reais.
 
 Pendências conhecidas:
 
@@ -798,7 +811,7 @@ Pendências conhecidas:
 - Localização multilíngue ainda não foi implementada.
 - Tela Add Game separada não implementada (adição atual é diálogo inline na BibliotecaTab).
 - GFX Profile avançado não implementado (perfis futuros: Fluidez, Competitivo, Ultra Visual, Personalizado).
-- Apex Scan: motor local criado (Fase 2M.2). UI não implementada. Sem leitura de métricas reais do dispositivo.
+- Apex Scan: motor local criado (Fase 2M.2). Card visual implementado no Detalhe do Jogo (Fase 2M.4A). Integração na aba Preparar ainda não implementada. Métricas reais do dispositivo ainda não implementadas (planejado na Fase 2-O).
 - Boost Engine não implementado.
 - Histórico real não implementado.
 - Configurações reais não implementadas.
@@ -813,19 +826,26 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1 e 2M.2 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2 e 2M.4A concluídas.
 
-Próximo passo oficial:
+Próximo passo imediato:
+- Fase 2N — Revisão visual curta do Detalhe do Jogo (validação do card Apex Scan no celular físico).
 
-Fase 2M.4 — UI do Apex Scan.
+Próxima prioridade estratégica após Fase 2N:
+- Fase 2-O — Apex Metrics Real v1
+  - Iniciar métricas reais e honestas no Apex Scan.
+  - RAM real: leitura de memória disponível do dispositivo.
+  - Latência Apex: teste de rede próprio (sem prometer ping de jogo externo).
+  - FPS real e GPU real: fora da v1, em estudo futuro.
+  - Sem prometer boost real sem ação técnica correspondente.
+  - Não implementada. Aguarda conclusão de Fase 2N.
 
-Opções em discussão:
-- Fase 2M.4A — Exibir Apex Scan no Detalhe do Jogo (vinculado ao jogo selecionado).
-- Fase 2M.4B — Integrar Apex Scan na aba Preparar (contexto geral de sessão).
+Nota estratégica:
+- Fase 2M.4B (integração do Apex Scan na aba Preparar): adiada. A aba Preparar pode esperar. O próximo salto de valor real é a Fase 2-O.
 
 Regra:
 
-Nenhuma implementação nova deve começar sem aprovação explícita do escopo da Fase 2M.4.
+Nenhuma implementação nova deve começar sem aprovação explícita do escopo da fase correspondente.
 
 ---
 
@@ -1048,7 +1068,7 @@ Antes de adicionar http:
 - avaliar dart:io;
 - justificar necessidade.
 
-Estado atual da implementação (Fase 2M.2):
+Estado atual da implementação (Fase 2M.4A):
 
 Motor local criado. Puro Dart. Sem permissões.
 - ApexScanResult: entity com score, status, mensagens e detalhes por campo.
@@ -1057,7 +1077,9 @@ Motor local criado. Puro Dart. Sem permissões.
 - GFX Profile e favorito entram apenas como informação — sem peso negativo no score.
 - Ausência de GFX Profile usa mensagem neutra: "perfil padrão será usado".
 - Não usa AndroidManifest, MainActivity, MethodChannel, permissões ou leitura de sistema.
-- UI não implementada. Apex Scan não aparece em nenhuma tela ainda.
+- UI do Detalhe do Jogo implementada (Fase 2M.4A): card premium/gamer com animação, status local e indicadores visuais.
+- Apex Scan ainda não aparece na aba Preparar.
+- Métricas reais ainda não implementadas. Planejadas na Fase 2-O: RAM real + Latência Apex como primeira leva honesta de dados do dispositivo. FPS e GPU reais fora do escopo da v1.
 
 ---
 
