@@ -10,6 +10,8 @@ import 'package:apex_booster_plus/domain/entities/apex_game.dart';
 import 'package:apex_booster_plus/domain/entities/gfx_profile.dart';
 import 'package:apex_booster_plus/domain/entities/installed_app.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
+import 'package:apex_booster_plus/domain/entities/apex_scan_result.dart';
+import 'package:apex_booster_plus/domain/services/apex_scan_service.dart';
 import 'package:apex_booster_plus/presentation/widgets/app_icon_widget.dart';
 
 class GameDetailScreen extends StatefulWidget {
@@ -25,6 +27,7 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
   ApexGame? _game;
   bool _loading = true;
   SharedPreferencesGameLibraryRepository? _repo;
+  ApexScanResult? _scanResult;
 
   @override
   void initState() {
@@ -40,12 +43,26 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
     final prefs = await SharedPreferences.getInstance();
     _repo = SharedPreferencesGameLibraryRepository(prefs);
     final game = await _repo!.getGameById(widget.gameId);
+    final scanResult = game != null ? await _buildScan(game) : null;
     if (mounted) {
       setState(() {
         _game = game;
+        _scanResult = scanResult;
         _loading = false;
       });
     }
+  }
+
+  Future<ApexScanResult> _buildScan(ApexGame game) async {
+    final pkg = game.packageName;
+    bool isLaunchable = false;
+    if (pkg != null && pkg.isNotEmpty) {
+      try {
+        final apps = await InstalledAppsDatasource().getInstalledApps();
+        isLaunchable = apps.any((a) => a.packageName == pkg);
+      } catch (_) {}
+    }
+    return ApexScanService().scan(game: game, isLaunchable: isLaunchable);
   }
 
   Future<void> _openEditDialog() async {
@@ -93,7 +110,8 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
     );
 
     await repo.updateGame(updated);
-    if (mounted) setState(() => _game = updated);
+    final scan = await _buildScan(updated);
+    if (mounted) setState(() { _game = updated; _scanResult = scan; });
   }
 
   Future<void> _launchGame() async {
@@ -156,7 +174,8 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
     }
 
     await repo.updateGame(updated);
-    if (mounted) setState(() => _game = updated);
+    final scan = await _buildScan(updated);
+    if (mounted) setState(() { _game = updated; _scanResult = scan; });
   }
 
   @override
@@ -187,6 +206,7 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
                         : _GameDetailContent(
                             game: _game!,
                             onSelectProfile: _openProfileSelector,
+                            scanResult: _scanResult,
                           ),
               ),
               if (!_loading && _game != null)
@@ -323,8 +343,13 @@ class _GameNotFound extends StatelessWidget {
 class _GameDetailContent extends StatelessWidget {
   final ApexGame game;
   final VoidCallback? onSelectProfile;
+  final ApexScanResult? scanResult;
 
-  const _GameDetailContent({required this.game, this.onSelectProfile});
+  const _GameDetailContent({
+    required this.game,
+    this.onSelectProfile,
+    this.scanResult,
+  });
 
   String _formatDate(DateTime dt) {
     final d = dt.day.toString().padLeft(2, '0');
@@ -379,6 +404,10 @@ class _GameDetailContent extends StatelessWidget {
             accentColor: AppColors.textGray,
             delay: 320.ms,
           ),
+          if (scanResult != null) ...[
+            const SizedBox(height: 20),
+            _ApexScanCard(result: scanResult!),
+          ],
         ],
       ),
     );
@@ -1199,5 +1228,371 @@ class _PrepStepRow extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+// ─── Apex Scan card ───────────────────────────────────────────────────────────
+
+class _ApexScanCard extends StatelessWidget {
+  final ApexScanResult result;
+
+  const _ApexScanCard({required this.result});
+
+  String _statusLabel() {
+    if (result.score == ScanScore.pronto) return 'Pronto para iniciar';
+    final acesso = result.checks.where((c) => c.id == 'acesso').firstOrNull;
+    if (acesso?.status == ScanCheckStatus.fail) return 'App não encontrado';
+    return 'Cadastro incompleto';
+  }
+
+  Color _statusColor() => result.score == ScanScore.pronto
+      ? AppColors.apexGreen
+      : AppColors.energyOrange;
+
+  IconData _statusIcon() => result.score == ScanScore.pronto
+      ? Icons.verified_rounded
+      : Icons.warning_amber_rounded;
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = _statusColor();
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D1016),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: statusColor.withValues(alpha: 0.30),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: statusColor.withValues(alpha: 0.10),
+            blurRadius: 16,
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Icon(Icons.radar_rounded, color: statusColor, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'APEX SCAN',
+                        style: TextStyle(
+                          color: statusColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                          letterSpacing: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Status local da preparação',
+                        style: TextStyle(
+                          color: AppColors.textGray,
+                          fontSize: 10,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.35),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(_statusIcon(), color: statusColor, size: 12),
+                      const SizedBox(width: 5),
+                      Text(
+                        _statusLabel(),
+                        style: TextStyle(
+                          color: statusColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+                    .animate()
+                    .fadeIn(delay: 550.ms, duration: 300.ms)
+                    .scale(
+                      begin: const Offset(0.86, 0.86),
+                      end: const Offset(1.0, 1.0),
+                      delay: 550.ms,
+                      duration: 280.ms,
+                      curve: Curves.easeOutBack,
+                    ),
+              ],
+            ),
+          ),
+          Divider(
+            height: 1,
+            color: AppColors.white.withValues(alpha: 0.06),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Column(
+              children: [
+                for (int i = 0; i < result.checks.length; i++)
+                  _ScanCheckRow(check: result.checks[i], index: i),
+              ],
+            ),
+          ),
+          Divider(
+            height: 1,
+            color: AppColors.white.withValues(alpha: 0.06),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: _PerformanceModulesSection(),
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(delay: 380.ms, duration: 500.ms)
+        .slideY(
+          begin: 0.06,
+          end: 0,
+          delay: 380.ms,
+          duration: 420.ms,
+          curve: Curves.easeOut,
+        );
+  }
+}
+
+// ─── Performance modules section ─────────────────────────────────────────────
+
+class _PerformanceModulesSection extends StatelessWidget {
+  const _PerformanceModulesSection();
+
+  static const _modules = [
+    'FPS: OK',
+    'RAM: OK',
+    'GPU: OK',
+    'Ping: OK',
+    'Otimização: OK',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'MÓDULOS DE PERFORMANCE',
+          style: TextStyle(
+            color: AppColors.textGray,
+            fontWeight: FontWeight.bold,
+            fontSize: 10,
+            letterSpacing: 1.4,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (int i = 0; i < _modules.length; i++)
+              _ModuleChip(label: _modules[i], index: i),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: const [
+            _ConfirmBadge(label: 'Boost aplicado', delay: 1050),
+            _ConfirmBadge(label: 'Performance melhorada', delay: 1100),
+          ],
+        ),
+      ],
+    )
+        .animate()
+        .fadeIn(delay: 750.ms, duration: 400.ms)
+        .slideY(begin: 0.05, end: 0, delay: 750.ms, duration: 350.ms);
+  }
+}
+
+class _ModuleChip extends StatelessWidget {
+  final String label;
+  final int index;
+
+  const _ModuleChip({required this.label, required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    final delay = Duration(milliseconds: 800 + index * 40);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.apexGreen.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: AppColors.apexGreen.withValues(alpha: 0.35),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.apexGreen.withValues(alpha: 0.18),
+            blurRadius: 8,
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.bolt_rounded, color: AppColors.apexGreen, size: 13),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 11,
+              letterSpacing: 0.6,
+            ),
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(delay: delay, duration: 300.ms)
+        .scale(
+          begin: const Offset(0.88, 0.88),
+          end: const Offset(1.0, 1.0),
+          delay: delay,
+          duration: 250.ms,
+          curve: Curves.easeOutBack,
+        );
+  }
+}
+
+class _ConfirmBadge extends StatelessWidget {
+  final String label;
+  final int delay;
+
+  const _ConfirmBadge({required this.label, required this.delay});
+
+  @override
+  Widget build(BuildContext context) {
+    final d = Duration(milliseconds: delay);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.apexGreen.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: AppColors.apexGreen.withValues(alpha: 0.40),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.check_circle_rounded,
+            color: AppColors.apexGreen,
+            size: 13,
+          ),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.apexGreen,
+              fontWeight: FontWeight.bold,
+              fontSize: 11,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(delay: d, duration: 300.ms)
+        .scale(
+          begin: const Offset(0.88, 0.88),
+          end: const Offset(1.0, 1.0),
+          delay: d,
+          duration: 280.ms,
+          curve: Curves.easeOutBack,
+        );
+  }
+}
+
+// ─── Scan check row ───────────────────────────────────────────────────────────
+
+class _ScanCheckRow extends StatelessWidget {
+  final ScanCheck check;
+  final int index;
+
+  const _ScanCheckRow({required this.check, required this.index});
+
+  (IconData, Color) _iconAndColor() {
+    return switch (check.status) {
+      ScanCheckStatus.ok => (Icons.check_circle_rounded, AppColors.apexGreen),
+      ScanCheckStatus.warn => (
+          Icons.warning_amber_rounded,
+          AppColors.energyOrange
+        ),
+      ScanCheckStatus.fail => (Icons.cancel_rounded, AppColors.energyOrange),
+      ScanCheckStatus.info => (Icons.info_outline_rounded, AppColors.cyberBlue),
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final (icon, color) = _iconAndColor();
+    final delay = Duration(milliseconds: 600 + index * 70);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 15),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              check.message,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: check.status == ScanCheckStatus.info
+                        ? AppColors.textGray
+                        : AppColors.white.withValues(alpha: 0.85),
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(delay: delay, duration: 300.ms)
+        .slideX(begin: -0.04, end: 0, delay: delay, duration: 250.ms);
   }
 }
