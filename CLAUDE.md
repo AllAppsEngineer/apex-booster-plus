@@ -721,6 +721,26 @@ Concluído:
   - _PerformanceModulesSection não removida nesta etapa.
   - Nenhum arquivo Dart, Kotlin ou AndroidManifest alterado.
   - Esses indicadores NÃO representam métricas reais de sistema implementadas.
+- Fase 2-O.3 concluída: seção "MÉTRICAS REAIS" exibida no Apex Scan do Detalhe do Jogo.
+  - Memória disponível exibida (leitura real do dispositivo).
+  - Memória total exibida (leitura real do dispositivo).
+  - Estado de memória exibido (calculado a partir dos valores reais).
+  - Latência Apex exibida (teste de rede próprio, sem prometer ping de jogo externo).
+  - Tratamento seguro de loading: indicador enquanto métricas carregam.
+  - Tratamento seguro de erro: mensagem clara se leitura falhar.
+  - Tratamento seguro de timeout: limite global de 4 segundos configurado.
+  - Tratamento seguro de sem rede: estado específico exibido ao usuário.
+  - Disclaimer exibido: "Snapshot do dispositivo. Não representa alteração de jogos."
+  - Botão ABRIR JOGO preservado e funcionando.
+  - Apex Boost Mode preservado e funcionando.
+  - Seção visual do Apex Scan (indicadores visuais) preservada intacta.
+  - FPS real não implementado.
+  - GPU real não implementado.
+  - Limpeza de RAM não implementada.
+  - Boost real não implementado.
+  - Otimização real não implementada.
+  - AndroidManifest não alterado. MainActivity não alterada.
+  - flutter analyze passando. flutter test passando (90/90).
 
 Observação sobre a Fase 1.6B:
 
@@ -801,16 +821,20 @@ Arquivos alterados na Fase 2M.4A:
 
 - lib/presentation/screens/game_detail/game_detail_screen.dart (alterado — card Apex Scan adicionado)
 
+Arquivos alterados na Fase 2-O.3:
+
+- lib/presentation/screens/game_detail/game_detail_screen.dart (alterado — seção "MÉTRICAS REAIS" adicionada ao Apex Scan)
+
 Estado visual atual:
 
-Aprovado como checkpoint da Fase 2N: visual do Apex Scan no Detalhe do Jogo mantido como está.
-Indicadores visuais (FPS, RAM, GPU, Ping, Otimização, Boost, Performance) são efeito visual de produto — não são métricas reais implementadas.
-flutter analyze e flutter test passando (64/64).
+Aprovado como checkpoint da Fase 2-O.3: seção "MÉTRICAS REAIS" implementada na GameDetailScreen com RAM disponível, RAM total, estado de memória e latência Apex lidos do dispositivo real.
+Indicadores visuais (FPS, RAM, GPU, Ping, Otimização, Boost, Performance) são efeito visual de produto — não são métricas reais implementadas (exceto RAM e Latência Apex, exibidas na seção dedicada "MÉTRICAS REAIS").
+flutter analyze e flutter test passando (90/90).
 Ainda não é o visual final absoluto do produto.
 
 Observação:
 
-A Biblioteca funciona com adição via BottomSheet com autocomplete inteligente (sugestões desde a primeira letra, ranking por relevância, lista rolável), validação de packageName manual contra apps instalados, bloqueio de jogos fantasmas, bloqueio de duplicados com mensagem "Já instalado", favoritar, remover, persistência entre sessões, navegação para detalhe, edição de nome e packageName com validação completa no detalhe (packageName inválido bloqueado, duplicado em outro jogo bloqueado, vazio permitido com fallback de ícone, igual ao jogo atual permitido), seleção de GFX Profile local, seleção restrita de apps instalados via AppPickerSheet (intent MAIN/LAUNCHER), e exibição de ícone real do app via AppIconWidget quando packageName disponível. Entrada manual permanece como fallback. Ícone não é persistido em disco — cache em memória por sessão. Contagem exibe "na biblioteca". Empty state honesto. Launcher real implementado na GameDetailScreen: botão ABRIR JOGO abre o app pelo packageName via Intent Android, precedido por sequência visual honesta Apex Boost Mode. Tratamento de erro presente se app não puder ser aberto. Apex Scan visual implementado na GameDetailScreen: card premium/gamer com animação, glow sutil, checks de status local e indicadores visuais. Status exibido: "Pronto para iniciar", "Cadastro incompleto" ou "App não encontrado". Motor local ApexScanService utilizado sem alteração. Sem métricas reais.
+A Biblioteca funciona com adição via BottomSheet com autocomplete inteligente (sugestões desde a primeira letra, ranking por relevância, lista rolável), validação de packageName manual contra apps instalados, bloqueio de jogos fantasmas, bloqueio de duplicados com mensagem "Já instalado", favoritar, remover, persistência entre sessões, navegação para detalhe, edição de nome e packageName com validação completa no detalhe (packageName inválido bloqueado, duplicado em outro jogo bloqueado, vazio permitido com fallback de ícone, igual ao jogo atual permitido), seleção de GFX Profile local, seleção restrita de apps instalados via AppPickerSheet (intent MAIN/LAUNCHER), e exibição de ícone real do app via AppIconWidget quando packageName disponível. Entrada manual permanece como fallback. Ícone não é persistido em disco — cache em memória por sessão. Contagem exibe "na biblioteca". Empty state honesto. Launcher real implementado na GameDetailScreen: botão ABRIR JOGO abre o app pelo packageName via Intent Android, precedido por sequência visual honesta Apex Boost Mode. Tratamento de erro presente se app não puder ser aberto. Apex Scan visual implementado na GameDetailScreen: card premium/gamer com animação, glow sutil, checks de status local e indicadores visuais. Status exibido: "Pronto para iniciar", "Cadastro incompleto" ou "App não encontrado". Motor local ApexScanService utilizado sem alteração. Seção "MÉTRICAS REAIS" implementada na GameDetailScreen (Fase 2-O.3): exibe memória disponível, memória total, estado de memória e latência Apex lidos do dispositivo real, com tratamento seguro de loading, erro, timeout e sem rede. Disclaimer exibido: "Snapshot do dispositivo. Não representa alteração de jogos." FPS real e GPU real não implementados.
 
 Pendências conhecidas:
 
@@ -818,7 +842,7 @@ Pendências conhecidas:
 - Localização multilíngue ainda não foi implementada.
 - Tela Add Game separada não implementada (adição atual é diálogo inline na BibliotecaTab).
 - GFX Profile avançado não implementado (perfis futuros: Fluidez, Competitivo, Ultra Visual, Personalizado).
-- Apex Scan: motor local criado (Fase 2M.2). Card visual implementado no Detalhe do Jogo (Fase 2M.4A). Integração na aba Preparar ainda não implementada. Métricas reais do dispositivo ainda não implementadas (planejado na Fase 2-O).
+- Apex Scan: motor local criado (Fase 2M.2). Card visual implementado no Detalhe do Jogo (Fase 2M.4A). Métricas reais parciais implementadas (Fase 2-O.3): RAM disponível, RAM total, estado de memória e latência Apex. Integração na aba Preparar ainda não implementada. FPS real, GPU real, limpeza de RAM, boost real e otimização real não implementados.
 - Boost Engine não implementado.
 - Histórico real não implementado.
 - Configurações reais não implementadas.
@@ -833,19 +857,26 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A e 2N concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2 e 2-O.3 concluídas.
+
+Fase 2-O — Apex Metrics Real v1 (parcialmente concluída):
+- Fase 2-O.1: camada de dados de métricas reais criada.
+- Fase 2-O.2: dados de métricas reais integrados ao Apex Scan.
+- Fase 2-O.3: seção "MÉTRICAS REAIS" exibida na GameDetailScreen.
+  - RAM disponível, RAM total, estado de memória e latência Apex implementados.
+  - FPS real e GPU real: fora da v1, em estudo futuro.
 
 Próximo passo imediato:
-- Fase 2-O — Apex Metrics Real v1
-  - Iniciar métricas reais e honestas no Apex Scan.
-  - RAM real: leitura de memória disponível do dispositivo.
-  - Latência Apex: teste de rede próprio (sem prometer ping de jogo externo).
-  - FPS real e GPU real: fora da v1, em estudo futuro.
-  - Sem prometer boost real sem ação técnica correspondente.
-  - Não implementada. Aguarda aprovação de escopo.
+- Fase 2-O.5 — Revisão visual das métricas reais no celular físico
+  - Validar visualmente a seção "MÉTRICAS REAIS" no Samsung S24 Ultra.
+  - Confirmar loading, erro, timeout e sem rede no dispositivo real.
+  - Sem implementação nova. Apenas validação visual.
+  - Aguarda aprovação.
+- ou Fase 2-P — Modo Foco Gamer (após validação visual da Fase 2-O.5).
+  - Aguarda aprovação de escopo.
 
 Nota estratégica:
-- Fase 2M.4B (integração do Apex Scan na aba Preparar): adiada. A aba Preparar pode esperar. O próximo salto de valor real é a Fase 2-O.
+- Fase 2M.4B (integração do Apex Scan na aba Preparar): adiada. A aba Preparar pode esperar.
 
 Regra:
 
@@ -1072,7 +1103,7 @@ Antes de adicionar http:
 - avaliar dart:io;
 - justificar necessidade.
 
-Estado atual da implementação (Fase 2M.4A):
+Estado atual da implementação (Fase 2-O.3):
 
 Motor local criado. Puro Dart. Sem permissões.
 - ApexScanResult: entity com score, status, mensagens e detalhes por campo.
@@ -1080,16 +1111,27 @@ Motor local criado. Puro Dart. Sem permissões.
 - Score binário: pronto (packageName + launchable) / incompleto.
 - GFX Profile e favorito entram apenas como informação — sem peso negativo no score.
 - Ausência de GFX Profile usa mensagem neutra: "perfil padrão será usado".
-- Não usa AndroidManifest, MainActivity, MethodChannel, permissões ou leitura de sistema.
+- Não usa PACKAGE_USAGE_STATS, SYSTEM_ALERT_WINDOW, AccessibilityService.
 - UI do Detalhe do Jogo implementada (Fase 2M.4A): card premium/gamer com animação, status local e indicadores visuais.
 - Apex Scan ainda não aparece na aba Preparar.
-- Métricas reais ainda não implementadas. Planejadas na Fase 2-O: RAM real + Latência Apex como primeira leva honesta de dados do dispositivo. FPS e GPU reais fora do escopo da v1.
+- Seção "MÉTRICAS REAIS" implementada na GameDetailScreen (Fase 2-O.3):
+  - Memória disponível: leitura real do dispositivo.
+  - Memória total: leitura real do dispositivo.
+  - Estado de memória: calculado a partir dos valores reais.
+  - Latência Apex: teste de rede próprio (sem prometer ping de jogo externo).
+  - Tratamento seguro de loading, erro, timeout (4s) e sem rede.
+  - Disclaimer: "Snapshot do dispositivo. Não representa alteração de jogos."
+- FPS real: não implementado. Fora do escopo da v1.
+- GPU real: não implementado. Fora do escopo da v1.
+- Limpeza de RAM: não implementada.
+- Boost real: não implementado.
+- Otimização real: não implementada.
 
 Decisão da Fase 2N: visual do Apex Scan mantido como está no Detalhe do Jogo.
 Os indicadores visuais (FPS, RAM, GPU, Ping, Otimização, Boost aplicado,
-Performance melhorada) são efeito visual de produto nesta fase —
+Performance melhorada) são efeito visual de produto —
 não representam métricas reais de sistema implementadas.
-Próximo passo real de métricas: Fase 2-O (RAM real + Latência Apex).
+As métricas reais implementadas (RAM + Latência Apex) aparecem na seção dedicada "MÉTRICAS REAIS", separada dos indicadores visuais.
 
 ---
 
