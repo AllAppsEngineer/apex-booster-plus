@@ -681,6 +681,15 @@ Concluído:
   - Alteração real de FPS/RAM/GPU/Ping não implementada.
 - flutter analyze passando.
 - flutter test passando.
+- Fase 2L.1 concluída: revisão end-to-end aprovada manualmente no Samsung S24 Ultra.
+  - Biblioteca validada: adição, sugestões, duplicados, favoritar, remover, persistência.
+  - ADICIONAR JOGO validado: BottomSheet, autocomplete desde 1ª letra, lista rolável, bloqueio de fantasmas.
+  - ESCOLHER APP INSTALADO validado: picker, busca, ícones reais, duplicado tratado.
+  - Detalhe do jogo validado: edição de nome/packageName, validações, GFX Profile.
+  - Launcher real validado: botão ABRIR JOGO funciona pelo packageName.
+  - Apex Boost Mode validado: sequência visual honesta, sem FPS/RAM/GPU/Ping/otimização real.
+  - Nenhum crash. Nenhuma tela vermelha. Retorno ao app após jogo: normal.
+- Fase 2L.2 concluída: CLAUDE.md atualizado para refletir revisão end-to-end aprovada.
 
 Observação sobre a Fase 1.6B:
 
@@ -753,11 +762,9 @@ Arquivos relevantes alterados na Fase 2K.2:
 
 Estado visual atual:
 
-Aprovado como checkpoint da Fase 2H.2: fluxo ADICIONAR JOGO com BottomSheet e autocomplete inteligente.
-Fase 2I.2 adicionou validação funcional na edição do detalhe sem alterar o visual aprovado.
-Fase 2J.2 ajustou apenas microcopy da Biblioteca sem alterar lógica ou estrutura visual.
-Fase 2K.2 adicionou launcher real com Apex Boost Mode visual na GameDetailScreen.
-Validado manualmente pelo usuário. Ainda não é o visual final absoluto do produto.
+Aprovado como checkpoint da Fase 2L.1: revisão end-to-end completa de Biblioteca + Detalhe + Apex Boost Mode + Launcher.
+Fluxo validado manualmente no Samsung S24 Ultra. Biblioteca e Launcher estáveis para avançar.
+Ainda não é o visual final absoluto do produto.
 
 Observação:
 
@@ -776,39 +783,31 @@ Pendências conhecidas:
 - Hive não implementado (shared_preferences cobre a necessidade atual).
 - Billing não implementado.
 - Firebase não implementado.
+- Overlay gamer não implementado.
+- Modo foco / Não Perturbe não implementado.
+- Usage Stats não implementado.
 
 ---
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2 e 2K.2 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1 e 2L.2 concluídas.
 
-Próxima decisão obrigatória:
+Próximo passo oficial:
 
-Antes de iniciar qualquer implementação nova, decidir entre:
+Fase 2M — Apex Scan conceitual/local.
 
-1. Revisar fluxo completo da Biblioteca e launcher antes de avançar:
-   - validar experiência end-to-end no celular físico;
-   - identificar inconsistências visuais ou de fluxo;
-   - confirmar comportamento do botão ABRIR JOGO e Apex Boost Mode no dispositivo real.
-
-2. Iniciar Apex Scan conceitual/local:
-   - diagnóstico baseado em dados disponíveis sem permissões extras;
-   - sem leitura de métricas reais do sistema nesta fase;
-   - orientação e score visual honesto.
-
-3. Micro-refino visual pontual:
-   - somente se houver problema visual objetivo identificado no celular;
-   - sem reabrir toda a estrutura visual;
-   - sem alterar escopo funcional.
-
-4. Atualizar documentação/roadmap:
-   - registrar estado real para referência futura;
-   - sem alterar escopo funcional.
+Escopo planejado:
+- diagnóstico baseado em dados disponíveis sem permissões extras;
+- sem leitura de métricas reais do sistema nesta fase;
+- sem Usage Stats;
+- sem overlay;
+- orientação e score visual honesto;
+- tela própria ou integrada na aba Preparar.
 
 Regra:
 
-Nenhuma implementação nova deve começar sem escolher explicitamente uma dessas opções.
+Nenhuma implementação nova deve começar sem aprovação explícita do escopo da Fase 2M.
 
 ---
 
