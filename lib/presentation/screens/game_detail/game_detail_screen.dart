@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -10,7 +12,9 @@ import 'package:apex_booster_plus/domain/entities/apex_game.dart';
 import 'package:apex_booster_plus/domain/entities/gfx_profile.dart';
 import 'package:apex_booster_plus/domain/entities/installed_app.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
+import 'package:apex_booster_plus/data/services/device_metrics_service_impl.dart';
 import 'package:apex_booster_plus/domain/entities/apex_scan_result.dart';
+import 'package:apex_booster_plus/domain/entities/device_metrics.dart';
 import 'package:apex_booster_plus/domain/services/apex_scan_service.dart';
 import 'package:apex_booster_plus/presentation/widgets/app_icon_widget.dart';
 
@@ -28,6 +32,9 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
   bool _loading = true;
   SharedPreferencesGameLibraryRepository? _repo;
   ApexScanResult? _scanResult;
+  DeviceMetrics? _deviceMetrics;
+  bool _metricsLoading = false;
+  bool _metricsError = false;
 
   @override
   void initState() {
@@ -50,6 +57,37 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
         _scanResult = scanResult;
         _loading = false;
       });
+      if (game != null) _loadMetrics();
+    }
+  }
+
+  Future<void> _loadMetrics() async {
+    if (!mounted) return;
+    setState(() => _metricsLoading = true);
+    try {
+      final metrics = await DeviceMetricsServiceImpl()
+          .measure()
+          .timeout(const Duration(seconds: 4));
+      if (mounted) {
+        setState(() {
+          _deviceMetrics = metrics;
+          _metricsLoading = false;
+        });
+      }
+    } on TimeoutException {
+      if (mounted) {
+        setState(() {
+          _metricsError = true;
+          _metricsLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _metricsError = true;
+          _metricsLoading = false;
+        });
+      }
     }
   }
 
@@ -207,6 +245,9 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
                             game: _game!,
                             onSelectProfile: _openProfileSelector,
                             scanResult: _scanResult,
+                            deviceMetrics: _deviceMetrics,
+                            metricsLoading: _metricsLoading,
+                            metricsError: _metricsError,
                           ),
               ),
               if (!_loading && _game != null)
@@ -344,11 +385,17 @@ class _GameDetailContent extends StatelessWidget {
   final ApexGame game;
   final VoidCallback? onSelectProfile;
   final ApexScanResult? scanResult;
+  final DeviceMetrics? deviceMetrics;
+  final bool metricsLoading;
+  final bool metricsError;
 
   const _GameDetailContent({
     required this.game,
     this.onSelectProfile,
     this.scanResult,
+    this.deviceMetrics,
+    this.metricsLoading = false,
+    this.metricsError = false,
   });
 
   String _formatDate(DateTime dt) {
@@ -406,7 +453,12 @@ class _GameDetailContent extends StatelessWidget {
           ),
           if (scanResult != null) ...[
             const SizedBox(height: 20),
-            _ApexScanCard(result: scanResult!),
+            _ApexScanCard(
+              result: scanResult!,
+              deviceMetrics: deviceMetrics,
+              metricsLoading: metricsLoading,
+              metricsError: metricsError,
+            ),
           ],
         ],
       ),
@@ -1235,8 +1287,16 @@ class _PrepStepRow extends StatelessWidget {
 
 class _ApexScanCard extends StatelessWidget {
   final ApexScanResult result;
+  final DeviceMetrics? deviceMetrics;
+  final bool metricsLoading;
+  final bool metricsError;
 
-  const _ApexScanCard({required this.result});
+  const _ApexScanCard({
+    required this.result,
+    this.deviceMetrics,
+    this.metricsLoading = false,
+    this.metricsError = false,
+  });
 
   String _statusLabel() {
     if (result.score == ScanScore.pronto) return 'Pronto para iniciar';
@@ -1369,6 +1429,18 @@ class _ApexScanCard extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 12, 16, 16),
             child: _PerformanceModulesSection(),
+          ),
+          Divider(
+            height: 1,
+            color: AppColors.white.withValues(alpha: 0.06),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: _RealMetricsSection(
+              metrics: deviceMetrics,
+              loading: metricsLoading,
+              hasError: metricsError,
+            ),
           ),
         ],
       ),
@@ -1594,5 +1666,240 @@ class _ScanCheckRow extends StatelessWidget {
         .animate()
         .fadeIn(delay: delay, duration: 300.ms)
         .slideX(begin: -0.04, end: 0, delay: delay, duration: 250.ms);
+  }
+}
+
+// ─── Real metrics section ─────────────────────────────────────────────────────
+
+class _RealMetricsSection extends StatelessWidget {
+  final DeviceMetrics? metrics;
+  final bool loading;
+  final bool hasError;
+
+  const _RealMetricsSection({
+    required this.metrics,
+    required this.loading,
+    required this.hasError,
+  });
+
+  String _formatMb(int bytes) {
+    if (bytes <= 0) return 'Indisponível';
+    final mb = bytes / (1024 * 1024);
+    return '${mb.toStringAsFixed(0)} MB';
+  }
+
+  String _latencyLabel(DeviceMetrics m) => switch (m.latencyStatus) {
+        LatencyStatus.success => '${m.latencyMs} ms',
+        LatencyStatus.timeout => 'Timeout',
+        LatencyStatus.noNetwork => 'Sem rede',
+        LatencyStatus.error => 'Indisponível',
+      };
+
+  Color _latencyColor(DeviceMetrics m) => switch (m.latencyStatus) {
+        LatencyStatus.success => AppColors.apexGreen,
+        LatencyStatus.timeout => AppColors.energyOrange,
+        LatencyStatus.noNetwork => AppColors.energyOrange,
+        LatencyStatus.error => AppColors.textGray,
+      };
+
+  String _memoryStateLabel(DeviceMetrics m) {
+    if (m.totalMemoryBytes <= 0) return 'Indisponível';
+    return m.isLowMemory ? 'Memória baixa' : 'Normal';
+  }
+
+  Color _memoryStateColor(DeviceMetrics m) {
+    if (m.totalMemoryBytes <= 0) return AppColors.textGray;
+    return m.isLowMemory ? AppColors.energyOrange : AppColors.apexGreen;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.memory_rounded, color: AppColors.cyberBlue, size: 13),
+            const SizedBox(width: 6),
+            const Text(
+              'MÉTRICAS REAIS',
+              style: TextStyle(
+                color: AppColors.textGray,
+                fontWeight: FontWeight.bold,
+                fontSize: 10,
+                letterSpacing: 1.4,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        const Text(
+          'Snapshot atual do dispositivo',
+          style: TextStyle(
+            color: AppColors.textGray,
+            fontSize: 9,
+            letterSpacing: 0.3,
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (loading)
+          const _MetricsLoadingRow()
+        else if (hasError || metrics == null)
+          const _MetricsErrorRow()
+        else ...[
+          _RealMetricRow(
+            label: 'Memória disponível',
+            value: _formatMb(metrics!.availableMemoryBytes),
+            valueColor: AppColors.white,
+          ),
+          _RealMetricRow(
+            label: 'Memória total',
+            value: _formatMb(metrics!.totalMemoryBytes),
+            valueColor: AppColors.white,
+          ),
+          _RealMetricRow(
+            label: 'Estado de memória',
+            value: _memoryStateLabel(metrics!),
+            valueColor: _memoryStateColor(metrics!),
+          ),
+          _RealMetricRow(
+            label: 'Latência Apex',
+            subtitle: 'Teste de rede',
+            value: _latencyLabel(metrics!),
+            valueColor: _latencyColor(metrics!),
+          ),
+        ],
+        const SizedBox(height: 10),
+        Text(
+          'Snapshot do dispositivo. Não representa alteração de jogos.',
+          style: TextStyle(
+            color: AppColors.textGray.withValues(alpha: 0.5),
+            fontSize: 10,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      ],
+    )
+        .animate()
+        .fadeIn(delay: 900.ms, duration: 400.ms)
+        .slideY(begin: 0.04, end: 0, delay: 900.ms, duration: 350.ms);
+  }
+}
+
+class _MetricsLoadingRow extends StatelessWidget {
+  const _MetricsLoadingRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(
+              strokeWidth: 1.5,
+              color: AppColors.cyberBlue.withValues(alpha: 0.7),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            'Lendo métricas...',
+            style: TextStyle(
+              color: AppColors.textGray.withValues(alpha: 0.7),
+              fontSize: 11,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricsErrorRow extends StatelessWidget {
+  const _MetricsErrorRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline_rounded,
+            color: AppColors.textGray.withValues(alpha: 0.5),
+            size: 14,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Métricas indisponíveis',
+            style: TextStyle(
+              color: AppColors.textGray.withValues(alpha: 0.6),
+              fontSize: 11,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RealMetricRow extends StatelessWidget {
+  final String label;
+  final String? subtitle;
+  final String value;
+  final Color valueColor;
+
+  const _RealMetricRow({
+    required this.label,
+    this.subtitle,
+    required this.value,
+    required this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppColors.textGray,
+                    fontSize: 11,
+                  ),
+                ),
+                if (subtitle != null)
+                  Text(
+                    subtitle!,
+                    style: TextStyle(
+                      color: AppColors.textGray.withValues(alpha: 0.55),
+                      fontSize: 9,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: valueColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
