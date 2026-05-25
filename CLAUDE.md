@@ -690,6 +690,22 @@ Concluído:
   - Apex Boost Mode validado: sequência visual honesta, sem FPS/RAM/GPU/Ping/otimização real.
   - Nenhum crash. Nenhuma tela vermelha. Retorno ao app após jogo: normal.
 - Fase 2L.2 concluída: CLAUDE.md atualizado para refletir revisão end-to-end aprovada.
+- Fase 2M.1 concluída: escopo da Fase 2M aprovado e registrado.
+- Fase 2M.2 concluída: motor local do Apex Scan criado.
+  - ApexScanResult criado (entity com score, status, mensagens, detalhes).
+  - ApexScanService criado (serviço puro Dart, sem permissões).
+  - Score honesto baseado somente em packageName + isLaunchable.
+  - ScanScore binário: pronto / incompleto.
+  - GFX Profile, favorito e consistência: informação/ok, sem peso no score.
+  - Ausência de GFX Profile informa "perfil padrão será usado" (neutro).
+  - Testes criados e passando (flutter test).
+  - flutter analyze passando.
+  - Não usa PACKAGE_USAGE_STATS, SYSTEM_ALERT_WINDOW, AccessibilityService.
+  - Não mede FPS, RAM, GPU, Ping real.
+  - Não usa AndroidManifest, MainActivity, MethodChannel.
+  - UI do Apex Scan ainda não implementada.
+  - Apex Scan ainda não aparece na aba Preparar.
+  - Apex Scan ainda não aparece no Detalhe do Jogo.
 
 Observação sobre a Fase 1.6B:
 
@@ -760,6 +776,12 @@ Arquivos relevantes alterados na Fase 2K.2:
 - lib/data/datasources/installed_apps_datasource.dart (alterado — método launchApp adicionado)
 - lib/presentation/screens/game_detail/game_detail_screen.dart (alterado — botão ABRIR JOGO e fluxo Apex Boost Mode adicionados)
 
+Arquivos relevantes criados na Fase 2M.2:
+
+- lib/domain/entities/apex_scan_result.dart (criado)
+- lib/domain/services/apex_scan_service.dart (criado)
+- test/domain/services/apex_scan_service_test.dart (criado)
+
 Estado visual atual:
 
 Aprovado como checkpoint da Fase 2L.1: revisão end-to-end completa de Biblioteca + Detalhe + Apex Boost Mode + Launcher.
@@ -776,7 +798,7 @@ Pendências conhecidas:
 - Localização multilíngue ainda não foi implementada.
 - Tela Add Game separada não implementada (adição atual é diálogo inline na BibliotecaTab).
 - GFX Profile avançado não implementado (perfis futuros: Fluidez, Competitivo, Ultra Visual, Personalizado).
-- Apex Scan real não implementado (sem leitura de métricas do dispositivo).
+- Apex Scan: motor local criado (Fase 2M.2). UI não implementada. Sem leitura de métricas reais do dispositivo.
 - Boost Engine não implementado.
 - Histórico real não implementado.
 - Configurações reais não implementadas.
@@ -791,23 +813,19 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1 e 2L.2 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1 e 2M.2 concluídas.
 
 Próximo passo oficial:
 
-Fase 2M — Apex Scan conceitual/local.
+Fase 2M.4 — UI do Apex Scan.
 
-Escopo planejado:
-- diagnóstico baseado em dados disponíveis sem permissões extras;
-- sem leitura de métricas reais do sistema nesta fase;
-- sem Usage Stats;
-- sem overlay;
-- orientação e score visual honesto;
-- tela própria ou integrada na aba Preparar.
+Opções em discussão:
+- Fase 2M.4A — Exibir Apex Scan no Detalhe do Jogo (vinculado ao jogo selecionado).
+- Fase 2M.4B — Integrar Apex Scan na aba Preparar (contexto geral de sessão).
 
 Regra:
 
-Nenhuma implementação nova deve começar sem aprovação explícita do escopo da Fase 2M.
+Nenhuma implementação nova deve começar sem aprovação explícita do escopo da Fase 2M.4.
 
 ---
 
@@ -1029,6 +1047,17 @@ Antes de adicionar http:
 - avaliar connectivity_plus;
 - avaliar dart:io;
 - justificar necessidade.
+
+Estado atual da implementação (Fase 2M.2):
+
+Motor local criado. Puro Dart. Sem permissões.
+- ApexScanResult: entity com score, status, mensagens e detalhes por campo.
+- ApexScanService: serviço que recebe ApexGame + isLaunchable e retorna ApexScanResult.
+- Score binário: pronto (packageName + launchable) / incompleto.
+- GFX Profile e favorito entram apenas como informação — sem peso negativo no score.
+- Ausência de GFX Profile usa mensagem neutra: "perfil padrão será usado".
+- Não usa AndroidManifest, MainActivity, MethodChannel, permissões ou leitura de sistema.
+- UI não implementada. Apex Scan não aparece em nenhuma tela ainda.
 
 ---
 
