@@ -17,6 +17,8 @@ import 'package:apex_booster_plus/domain/entities/apex_scan_result.dart';
 import 'package:apex_booster_plus/domain/entities/device_metrics.dart';
 import 'package:apex_booster_plus/domain/services/apex_scan_service.dart';
 import 'package:apex_booster_plus/presentation/widgets/app_icon_widget.dart';
+import 'package:apex_booster_plus/data/services/focus_mode_service_impl.dart';
+import 'package:apex_booster_plus/domain/services/focus_mode_service.dart';
 
 class GameDetailScreen extends StatefulWidget {
   final String gameId;
@@ -27,7 +29,8 @@ class GameDetailScreen extends StatefulWidget {
   State<GameDetailScreen> createState() => _GameDetailScreenState();
 }
 
-class _GameDetailScreenState extends State<GameDetailScreen> {
+class _GameDetailScreenState extends State<GameDetailScreen>
+    with WidgetsBindingObserver {
   ApexGame? _game;
   bool _loading = true;
   SharedPreferencesGameLibraryRepository? _repo;
@@ -35,11 +38,32 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
   DeviceMetrics? _deviceMetrics;
   bool _metricsLoading = false;
   bool _metricsError = false;
+  final _focusService = FocusModeServiceImpl();
+  bool _focusWasEnabled = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadGame();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    if (_focusWasEnabled) {
+      _focusWasEnabled = false;
+      unawaited(_focusService.restore());
+    }
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _focusWasEnabled) {
+      _focusWasEnabled = false;
+      unawaited(_focusService.restore());
+    }
   }
 
   Future<void> _loadGame() async {
@@ -163,6 +187,12 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
   Future<void> _launchGame() async {
     final pkg = _game?.packageName;
     if (pkg == null || pkg.isEmpty) return;
+
+    final focusResult = await _focusService.saveAndEnable();
+    if (mounted && focusResult == FocusModeResult.success) {
+      _focusWasEnabled = true;
+    }
+    if (!mounted) return;
 
     final error = await showModalBottomSheet<Object?>(
       context: context,
