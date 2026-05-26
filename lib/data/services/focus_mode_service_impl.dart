@@ -4,7 +4,7 @@ import '../../domain/services/focus_mode_service.dart';
 
 class FocusModeServiceImpl implements FocusModeService {
   static const _channel =
-      MethodChannel('apex_booster_plus/focus_mode');
+      MethodChannel('com.allappsengineer.apex_booster_plus/focus_mode');
 
   @override
   Future<bool> isPermissionGranted() async {

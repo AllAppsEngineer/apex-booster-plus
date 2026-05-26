@@ -6,7 +6,7 @@ import 'package:apex_booster_plus/domain/services/focus_mode_service.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const channel = MethodChannel('apex_booster_plus/focus_mode');
+  const channel = MethodChannel('com.allappsengineer.apex_booster_plus/focus_mode');
 
   setUp(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

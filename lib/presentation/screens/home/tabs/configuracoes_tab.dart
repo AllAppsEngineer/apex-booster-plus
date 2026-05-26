@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
+import 'package:apex_booster_plus/data/services/focus_mode_service_impl.dart';
+import 'package:apex_booster_plus/domain/services/focus_mode_service.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_badge.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_feature_card.dart';
@@ -22,6 +24,8 @@ class ConfiguracoesTab extends StatelessWidget {
               const SizedBox(height: 28),
               const _ConfiguracoesMainCard(),
               const SizedBox(height: 16),
+              const _FocusModeCard(),
+              const SizedBox(height: 12),
               ApexFeatureCard(
                 badge: 'LANG',
                 title: 'Idioma do app',
@@ -139,6 +143,270 @@ class _ConfiguracoesMainCard extends StatelessWidget {
         .slideY(begin: 0.04, end: 0, duration: 400.ms);
   }
 }
+
+// ─── Modo Foco Gamer ────────────────────────────────────────────────────────
+
+enum _FocusPermissionState { loading, granted, required }
+
+class _FocusModeCard extends StatefulWidget {
+  const _FocusModeCard();
+
+  @override
+  State<_FocusModeCard> createState() => _FocusModeCardState();
+}
+
+class _FocusModeCardState extends State<_FocusModeCard>
+    with WidgetsBindingObserver {
+  final FocusModeService _service = FocusModeServiceImpl();
+  _FocusPermissionState _permState = _FocusPermissionState.loading;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkPermission();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkPermission();
+    }
+  }
+
+  Future<void> _checkPermission() async {
+    try {
+      final granted = await _service
+          .isPermissionGranted()
+          .timeout(const Duration(seconds: 2));
+      if (!mounted) return;
+      setState(() {
+        _permState = granted
+            ? _FocusPermissionState.granted
+            : _FocusPermissionState.required;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _permState = _FocusPermissionState.required);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.cyberBlue.withValues(alpha: 0.10),
+            AppColors.white.withValues(alpha: 0.03),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.cyberBlue.withValues(alpha: 0.28),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const ApexBadge(label: 'FOCO', color: AppColors.cyberBlue),
+              _buildStatusChip(),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Modo Foco Gamer',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Reduz interrupções durante sua sessão usando o Não Perturbe do Android. Requer permissão manual. Não melhora FPS, RAM, GPU ou Ping.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textGray,
+                  fontSize: 13,
+                ),
+          ),
+          const SizedBox(height: 16),
+          _buildStatusRow(context),
+          if (_permState == _FocusPermissionState.required) ...[
+            const SizedBox(height: 16),
+            _buildPermissionButton(context),
+          ],
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(delay: 50.ms, duration: 600.ms)
+        .slideY(begin: 0.04, end: 0, duration: 400.ms);
+  }
+
+  Widget _buildStatusChip() {
+    if (_permState == _FocusPermissionState.loading) {
+      return SizedBox(
+        width: 14,
+        height: 14,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: AppColors.cyberBlue.withValues(alpha: 0.6),
+        ),
+      );
+    }
+    final granted = _permState == _FocusPermissionState.granted;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: (granted ? AppColors.apexGreen : AppColors.energyOrange)
+            .withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: (granted ? AppColors.apexGreen : AppColors.energyOrange)
+              .withValues(alpha: 0.35),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        granted ? 'Ativo' : 'Necessário',
+        style: TextStyle(
+          color: granted ? AppColors.apexGreen : AppColors.energyOrange,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusRow(BuildContext context) {
+    if (_permState == _FocusPermissionState.loading) {
+      return Row(
+        children: [
+          SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(
+              strokeWidth: 1.5,
+              color: AppColors.textGray.withValues(alpha: 0.5),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Verificando permissão...',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textGray,
+                  fontSize: 12,
+                ),
+          ),
+        ],
+      );
+    }
+
+    final granted = _permState == _FocusPermissionState.granted;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          granted
+              ? Icons.check_circle_outline_rounded
+              : Icons.lock_outline_rounded,
+          size: 16,
+          color: granted ? AppColors.apexGreen : AppColors.energyOrange,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                granted ? 'Permissão concedida' : 'Permissão necessária',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: granted
+                          ? AppColors.apexGreen
+                          : AppColors.energyOrange,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                granted
+                    ? 'Modo Foco disponível. Será ativado ao iniciar uma sessão.'
+                    : 'Conceda acesso para ativar o Modo Foco.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textGray,
+                      fontSize: 12,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPermissionButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 44,
+      child: ElevatedButton.icon(
+        onPressed: () async {
+          final messenger = ScaffoldMessenger.of(context);
+          try {
+            await _service.openSettings();
+          } catch (_) {
+            if (!mounted) return;
+            messenger.showSnackBar(
+              const SnackBar(
+                content: Text('Não foi possível abrir as configurações do Android.'),
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.cyberBlue.withValues(alpha: 0.18),
+          foregroundColor: AppColors.cyberBlue,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(
+              color: AppColors.cyberBlue.withValues(alpha: 0.45),
+              width: 1,
+            ),
+          ),
+          elevation: 0,
+        ),
+        icon: const Icon(Icons.open_in_new_rounded, size: 16),
+        label: const Text(
+          'PERMITIR MODO FOCO',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+            letterSpacing: 1.2,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── CTA bottom ─────────────────────────────────────────────────────────────
 
 class _ConfiguracoesCTA extends StatelessWidget {
   const _ConfiguracoesCTA();
