@@ -47,10 +47,18 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
       if (mounted) setState(() => _loading = false);
       return;
     }
+
     final prefs = await SharedPreferences.getInstance();
+
     _repo = SharedPreferencesGameLibraryRepository(prefs);
+
     final game = await _repo!.getGameById(widget.gameId);
-    final scanResult = game != null ? await _buildScan(game) : null;
+
+    ApexScanResult? scanResult;
+    if (game != null) {
+      scanResult = await _buildScan(game);
+    }
+
     if (mounted) {
       setState(() {
         _game = game;

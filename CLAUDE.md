@@ -848,7 +848,7 @@ Estado visual atual:
 Aprovado como checkpoint da Fase 2-O.5: seção "MÉTRICAS REAIS" validada no Samsung S24 Ultra com RAM disponível, RAM total, estado de memória e latência Apex lidos do dispositivo real.
 Indicadores visuais (FPS, RAM, GPU, Ping, Otimização, Boost, Performance) são efeito visual de produto — não são métricas reais implementadas (exceto RAM e Latência Apex, exibidas na seção dedicada "MÉTRICAS REAIS").
 flutter analyze e flutter test passando (90/90).
-Observação de performance registrada: abertura da GameDetailScreen com demora de ~3s observada no Samsung S24 Ultra. Meta para padrão premium: até 1s, ideal abaixo de 500ms. Diagnóstico pendente na Fase 2-O.6.
+Fase 2-O.6 concluída por diagnóstico: demora de ~3s observada apenas no cold start (primeira abertura após iniciar o app). Após cache aquecido (SharedPreferences + getInstalledApps), navegação seguinte abre imediata. Sem crash, sem tela vermelha, sem bloqueio funcional. Classificado como refinamento futuro, não bloqueador. Meta futura: abertura em até 1s, ideal abaixo de 500ms.
 Ainda não é o visual final absoluto do produto.
 
 Observação:
@@ -876,9 +876,9 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3 e 2-O.5 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5 e 2-O.6 concluídas.
 
-Fase 2-O — Apex Metrics Real v1 (métricas v1 implementadas e validadas; diagnóstico 2-O.6 pendente antes da Fase 2-P):
+Fase 2-O — Apex Metrics Real v1 (concluída):
 - Fase 2-O.1: camada de dados de métricas reais criada.
 - Fase 2-O.2: dados de métricas reais integrados ao Apex Scan.
 - Fase 2-O.3: seção "MÉTRICAS REAIS" exibida na GameDetailScreen.
@@ -887,21 +887,15 @@ Fase 2-O — Apex Metrics Real v1 (métricas v1 implementadas e validadas; diagn
 - Fase 2-O.5: revisão visual aprovada no Samsung S24 Ultra.
   - Observação de performance: abertura do Detalhe com ~3s de demora. Não bloqueador.
   - Meta futura: abertura em até 1s, idealmente abaixo de 500ms.
+- Fase 2-O.6: diagnóstico de performance concluído.
+  - Demora observada apenas no cold start (primeira abertura após iniciar o app).
+  - Origem: aquecimento de SharedPreferences + cache de getInstalledApps.
+  - Após cache aquecido, navegação seguinte abre imediata.
+  - Classificado como refinamento futuro, não bloqueador.
+  - Logs temporários [DIAG 2-O.6A] removidos do código.
 
 Próximo passo imediato:
-- Fase 2-O.6 — Diagnóstico de performance da navegação Biblioteca → Detalhe
-  - Medir onde está a demora (~3s observados no Samsung S24 Ultra).
-  - Verificar se a origem é: ícone (MethodChannel getAppIcon), Apex Scan
-    (ApexScanService), métricas reais (DeviceMetricsService), animações,
-    FutureBuilder, reconstrução de tela ou combinação.
-  - Não implementar correção sem diagnóstico concluído.
-  - Não alterar escopo da Fase 2-O.5.
-  - Aguarda aprovação de escopo.
-
-Fase estratégica seguinte:
 - Fase 2-P — Modo Foco Gamer
-  - Inicia após Fase 2-O.6 resolvida ou classificada (latência aceitável ou
-    plano de correção definido).
   - Aguarda aprovação de escopo.
 
 Nota estratégica:
