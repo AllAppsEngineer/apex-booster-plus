@@ -1,6 +1,7 @@
 package com.allappsengineer.apex_booster_plus
 
 import android.app.ActivityManager
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
@@ -10,12 +11,16 @@ import android.graphics.Canvas
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.BitmapDrawable
 import android.os.Build
+import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
 
 class MainActivity : FlutterActivity() {
+    private var _previousFilter: Int? = null
+    private var _focusModeActivatedByApp: Boolean = false
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(
@@ -137,6 +142,71 @@ class MainActivity : FlutterActivity() {
                         result.error("MEMORY_ERROR", e.message, null)
                     }
                 }
+                else -> result.notImplemented()
+            }
+        }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.allappsengineer.apex_booster_plus/focus_mode"
+        ).setMethodCallHandler { call, result ->
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            when (call.method) {
+                "isPermissionGranted" -> {
+                    result.success(nm.isNotificationPolicyAccessGranted)
+                }
+
+                "openSettings" -> {
+                    try {
+                        val intent = Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(intent)
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.success(null)
+                    }
+                }
+
+                "saveAndEnable" -> {
+                    if (!nm.isNotificationPolicyAccessGranted) {
+                        result.error("NO_PERMISSION", "ACCESS_NOTIFICATION_POLICY not granted", null)
+                        return@setMethodCallHandler
+                    }
+                    try {
+                        _previousFilter = nm.currentInterruptionFilter
+                        _focusModeActivatedByApp = true
+                        nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALARMS)
+                        result.success(null)
+                    } catch (e: SecurityException) {
+                        _focusModeActivatedByApp = false
+                        _previousFilter = null
+                        result.error("SET_FILTER_ERROR", e.message, null)
+                    } catch (e: Exception) {
+                        _focusModeActivatedByApp = false
+                        _previousFilter = null
+                        result.error("SET_FILTER_ERROR", e.message, null)
+                    }
+                }
+
+                "restore" -> {
+                    if (!_focusModeActivatedByApp) {
+                        result.success(null)
+                        return@setMethodCallHandler
+                    }
+                    try {
+                        if (nm.isNotificationPolicyAccessGranted) {
+                            val target = _previousFilter ?: NotificationManager.INTERRUPTION_FILTER_ALL
+                            nm.setInterruptionFilter(target)
+                        }
+                    } catch (e: Exception) {
+                        // silent — no-op on failure
+                    } finally {
+                        _focusModeActivatedByApp = false
+                        _previousFilter = null
+                        result.success(null)
+                    }
+                }
+
                 else -> result.notImplemented()
             }
         }
