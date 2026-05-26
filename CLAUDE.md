@@ -417,7 +417,7 @@ Estado funcional das abas da Home:
 - Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome via BottomSheet com autocomplete inteligente desde a primeira letra, sugestões por ranking de relevância, lista rolável sem limite artificial, seleção de sugestão preenche nome + packageName, packageName manual validado contra apps instalados, jogos fantasmas bloqueados, duplicados bloqueados com mensagem "Já instalado", favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe com validação: packageName inválido bloqueado, packageName duplicado em outro jogo bloqueado, packageName vazio permitido com fallback de ícone, packageName igual ao jogo atual permitido, edição apenas do nome preservada sem validação desnecessária, seleção de GFX Profile local via bottom sheet no detalhe, seleção restrita de apps Android instalados via AppPickerSheet com intent MAIN/LAUNCHER — entrada manual permanece como fallback, exibição de ícone real do app instalado via AppIconWidget quando packageName disponível — fallback genérico quando ausente, app desinstalado ou erro, microcopy final ajustado: contagem exibe "na biblioteca", empty state honesto "Nenhum jogo adicionado ainda.", subtítulo orienta ação real, copy do card Perfis locais reflete que GFX Profile já existe no detalhe de cada jogo, launcher real implementado na GameDetailScreen via botão ABRIR JOGO com Apex Boost Mode visual antes da abertura).
 - Aba Preparar: placeholder visual. Sem funcionalidade real.
 - Aba Histórico: placeholder visual. Sem funcionalidade real.
-- Aba Configurações: placeholder visual. Sem funcionalidade real.
+- Aba Configurações: card "Modo Foco Gamer" implementado (Fase 2-P.4) com UI de permissão. Restante placeholder visual.
 
 ---
 
@@ -759,6 +759,30 @@ Concluído:
     padrão premium, o alvo é abertura em até 1 segundo, idealmente abaixo de
     500ms. Registrado como ponto de otimização futura antes de acumular novas
     camadas visuais ou funcionais.
+- Fase 2-P.2 concluída: base Android/Kotlin do Modo Foco Gamer criada.
+  - AndroidManifest com permissão ACCESS_NOTIFICATION_POLICY.
+  - MainActivity.kt com MethodChannel focus_mode criado.
+  - Métodos implementados: isPermissionGranted, openSettings, saveAndEnable, restore.
+  - Sem UI nesta fase.
+  - Sem ativação automática de DND.
+- Fase 2-P.3 concluída: camada Dart do Modo Foco Gamer criada.
+  - FocusModeService (contrato) criado.
+  - FocusModeServiceImpl criado (Dart, via MethodChannel).
+  - Testes criados para o serviço Dart.
+  - Sem ativação automática de DND.
+- Fase 2-P.4 concluída: UI de permissão do Modo Foco Gamer criada.
+  - Card "Modo Foco Gamer" adicionado à aba Configurações.
+  - Status "Permissão necessária" exibido quando acesso não concedido.
+  - Status "Ativo" / "Permissão concedida" exibido quando acesso concedido.
+  - Botão "PERMITIR MODO FOCO" abre configurações Android.
+  - Revalidação automática ao retornar ao app (AppLifecycleState.resumed).
+  - Correção do mismatch de MethodChannel: canal Dart/testes alinhado ao canal Kotlin
+    (apex_booster_plus/focus_mode → com.allappsengineer.apex_booster_plus/focus_mode).
+  - UI não ativa DND automaticamente.
+  - UI não chama saveAndEnable nem restore.
+  - Integração com ABRIR JOGO não implementada nesta fase.
+  - flutter analyze passando. flutter test passando (102/102).
+  - Validação visual no Samsung S24 Ultra aprovada.
 
 Observação sobre a Fase 1.6B:
 
@@ -843,12 +867,27 @@ Arquivos alterados na Fase 2-O.3:
 
 - lib/presentation/screens/game_detail/game_detail_screen.dart (alterado — seção "MÉTRICAS REAIS" adicionada ao Apex Scan)
 
+Arquivos criados ou alterados nas Fases 2-P.2 e 2-P.3:
+
+- android/app/src/main/AndroidManifest.xml (alterado — ACCESS_NOTIFICATION_POLICY adicionado)
+- android/app/src/main/kotlin/com/allappsengineer/apex_booster_plus/MainActivity.kt (alterado — MethodChannel focus_mode adicionado com isPermissionGranted, openSettings, saveAndEnable, restore)
+- lib/domain/services/focus_mode_service.dart (criado — contrato FocusModeService)
+- lib/data/services/focus_mode_service_impl.dart (criado — FocusModeServiceImpl via MethodChannel)
+- test/data/services/focus_mode_service_impl_test.dart (criado — testes do serviço Dart)
+
+Arquivos alterados na Fase 2-P.4:
+
+- lib/data/services/focus_mode_service_impl.dart (alterado — canal MethodChannel corrigido para com.allappsengineer.apex_booster_plus/focus_mode)
+- lib/presentation/screens/home/tabs/configuracoes_tab.dart (alterado — card Modo Foco Gamer adicionado)
+- test/data/services/focus_mode_service_impl_test.dart (alterado — testes atualizados para canal correto)
+
 Estado visual atual:
 
 Aprovado como checkpoint da Fase 2-O.5: seção "MÉTRICAS REAIS" validada no Samsung S24 Ultra com RAM disponível, RAM total, estado de memória e latência Apex lidos do dispositivo real.
 Indicadores visuais (FPS, RAM, GPU, Ping, Otimização, Boost, Performance) são efeito visual de produto — não são métricas reais implementadas (exceto RAM e Latência Apex, exibidas na seção dedicada "MÉTRICAS REAIS").
 flutter analyze e flutter test passando (90/90).
 Fase 2-O.6 concluída por diagnóstico: demora de ~3s observada apenas no cold start (primeira abertura após iniciar o app). Após cache aquecido (SharedPreferences + getInstalledApps), navegação seguinte abre imediata. Sem crash, sem tela vermelha, sem bloqueio funcional. Classificado como refinamento futuro, não bloqueador. Meta futura: abertura em até 1s, ideal abaixo de 500ms.
+Fase 2-P.4 aprovada: UI de permissão do Modo Foco Gamer validada no Samsung S24 Ultra. flutter analyze e flutter test passando (102/102).
 Ainda não é o visual final absoluto do produto.
 
 Observação:
@@ -869,14 +908,14 @@ Pendências conhecidas:
 - Billing não implementado.
 - Firebase não implementado.
 - Overlay gamer não implementado.
-- Modo foco / Não Perturbe não implementado.
+- Modo Foco Gamer: UI de permissão implementada (Fase 2-P.4). Ativação real do DND antes de abrir jogo, restore ao voltar, e integração com ABRIR JOGO ainda não implementados.
 - Usage Stats não implementado.
 
 ---
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5 e 2-O.6 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3 e 2-P.4 concluídas.
 
 Fase 2-O — Apex Metrics Real v1 (concluída):
 - Fase 2-O.1: camada de dados de métricas reais criada.
@@ -894,8 +933,13 @@ Fase 2-O — Apex Metrics Real v1 (concluída):
   - Classificado como refinamento futuro, não bloqueador.
   - Logs temporários [DIAG 2-O.6A] removidos do código.
 
+Fase 2-P — Modo Foco Gamer (em andamento):
+- Fase 2-P.2: base Android/Kotlin criada (MethodChannel focus_mode, AndroidManifest, métodos).
+- Fase 2-P.3: camada Dart criada (FocusModeService, FocusModeServiceImpl, testes).
+- Fase 2-P.4: UI de permissão criada e validada no Samsung S24 Ultra.
+
 Próximo passo imediato:
-- Fase 2-P — Modo Foco Gamer
+- Fase 2-P.6 — Integrar Modo Foco Gamer ao Apex Boost Mode / ABRIR JOGO.
   - Aguarda aprovação de escopo.
 
 Nota estratégica:
