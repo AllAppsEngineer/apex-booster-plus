@@ -741,6 +741,24 @@ Concluído:
   - Otimização real não implementada.
   - AndroidManifest não alterado. MainActivity não alterada.
   - flutter analyze passando. flutter test passando (90/90).
+- Fase 2-O.5 concluída: revisão visual das métricas reais aprovada no Samsung S24 Ultra.
+  - Card Apex Scan carrega normalmente.
+  - Seção "MÉTRICAS REAIS" aparece corretamente.
+  - Memória disponível exibida em MB.
+  - Memória total exibida em MB.
+  - Estado de memória exibido corretamente.
+  - Latência Apex exibida em ms ou estado seguro.
+  - Loading não trava a tela.
+  - Sem tela vermelha. Sem overflow visual.
+  - Disclaimer "Snapshot do dispositivo. Não representa alteração de jogos." visível.
+  - Botão ABRIR JOGO funcional.
+  - Fluxo aprovado para avançar.
+  - Observação não bloqueadora de performance: ao tocar no card de um jogo na
+    Biblioteca, foi percebida demora de ~3 segundos para abrir a GameDetailScreen.
+    O fluxo funciona, não há crash e o Detalhe abre corretamente. Porém, para
+    padrão premium, o alvo é abertura em até 1 segundo, idealmente abaixo de
+    500ms. Registrado como ponto de otimização futura antes de acumular novas
+    camadas visuais ou funcionais.
 
 Observação sobre a Fase 1.6B:
 
@@ -827,9 +845,10 @@ Arquivos alterados na Fase 2-O.3:
 
 Estado visual atual:
 
-Aprovado como checkpoint da Fase 2-O.3: seção "MÉTRICAS REAIS" implementada na GameDetailScreen com RAM disponível, RAM total, estado de memória e latência Apex lidos do dispositivo real.
+Aprovado como checkpoint da Fase 2-O.5: seção "MÉTRICAS REAIS" validada no Samsung S24 Ultra com RAM disponível, RAM total, estado de memória e latência Apex lidos do dispositivo real.
 Indicadores visuais (FPS, RAM, GPU, Ping, Otimização, Boost, Performance) são efeito visual de produto — não são métricas reais implementadas (exceto RAM e Latência Apex, exibidas na seção dedicada "MÉTRICAS REAIS").
 flutter analyze e flutter test passando (90/90).
+Observação de performance registrada: abertura da GameDetailScreen com demora de ~3s observada no Samsung S24 Ultra. Meta para padrão premium: até 1s, ideal abaixo de 500ms. Diagnóstico pendente na Fase 2-O.6.
 Ainda não é o visual final absoluto do produto.
 
 Observação:
@@ -857,22 +876,32 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2 e 2-O.3 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3 e 2-O.5 concluídas.
 
-Fase 2-O — Apex Metrics Real v1 (parcialmente concluída):
+Fase 2-O — Apex Metrics Real v1 (métricas v1 implementadas e validadas; diagnóstico 2-O.6 pendente antes da Fase 2-P):
 - Fase 2-O.1: camada de dados de métricas reais criada.
 - Fase 2-O.2: dados de métricas reais integrados ao Apex Scan.
 - Fase 2-O.3: seção "MÉTRICAS REAIS" exibida na GameDetailScreen.
   - RAM disponível, RAM total, estado de memória e latência Apex implementados.
   - FPS real e GPU real: fora da v1, em estudo futuro.
+- Fase 2-O.5: revisão visual aprovada no Samsung S24 Ultra.
+  - Observação de performance: abertura do Detalhe com ~3s de demora. Não bloqueador.
+  - Meta futura: abertura em até 1s, idealmente abaixo de 500ms.
 
 Próximo passo imediato:
-- Fase 2-O.5 — Revisão visual das métricas reais no celular físico
-  - Validar visualmente a seção "MÉTRICAS REAIS" no Samsung S24 Ultra.
-  - Confirmar loading, erro, timeout e sem rede no dispositivo real.
-  - Sem implementação nova. Apenas validação visual.
-  - Aguarda aprovação.
-- ou Fase 2-P — Modo Foco Gamer (após validação visual da Fase 2-O.5).
+- Fase 2-O.6 — Diagnóstico de performance da navegação Biblioteca → Detalhe
+  - Medir onde está a demora (~3s observados no Samsung S24 Ultra).
+  - Verificar se a origem é: ícone (MethodChannel getAppIcon), Apex Scan
+    (ApexScanService), métricas reais (DeviceMetricsService), animações,
+    FutureBuilder, reconstrução de tela ou combinação.
+  - Não implementar correção sem diagnóstico concluído.
+  - Não alterar escopo da Fase 2-O.5.
+  - Aguarda aprovação de escopo.
+
+Fase estratégica seguinte:
+- Fase 2-P — Modo Foco Gamer
+  - Inicia após Fase 2-O.6 resolvida ou classificada (latência aceitável ou
+    plano de correção definido).
   - Aguarda aprovação de escopo.
 
 Nota estratégica:
