@@ -783,6 +783,18 @@ Concluído:
   - Integração com ABRIR JOGO não implementada nesta fase.
   - flutter analyze passando. flutter test passando (102/102).
   - Validação visual no Samsung S24 Ultra aprovada.
+- Fase 2-P.6 concluída: Modo Foco Gamer integrado ao fluxo ABRIR JOGO.
+  - saveAndEnable chamado antes de abrir o jogo quando permissão concedida.
+  - Ausência de permissão não bloqueia o lançamento do jogo.
+  - Falha do saveAndEnable não bloqueia o lançamento do jogo.
+  - restore chamado ao retornar ao app (AppLifecycleState.resumed), apenas se o app ativou o Modo Foco.
+  - restore protegido no dispose sem setState e sem travar a tela.
+  - App não abre configurações Android automaticamente.
+  - Estado anterior do Não Perturbe respeitado.
+  - Nenhuma nova permissão adicionada.
+  - AndroidManifest não alterado. MainActivity não alterada. Configurações não alterada.
+  - flutter analyze passando. flutter test passando (102/102).
+  - Validação no Samsung S24 Ultra aprovada: com permissão concedida, sem permissão concedida, jogo abre normalmente, sem crash, sem tela vermelha, sem bloqueio do ABRIR JOGO.
 
 Observação sobre a Fase 1.6B:
 
@@ -881,6 +893,10 @@ Arquivos alterados na Fase 2-P.4:
 - lib/presentation/screens/home/tabs/configuracoes_tab.dart (alterado — card Modo Foco Gamer adicionado)
 - test/data/services/focus_mode_service_impl_test.dart (alterado — testes atualizados para canal correto)
 
+Arquivos alterados na Fase 2-P.6:
+
+- lib/presentation/screens/game_detail/game_detail_screen.dart (alterado — integração do Modo Foco Gamer ao fluxo ABRIR JOGO)
+
 Estado visual atual:
 
 Aprovado como checkpoint da Fase 2-O.5: seção "MÉTRICAS REAIS" validada no Samsung S24 Ultra com RAM disponível, RAM total, estado de memória e latência Apex lidos do dispositivo real.
@@ -888,6 +904,7 @@ Indicadores visuais (FPS, RAM, GPU, Ping, Otimização, Boost, Performance) são
 flutter analyze e flutter test passando (90/90).
 Fase 2-O.6 concluída por diagnóstico: demora de ~3s observada apenas no cold start (primeira abertura após iniciar o app). Após cache aquecido (SharedPreferences + getInstalledApps), navegação seguinte abre imediata. Sem crash, sem tela vermelha, sem bloqueio funcional. Classificado como refinamento futuro, não bloqueador. Meta futura: abertura em até 1s, ideal abaixo de 500ms.
 Fase 2-P.4 aprovada: UI de permissão do Modo Foco Gamer validada no Samsung S24 Ultra. flutter analyze e flutter test passando (102/102).
+Fase 2-P.6 aprovada: integração do Modo Foco Gamer ao ABRIR JOGO validada no Samsung S24 Ultra com e sem permissão concedida. flutter analyze e flutter test passando (102/102).
 Ainda não é o visual final absoluto do produto.
 
 Observação:
@@ -908,14 +925,14 @@ Pendências conhecidas:
 - Billing não implementado.
 - Firebase não implementado.
 - Overlay gamer não implementado.
-- Modo Foco Gamer: UI de permissão implementada (Fase 2-P.4). Ativação real do DND antes de abrir jogo, restore ao voltar, e integração com ABRIR JOGO ainda não implementados.
+- Modo Foco Gamer: UI de permissão implementada (Fase 2-P.4). Integração ao ABRIR JOGO implementada (Fase 2-P.6). Persistência segura do estado DND se o processo Android morrer: pendente. Ajustes avançados de lifecycle: pendente.
 - Usage Stats não implementado.
 
 ---
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3 e 2-P.4 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4 e 2-P.6 concluídas.
 
 Fase 2-O — Apex Metrics Real v1 (concluída):
 - Fase 2-O.1: camada de dados de métricas reais criada.
@@ -933,14 +950,26 @@ Fase 2-O — Apex Metrics Real v1 (concluída):
   - Classificado como refinamento futuro, não bloqueador.
   - Logs temporários [DIAG 2-O.6A] removidos do código.
 
-Fase 2-P — Modo Foco Gamer (em andamento):
+Fase 2-P — Modo Foco Gamer (integração principal concluída; revisão end-to-end pendente):
 - Fase 2-P.2: base Android/Kotlin criada (MethodChannel focus_mode, AndroidManifest, métodos).
 - Fase 2-P.3: camada Dart criada (FocusModeService, FocusModeServiceImpl, testes).
 - Fase 2-P.4: UI de permissão criada e validada no Samsung S24 Ultra.
+- Fase 2-P.6: integração do Modo Foco Gamer ao ABRIR JOGO concluída e validada.
+  - saveAndEnable chamado antes de abrir o jogo quando permissão concedida.
+  - Ausência de permissão não bloqueia o lançamento do jogo.
+  - Falha do Modo Foco não bloqueia o lançamento do jogo.
+  - restore chamado ao retornar ao app, apenas se o app ativou o Modo Foco.
+  - restore protegido no dispose sem setState.
+  - App não abre configurações automaticamente.
+  - Estado anterior do Não Perturbe respeitado.
+  - Nenhuma nova permissão adicionada.
 
 Próximo passo imediato:
-- Fase 2-P.6 — Integrar Modo Foco Gamer ao Apex Boost Mode / ABRIR JOGO.
+- Fase 2-P.8 — Revisão end-to-end do Modo Foco Gamer no celular físico.
   - Aguarda aprovação de escopo.
+
+Fase estratégica seguinte (após 2-P.8 aprovada):
+- Fase 2-Q — Planejamento de Histórico Real / Sessões.
 
 Nota estratégica:
 - Fase 2M.4B (integração do Apex Scan na aba Preparar): adiada. A aba Preparar pode esperar.
