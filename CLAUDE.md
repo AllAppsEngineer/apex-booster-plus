@@ -414,7 +414,7 @@ A existência dessas telas não significa aprovação visual final.
 Estado funcional das abas da Home:
 
 - Aba Início: placeholder visual refinado. Sem funcionalidade real.
-- Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome via BottomSheet com autocomplete inteligente desde a primeira letra, sugestões por ranking de relevância, lista rolável sem limite artificial, seleção de sugestão preenche nome + packageName, packageName manual validado contra apps instalados, jogos fantasmas bloqueados, duplicados bloqueados com mensagem "Já instalado", favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe com validação: packageName inválido bloqueado, packageName duplicado em outro jogo bloqueado, packageName vazio permitido com fallback de ícone, packageName igual ao jogo atual permitido, edição apenas do nome preservada sem validação desnecessária, seleção de GFX Profile local via bottom sheet no detalhe, seleção restrita de apps Android instalados via AppPickerSheet com intent MAIN/LAUNCHER — entrada manual permanece como fallback, exibição de ícone real do app instalado via AppIconWidget quando packageName disponível — fallback genérico quando ausente, app desinstalado ou erro, microcopy final ajustado: contagem exibe "na biblioteca", empty state honesto "Nenhum jogo adicionado ainda.", subtítulo orienta ação real, copy do card Perfis locais reflete que GFX Profile já existe no detalhe de cada jogo, launcher real implementado na GameDetailScreen via botão ABRIR JOGO com Apex Boost Mode visual antes da abertura).
+- Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome via BottomSheet com autocomplete inteligente desde a primeira letra, sugestões por ranking de relevância, lista rolável sem limite artificial, seleção de sugestão preenche nome + packageName, packageName manual validado contra apps instalados, jogos fantasmas bloqueados, duplicados bloqueados com mensagem "Já instalado", favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe com validação: packageName inválido bloqueado, packageName duplicado em outro jogo bloqueado, packageName vazio permitido com fallback de ícone, packageName igual ao jogo atual permitido, edição apenas do nome preservada sem validação desnecessária, seleção de GFX Profile local via bottom sheet no detalhe, seleção restrita de apps Android instalados via AppPickerSheet com intent MAIN/LAUNCHER — entrada manual permanece como fallback, exibição de ícone real do app instalado via AppIconWidget quando packageName disponível — fallback genérico quando ausente, app desinstalado ou erro, microcopy final ajustado: contagem exibe "na biblioteca", empty state honesto "Nenhum jogo adicionado ainda.", subtítulo orienta ação real, copy do card Perfis locais reflete que GFX Profile já existe no detalhe de cada jogo, launcher real implementado na GameDetailScreen via botão ABRIR JOGO com Apex Boost Mode visual antes da abertura). Observação (descoberta Fase 2-Q.4): o launcher abre qualquer packageName válido instalado, incluindo apps não-game como Waze. O Android não diferencia automaticamente neste fluxo. Não é bug técnico — é lacuna de classificação/curadoria gamer. Não quebrou a Fase 2-Q.4. Tratamento futuro planejado na Fase 2-R.
 - Aba Preparar: placeholder visual. Sem funcionalidade real.
 - Aba Histórico: placeholder visual. Sem funcionalidade real.
 - Aba Configurações: card "Modo Foco Gamer" implementado (Fase 2-P.4) com UI de permissão. Restante placeholder visual.
@@ -932,7 +932,8 @@ Pendências conhecidas:
 - GFX Profile avançado não implementado (perfis futuros: Fluidez, Competitivo, Ultra Visual, Personalizado).
 - Apex Scan: motor local criado (Fase 2M.2). Card visual implementado no Detalhe do Jogo (Fase 2M.4A). Métricas reais parciais implementadas (Fase 2-O.3): RAM disponível, RAM total, estado de memória e latência Apex. Integração na aba Preparar ainda não implementada. FPS real, GPU real, limpeza de RAM, boost real e otimização real não implementados.
 - Boost Engine não implementado.
-- Histórico real não implementado.
+- Histórico real: captura local integrada até a Fase 2-Q.4 (SessionRecord, repositório, registro ao abrir jogo, validação no celular físico). Exibição na aba Histórico ainda não implementada (Fase 2-Q.5 pendente).
+- Classificação/curadoria gamer da Biblioteca: apps não-game podem ser adicionados e abertos se tiverem packageName válido. Exemplo observado: Waze. Não é bug crítico — é lacuna de curadoria. Sem bloqueio atual. Tratamento futuro na Fase 2-R.
 - Configurações reais não implementadas.
 - Hive não implementado (shared_preferences cobre a necessidade atual).
 - Billing não implementado.
@@ -945,7 +946,7 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6 e 2-P.8 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3 e 2-Q.4 concluídas.
 
 Fase 2-O — Apex Metrics Real v1 (concluída):
 - Fase 2-O.1: camada de dados de métricas reais criada.
@@ -981,9 +982,25 @@ Fase 2-P — Modo Foco Gamer (concluída):
   - Fluxo sem permissão aprovado: jogo abre normalmente, app não abre configurações automaticamente, fluxo não trava.
   - ABRIR JOGO não bloqueado em nenhum cenário.
 
+Fase 2-Q — Histórico Real / Sessões: captura local integrada até a Fase 2-Q.4; exibição na aba Histórico ainda pendente.
+- Fase 2-Q.1: domínio SessionRecord criado.
+- Fase 2-Q.2: repositório local de histórico criado.
+- Fase 2-Q.3: integração ao launcher implementada (sessão registrada ao abrir jogo).
+- Fase 2-Q.4: validação no celular físico concluída.
+
 Próximo passo imediato:
-- Fase 2-Q — Planejamento de Histórico Real / Sessões.
+- Fase 2-Q.5 — Exibir histórico real na HistoricoTab.
   - Aguarda aprovação de escopo.
+
+Fase futura sugerida:
+- Fase 2-R — Validação/Classificação Gamer de Apps: não iniciada. Aguarda aprovação de escopo em momento oportuno.
+  - Origem: descoberta da Fase 2-Q.4 — apps não-game (ex: Waze) podem ser adicionados e abertos via packageName válido. Não é bug crítico. É lacuna de classificação/curadoria gamer.
+  - Possível escopo futuro:
+    - detectar categoria GAME quando disponível no Android;
+    - alertar quando o app não for classificado como jogo;
+    - sinalizar ou impedir apps claramente não-game;
+    - manter fallback manual (nem todo jogo se identifica como game no Android);
+    - evitar bloquear jogos reais por classificação incompleta.
 
 Nota estratégica:
 - Fase 2M.4B (integração do Apex Scan na aba Preparar): adiada. A aba Preparar pode esperar.
@@ -1008,7 +1025,8 @@ Na Fase 2, até aprovação individual de cada item, é proibido:
 - commitar visual não aprovado;
 - alterar nome Android sem aprovação explícita;
 - alterar launcher icon sem aprovação explícita;
-- avançar para Fase 3 sem Fase 2 funcional aprovada.
+- avançar para Fase 3 sem Fase 2 funcional aprovada;
+- implementar classificação automática de categoria de app (game detection) sem aprovação explícita.
 
 ---
 
