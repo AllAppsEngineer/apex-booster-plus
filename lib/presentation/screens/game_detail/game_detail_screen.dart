@@ -19,6 +19,8 @@ import 'package:apex_booster_plus/domain/services/apex_scan_service.dart';
 import 'package:apex_booster_plus/presentation/widgets/app_icon_widget.dart';
 import 'package:apex_booster_plus/data/services/focus_mode_service_impl.dart';
 import 'package:apex_booster_plus/domain/services/focus_mode_service.dart';
+import 'package:apex_booster_plus/domain/entities/session_record.dart';
+import 'package:apex_booster_plus/data/repositories/shared_preferences_session_repository.dart';
 
 class GameDetailScreen extends StatefulWidget {
   final String gameId;
@@ -188,6 +190,8 @@ class _GameDetailScreenState extends State<GameDetailScreen>
     final pkg = _game?.packageName;
     if (pkg == null || pkg.isEmpty) return;
 
+    final launchedAt = DateTime.now();
+
     final focusResult = await _focusService.saveAndEnable();
     if (mounted && focusResult == FocusModeResult.success) {
       _focusWasEnabled = true;
@@ -206,6 +210,16 @@ class _GameDetailScreenState extends State<GameDetailScreen>
     );
 
     if (!mounted) return;
+
+    // Build record synchronously — launchStatus known before any await.
+    final launchStatus = error == null ? 'success' : 'failed';
+    final record = _buildSessionRecord(
+      focusResult: focusResult,
+      launchStatus: launchStatus,
+      launchedAt: launchedAt,
+    );
+    if (record != null) unawaited(_saveSessionRecord(record));
+
     if (error == null) return;
 
     final message = error is PlatformException && error.code == 'APP_NOT_FOUND'
@@ -219,6 +233,69 @@ class _GameDetailScreenState extends State<GameDetailScreen>
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  SessionRecord? _buildSessionRecord({
+    required FocusModeResult focusResult,
+    required String launchStatus,
+    required DateTime launchedAt,
+  }) {
+    final game = _game;
+    if (game == null) return null;
+
+    final focusModeAvailable = focusResult != FocusModeResult.noPermission;
+    final focusModeResultStr = switch (focusResult) {
+      FocusModeResult.success => 'enabled',
+      FocusModeResult.noPermission => 'noPermission',
+      FocusModeResult.notActive => 'skipped',
+      FocusModeResult.error => 'error',
+    };
+
+    final metrics = _metricsError ? null : _deviceMetrics;
+    final metricsAvailable = metrics != null;
+
+    int? memAvailMb;
+    int? memTotalMb;
+    String? memState;
+    int? latencyMs;
+
+    if (metricsAvailable) {
+      if (metrics.availableMemoryBytes > 0) {
+        memAvailMb = (metrics.availableMemoryBytes / (1024 * 1024)).round();
+      }
+      if (metrics.totalMemoryBytes > 0) {
+        memTotalMb = (metrics.totalMemoryBytes / (1024 * 1024)).round();
+      }
+      memState = metrics.isLowMemory ? 'low' : 'normal';
+      if (metrics.latencyStatus == LatencyStatus.success) {
+        latencyMs = metrics.latencyMs;
+      }
+    }
+
+    return SessionRecord(
+      id: '${launchedAt.millisecondsSinceEpoch}_${game.id}',
+      gameId: game.id,
+      gameName: game.name,
+      packageName: game.packageName,
+      launchedAt: launchedAt,
+      launchStatus: launchStatus,
+      focusModeAvailable: focusModeAvailable,
+      focusModeAttempted: true,
+      focusModeResult: focusModeResultStr,
+      metricsAvailable: metricsAvailable,
+      memoryAvailableMb: memAvailMb,
+      memoryTotalMb: memTotalMb,
+      memoryState: memState,
+      apexLatencyMs: latencyMs,
+      gfxProfile: game.localProfileName,
+    );
+  }
+
+  Future<void> _saveSessionRecord(SessionRecord record) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await SharedPreferencesSessionRepository(prefs).addSession(record);
+    } catch (_) {}
   }
 
   Future<void> _openProfileSelector() async {
