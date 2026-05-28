@@ -41,9 +41,16 @@ class MainActivity : FlutterActivity() {
                                 !isSystem && hasLauncher && info.packageName != selfPkg
                             }
                             .map { info ->
+                                @Suppress("DEPRECATION")
+                                val isGame = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    info.category == ApplicationInfo.CATEGORY_GAME
+                                } else {
+                                    (info.flags and ApplicationInfo.FLAG_IS_GAME) != 0
+                                }
                                 mapOf(
                                     "appName" to pm.getApplicationLabel(info).toString(),
                                     "packageName" to info.packageName,
+                                    "isGame" to isGame,
                                 )
                             }
                             .sortedBy { it["appName"] as String }
