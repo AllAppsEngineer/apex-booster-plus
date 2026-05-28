@@ -171,6 +171,16 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
       return;
     }
     if (result is AppPickerSelected) {
+      if (!result.app.isGame) {
+        if (!mounted) return;
+        final confirmed = await showDialog<bool>(
+          context: context,
+          barrierColor: Colors.black.withValues(alpha: 0.75),
+          builder: (_) => const _NotVerifiedGameDialog(),
+        );
+        if (confirmed != true) return;
+        if (!mounted) return;
+      }
       await _openAddGameDialog(
         initialName: result.app.appName,
         initialPackageName: result.app.packageName,
@@ -951,6 +961,70 @@ class _RemoveGameDialog extends StatelessWidget {
           ),
           child: const Text(
             'Remover',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Not verified game dialog ─────────────────────────────────────────────────
+
+class _NotVerifiedGameDialog extends StatelessWidget {
+  const _NotVerifiedGameDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF111318),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: AppColors.cyberBlue.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      title: const Text(
+        'App não verificado como jogo',
+        style: TextStyle(
+          color: AppColors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+      ),
+      content: const Text(
+        'Este app não foi identificado pelo Android como um jogo.\n'
+        'Você ainda pode adicioná-lo à sua biblioteca.\n'
+        'Adicionar mesmo assim?',
+        style: TextStyle(
+          color: AppColors.textGray,
+          fontSize: 14,
+          height: 1.5,
+        ),
+      ),
+      actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text(
+            'Cancelar',
+            style: TextStyle(color: AppColors.textGray),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.cyberBlue,
+            foregroundColor: AppColors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            elevation: 0,
+          ),
+          child: const Text(
+            'Adicionar mesmo assim',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
         ),
