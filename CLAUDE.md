@@ -416,7 +416,7 @@ Estado funcional das abas da Home:
 - Aba Início: placeholder visual refinado. Sem funcionalidade real.
 - Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome via BottomSheet com autocomplete inteligente desde a primeira letra, sugestões por ranking de relevância, lista rolável sem limite artificial, seleção de sugestão preenche nome + packageName, packageName manual validado contra apps instalados, jogos fantasmas bloqueados, duplicados bloqueados com mensagem "Já instalado", favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe com validação: packageName inválido bloqueado, packageName duplicado em outro jogo bloqueado, packageName vazio permitido com fallback de ícone, packageName igual ao jogo atual permitido, edição apenas do nome preservada sem validação desnecessária, seleção de GFX Profile local via bottom sheet no detalhe, seleção restrita de apps Android instalados via AppPickerSheet com intent MAIN/LAUNCHER — entrada manual permanece como fallback, exibição de ícone real do app instalado via AppIconWidget quando packageName disponível — fallback genérico quando ausente, app desinstalado ou erro, microcopy final ajustado: contagem exibe "na biblioteca", empty state honesto "Nenhum jogo adicionado ainda.", subtítulo orienta ação real, copy do card Perfis locais reflete que GFX Profile já existe no detalhe de cada jogo, launcher real implementado na GameDetailScreen via botão ABRIR JOGO com Apex Boost Mode visual antes da abertura). Observação (descoberta Fase 2-Q.4): o launcher abre qualquer packageName válido instalado, incluindo apps não-game como Waze. O Android não diferencia automaticamente neste fluxo. Não é bug técnico — é lacuna de classificação/curadoria gamer. Não quebrou a Fase 2-Q.4. Tratamento futuro planejado na Fase 2-R.
 - Aba Preparar: placeholder visual. Sem funcionalidade real.
-- Aba Histórico: placeholder visual. Sem funcionalidade real.
+- Aba Histórico: histórico real implementado (Fase 2-Q.5): exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository; estado vazio honesto; status success/attempted/failed exibidos sem prometer duração real; revisão visual premium pendente (Fase 2-Q.7).
 - Aba Configurações: card "Modo Foco Gamer" implementado (Fase 2-P.4) com UI de permissão. Restante placeholder visual.
 
 ---
@@ -807,6 +807,21 @@ Concluído:
     - App não tenta abrir configurações Android automaticamente.
     - Fluxo não trava.
   - Modo Foco Gamer integrado e validado de ponta a ponta.
+- Fase 2-Q.1 concluída: domínio SessionRecord criado.
+- Fase 2-Q.2 concluída: repositório local de histórico criado (SharedPreferencesSessionRepository).
+- Fase 2-Q.3 concluída: integração ao launcher implementada (sessão registrada ao abrir jogo).
+- Fase 2-Q.4 concluída: validação no celular físico concluída.
+  - Descoberta: launcher abre qualquer packageName válido instalado, incluindo apps não-game.
+  - Lacuna de classificação/curadoria gamer. Não é bug crítico.
+- Fase 2-Q.5 concluída: HistoricoTab exibe histórico real de sessões.
+  - HistoricoTab conectada ao SharedPreferencesSessionRepository.
+  - Exibe lista de SessionRecord salvas localmente.
+  - Estado vazio honesto quando não há sessões.
+  - Status das sessões exibido: success, attempted, failed.
+  - Sem termos falsos: sem "tempo jogado", "duração" ou "partida concluída".
+  - Placeholder visual substituído por funcionalidade real.
+  - Apps não-game podem aparecer no histórico se forem abertos por packageName válido (lacuna de curadoria, não bug crítico).
+  - flutter analyze passando. flutter test passando.
 
 Observação sobre a Fase 1.6B:
 
@@ -909,6 +924,14 @@ Arquivos alterados na Fase 2-P.6:
 
 - lib/presentation/screens/game_detail/game_detail_screen.dart (alterado — integração do Modo Foco Gamer ao fluxo ABRIR JOGO)
 
+Arquivos relevantes criados ou alterados nas Fases 2-Q.1 a 2-Q.5:
+
+- lib/domain/entities/session_record.dart (criado — entity SessionRecord)
+- lib/domain/repositories/session_repository.dart (criado — contrato SessionRepository)
+- lib/data/repositories/shared_preferences_session_repository.dart (criado — persistência local de sessões)
+- lib/presentation/screens/game_detail/game_detail_screen.dart (alterado — registro de sessão ao abrir jogo)
+- lib/presentation/screens/home/tabs/historico_tab.dart (alterado — exibição real de sessões)
+
 Estado visual atual:
 
 Aprovado como checkpoint da Fase 2-O.5: seção "MÉTRICAS REAIS" validada no Samsung S24 Ultra com RAM disponível, RAM total, estado de memória e latência Apex lidos do dispositivo real.
@@ -918,6 +941,7 @@ Fase 2-O.6 concluída por diagnóstico: demora de ~3s observada apenas no cold s
 Fase 2-P.4 aprovada: UI de permissão do Modo Foco Gamer validada no Samsung S24 Ultra. flutter analyze e flutter test passando (102/102).
 Fase 2-P.6 aprovada: integração do Modo Foco Gamer ao ABRIR JOGO validada no Samsung S24 Ultra com e sem permissão concedida. flutter analyze e flutter test passando (102/102).
 Fase 2-P.8 aprovada: revisão end-to-end do Modo Foco Gamer validada no Samsung S24 Ultra. Fluxo com permissão e sem permissão aprovados. ABRIR JOGO não bloqueado. Sem crash. Sem tela vermelha. Sem travamento.
+Fase 2-Q.5 implementada: HistoricoTab exibe histórico real de sessões via SharedPreferencesSessionRepository. Revisão visual premium pendente (Fase 2-Q.7).
 Ainda não é o visual final absoluto do produto.
 
 Observação:
@@ -932,7 +956,7 @@ Pendências conhecidas:
 - GFX Profile avançado não implementado (perfis futuros: Fluidez, Competitivo, Ultra Visual, Personalizado).
 - Apex Scan: motor local criado (Fase 2M.2). Card visual implementado no Detalhe do Jogo (Fase 2M.4A). Métricas reais parciais implementadas (Fase 2-O.3): RAM disponível, RAM total, estado de memória e latência Apex. Integração na aba Preparar ainda não implementada. FPS real, GPU real, limpeza de RAM, boost real e otimização real não implementados.
 - Boost Engine não implementado.
-- Histórico real: captura local integrada até a Fase 2-Q.4 (SessionRecord, repositório, registro ao abrir jogo, validação no celular físico). Exibição na aba Histórico ainda não implementada (Fase 2-Q.5 pendente).
+- Histórico real: captura e exibição local implementadas (Fases 2-Q.1 a 2-Q.5). HistoricoTab exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository. Revisão visual premium da HistoricoTab pendente (Fase 2-Q.7).
 - Classificação/curadoria gamer da Biblioteca: apps não-game podem ser adicionados e abertos se tiverem packageName válido. Exemplo observado: Waze. Não é bug crítico — é lacuna de curadoria. Sem bloqueio atual. Tratamento futuro na Fase 2-R.
 - Configurações reais não implementadas.
 - Hive não implementado (shared_preferences cobre a necessidade atual).
@@ -946,7 +970,7 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3 e 2-Q.4 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5 e 2-Q.6 concluídas.
 
 Fase 2-O — Apex Metrics Real v1 (concluída):
 - Fase 2-O.1: camada de dados de métricas reais criada.
@@ -982,14 +1006,20 @@ Fase 2-P — Modo Foco Gamer (concluída):
   - Fluxo sem permissão aprovado: jogo abre normalmente, app não abre configurações automaticamente, fluxo não trava.
   - ABRIR JOGO não bloqueado em nenhum cenário.
 
-Fase 2-Q — Histórico Real / Sessões: captura local integrada até a Fase 2-Q.4; exibição na aba Histórico ainda pendente.
+Fase 2-Q — Histórico Real / Sessões (captura e exibição local concluídas; revisão visual premium pendente):
 - Fase 2-Q.1: domínio SessionRecord criado.
-- Fase 2-Q.2: repositório local de histórico criado.
+- Fase 2-Q.2: repositório local de histórico criado (SharedPreferencesSessionRepository).
 - Fase 2-Q.3: integração ao launcher implementada (sessão registrada ao abrir jogo).
 - Fase 2-Q.4: validação no celular físico concluída.
+- Fase 2-Q.5: HistoricoTab exibe histórico real de sessões.
+  - HistoricoTab conectada ao SharedPreferencesSessionRepository.
+  - Exibe SessionRecord salvas localmente.
+  - Estado vazio honesto. Status sem termos falsos (sem duração, sem tempo jogado).
+  - Apps não-game podem aparecer se abertos por packageName válido (lacuna de curadoria).
+- Fase 2-Q.6: CLAUDE.md atualizado para refletir Fase 2-Q.5 e setup auxiliar de skills.
 
 Próximo passo imediato:
-- Fase 2-Q.5 — Exibir histórico real na HistoricoTab.
+- Fase 2-Q.7 — Revisão visual premium da HistoricoTab no Samsung S24 Ultra com apoio do UI/UX Pro Max.
   - Aguarda aprovação de escopo.
 
 Fase futura sugerida:
@@ -1344,3 +1374,43 @@ Não estamos apenas fazendo telas funcionarem.
 Estamos construindo um produto Android gamer premium, honesto, vendável, tecnicamente limpo e visualmente forte.
 
 Se uma implementação passar nos testes, mas parecer ruim no celular, ela está reprovada.
+
+---
+
+## 30. SKILLS AUXILIARES DE DESENVOLVIMENTO
+
+O projeto utiliza dois sistemas auxiliares de metodologia e design, além do CLAUDE.md como fonte soberana.
+
+CLAUDE.md — Fonte soberana:
+
+Este arquivo é o contrato técnico, visual e estratégico do projeto.
+Em caso de conflito entre skills, conversa ou suposição, o CLAUDE.md vence.
+
+Superpowers — Metodologia de desenvolvimento:
+
+Plugin global instalado no Claude Code.
+Responsável por:
+- metodologia de trabalho (fluxo de sessão, planejamento);
+- TDD (test-driven development);
+- revisão de código;
+- debugging sistemático;
+- brainstorming de features;
+- execução de planos.
+
+UI/UX Pro Max — Design e experiência:
+
+Skill instalada localmente no projeto (.claude/skills/ui-ux-pro-max).
+Responsável por:
+- UX/UI gamer premium;
+- hierarquia visual;
+- layout e tipografia;
+- padrão de componentes;
+- revisão de telas antes da validação no celular físico.
+
+Regra de uso:
+
+As skills são ferramentas auxiliares que apoiam a execução.
+Não substituem o CLAUDE.md.
+Não alteram regras do produto.
+Não liberam implementações proibidas.
+Não autorizam features novas.
