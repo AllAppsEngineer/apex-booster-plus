@@ -6,7 +6,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_game_library_repository.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_session_repository.dart';
+import 'package:apex_booster_plus/data/services/device_metrics_service_impl.dart';
+import 'package:apex_booster_plus/data/services/focus_mode_service_impl.dart';
 import 'package:apex_booster_plus/domain/entities/apex_game.dart';
+import 'package:apex_booster_plus/domain/entities/device_metrics.dart';
 import 'package:apex_booster_plus/domain/entities/session_record.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_badge.dart';
@@ -91,15 +94,22 @@ class PrepararTab extends StatefulWidget {
 }
 
 class _PrepararTabState extends State<PrepararTab> {
+  // Game / session state
   bool _loading = true;
   List<ApexGame> _games = [];
   ApexGame? _selectedGame;
   List<_PrepScanCheck> _scanChecks = [];
 
+  // Device snapshot state — independent loading cycle
+  bool _metricsLoading = true;
+  DeviceMetrics? _metrics;
+  bool? _focusGranted;
+
   @override
   void initState() {
     super.initState();
     _load();
+    _loadMetrics(); // runs concurrently, never blocks game display
   }
 
   Future<void> _load() async {
@@ -122,6 +132,41 @@ class _PrepararTabState extends State<PrepararTab> {
         _selectedGame = selected;
         _scanChecks = selected != null ? _buildScanChecks(selected) : [];
         _loading = false;
+      });
+    }
+  }
+
+  Future<void> _loadMetrics() async {
+    // Start both futures concurrently before any await.
+    final metricsFuture = DeviceMetricsServiceImpl().measure().timeout(
+          const Duration(seconds: 6),
+          onTimeout: () => DeviceMetrics.empty(),
+        );
+    final focusFuture = FocusModeServiceImpl().isPermissionGranted();
+
+    DeviceMetrics? metrics;
+    bool? focusGranted;
+
+    try {
+      final m = await metricsFuture;
+      // Trava 1: reject zeroed metrics — DeviceMetrics.empty() or real failure.
+      // Only accept if totalMemoryBytes is non-zero, signalling a real reading.
+      if (m.totalMemoryBytes > 0) metrics = m;
+    } catch (_) {
+      // leave null → each row shows "Indisponível"
+    }
+
+    try {
+      focusGranted = await focusFuture;
+    } catch (_) {
+      // leave null → shows "Indisponível"
+    }
+
+    if (mounted) {
+      setState(() {
+        _metrics = metrics;
+        _focusGranted = focusGranted;
+        _metricsLoading = false;
       });
     }
   }
@@ -184,6 +229,12 @@ class _PrepararTabState extends State<PrepararTab> {
                         game: _selectedGame!,
                       ),
                     ],
+                    const SizedBox(height: 16),
+                    _DeviceSnapshotCard(
+                      loading: _metricsLoading,
+                      metrics: _metrics,
+                      focusGranted: _focusGranted,
+                    ),
                     const SizedBox(height: 32),
                     _PrepararCTA(game: _selectedGame),
                   ],
@@ -318,13 +369,38 @@ class _SelectedGameCard extends StatelessWidget {
               if (showTrocar)
                 GestureDetector(
                   onTap: onTrocar,
-                  child: Text(
-                    'TROCAR',
-                    style: TextStyle(
-                      color: AppColors.apexGreen.withValues(alpha: 0.85),
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.apexGreen.withValues(alpha: 0.07),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: AppColors.apexGreen.withValues(alpha: 0.40),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.swap_horiz_rounded,
+                          size: 13,
+                          color: AppColors.apexGreen.withValues(alpha: 0.85),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'TROCAR',
+                          style: TextStyle(
+                            color: AppColors.apexGreen.withValues(alpha: 0.85),
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -443,7 +519,48 @@ class _PrepScanCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const ApexBadge(label: 'APEX SCAN', color: AppColors.cyberBlue),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.cyberBlue.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: AppColors.cyberBlue.withValues(alpha: 0.30),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.track_changes_rounded,
+                      size: 14,
+                      color: AppColors.cyberBlue,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'APEX SCAN',
+                        style: TextStyle(
+                          color: AppColors.cyberBlue,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.4,
+                        ),
+                      ),
+                      Text(
+                        'Verificação local do jogo',
+                        style: TextStyle(
+                          color: AppColors.textGray.withValues(alpha: 0.70),
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -566,6 +683,246 @@ class _ScanCheckRow extends StatelessWidget {
   }
 }
 
+// ── Device snapshot card ──────────────────────────────────────────────────────
+
+class _DeviceSnapshotCard extends StatelessWidget {
+  final bool loading;
+  final DeviceMetrics? metrics;
+  final bool? focusGranted;
+
+  const _DeviceSnapshotCard({
+    required this.loading,
+    required this.metrics,
+    required this.focusGranted,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.energyOrange.withValues(alpha: 0.10),
+            AppColors.white.withValues(alpha: 0.03),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.energyOrange.withValues(alpha: 0.25),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.energyOrange.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: AppColors.energyOrange.withValues(alpha: 0.30),
+                    width: 1,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.memory_rounded,
+                  size: 14,
+                  color: AppColors.energyOrange,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'SNAPSHOT DO DISPOSITIVO',
+                    style: TextStyle(
+                      color: AppColors.energyOrange,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                  Text(
+                    'Leitura local do dispositivo',
+                    style: TextStyle(
+                      color: AppColors.textGray.withValues(alpha: 0.70),
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (loading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: CircularProgressIndicator(
+                  color: AppColors.energyOrange,
+                  strokeWidth: 2,
+                ),
+              ),
+            )
+          else ...[
+            _SnapshotRow(
+              label: 'Memória disponível',
+              value: _formatMemoryMb(metrics?.availableMemoryMb),
+              valueColor: _availableMemoryColor(metrics),
+            ),
+            _SnapshotRow(
+              label: 'Memória total',
+              value: _formatMemoryMb(metrics?.totalMemoryMb),
+              valueColor: AppColors.white.withValues(alpha: 0.85),
+            ),
+            _SnapshotRow(
+              label: 'Estado da memória',
+              value: _memoryStateLabel(metrics),
+              valueColor: _memoryStateColor(metrics),
+            ),
+            _SnapshotRow(
+              label: 'Latência Apex',
+              value: _latencyLabel(metrics),
+              valueColor: _latencyColor(metrics),
+            ),
+            _SnapshotRow(
+              label: 'Modo Foco',
+              value: _focusLabel(focusGranted),
+              valueColor: _focusColor(focusGranted),
+            ),
+          ],
+          const SizedBox(height: 10),
+          Divider(
+            color: AppColors.white.withValues(alpha: 0.08),
+            thickness: 1,
+            height: 1,
+          ),
+          const SizedBox(height: 10),
+          // Trava 2: disclaimer sempre visível, reforça caráter informativo/local.
+          Text(
+            'Snapshot local. Não representa alteração automática no jogo.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textGray.withValues(alpha: 0.7),
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                ),
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(delay: 150.ms, duration: 500.ms)
+        .slideY(begin: 0.04, end: 0, duration: 400.ms);
+  }
+
+  // Trava 1: null → "Indisponível". Zero MB from a real device is still shown
+  // as a legitimate reading; only null (failed/empty metric) becomes a label.
+  static String _formatMemoryMb(double? mb) {
+    if (mb == null) return 'Indisponível';
+    return '${mb.round()} MB';
+  }
+
+  static Color _availableMemoryColor(DeviceMetrics? m) {
+    if (m == null) return AppColors.textGray;
+    return m.isLowMemory ? AppColors.energyOrange : AppColors.apexGreen;
+  }
+
+  static String _memoryStateLabel(DeviceMetrics? m) {
+    if (m == null) return 'Indisponível';
+    return m.isLowMemory ? 'Crítico' : 'Normal';
+  }
+
+  static Color _memoryStateColor(DeviceMetrics? m) {
+    if (m == null) return AppColors.textGray;
+    return m.isLowMemory ? AppColors.energyOrange : AppColors.apexGreen;
+  }
+
+  static String _latencyLabel(DeviceMetrics? m) {
+    if (m == null) return 'Indisponível';
+    return switch (m.latencyStatus) {
+      LatencyStatus.success =>
+        m.latencyMs != null ? '${m.latencyMs} ms' : 'Indisponível',
+      LatencyStatus.timeout => 'Tempo esgotado',
+      LatencyStatus.noNetwork => 'Sem rede',
+      LatencyStatus.error => 'Indisponível',
+    };
+  }
+
+  static Color _latencyColor(DeviceMetrics? m) {
+    if (m == null) return AppColors.textGray;
+    return switch (m.latencyStatus) {
+      LatencyStatus.success =>
+        (m.latencyMs != null && m.latencyMs! < 100)
+            ? AppColors.apexGreen
+            : AppColors.energyOrange,
+      LatencyStatus.timeout => AppColors.energyOrange,
+      LatencyStatus.noNetwork => AppColors.textGray,
+      LatencyStatus.error => AppColors.textGray,
+    };
+  }
+
+  static String _focusLabel(bool? granted) {
+    if (granted == null) return 'Indisponível';
+    return granted ? 'Disponível' : 'Permissão necessária';
+  }
+
+  static Color _focusColor(bool? granted) {
+    if (granted == null) return AppColors.textGray;
+    return granted ? AppColors.apexGreen : AppColors.energyOrange;
+  }
+}
+
+class _SnapshotRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color valueColor;
+
+  const _SnapshotRow({
+    required this.label,
+    required this.value,
+    required this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: AppColors.white.withValues(alpha: 0.82),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            value,
+            style: TextStyle(
+              color: valueColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ── CTA ───────────────────────────────────────────────────────────────────────
 
 class _PrepararCTA extends StatelessWidget {
@@ -593,7 +950,7 @@ class _PrepararCTA extends StatelessWidget {
           elevation: 0,
         ),
         child: const Text(
-          'VER DETALHES DO JOGO',
+          'CONTINUAR PARA DETALHES',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 14,
