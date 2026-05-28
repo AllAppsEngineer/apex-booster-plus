@@ -414,7 +414,7 @@ A existência dessas telas não significa aprovação visual final.
 Estado funcional das abas da Home:
 
 - Aba Início: placeholder visual refinado. Sem funcionalidade real.
-- Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome via BottomSheet com autocomplete inteligente desde a primeira letra, sugestões por ranking de relevância, lista rolável sem limite artificial, seleção de sugestão preenche nome + packageName, packageName manual validado contra apps instalados, jogos fantasmas bloqueados, duplicados bloqueados com mensagem "Já instalado", favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe com validação: packageName inválido bloqueado, packageName duplicado em outro jogo bloqueado, packageName vazio permitido com fallback de ícone, packageName igual ao jogo atual permitido, edição apenas do nome preservada sem validação desnecessária, seleção de GFX Profile local via bottom sheet no detalhe, seleção restrita de apps Android instalados via AppPickerSheet com intent MAIN/LAUNCHER — entrada manual permanece como fallback, exibição de ícone real do app instalado via AppIconWidget quando packageName disponível — fallback genérico quando ausente, app desinstalado ou erro, microcopy final ajustado: contagem exibe "na biblioteca", empty state honesto "Nenhum jogo adicionado ainda.", subtítulo orienta ação real, copy do card Perfis locais reflete que GFX Profile já existe no detalhe de cada jogo, launcher real implementado na GameDetailScreen via botão ABRIR JOGO com Apex Boost Mode visual antes da abertura). Observação (descoberta Fase 2-Q.4): o launcher abre qualquer packageName válido instalado, incluindo apps não-game como Waze. O Android não diferencia automaticamente neste fluxo. Não é bug técnico — é lacuna de classificação/curadoria gamer. Não quebrou a Fase 2-Q.4. Tratamento futuro planejado na Fase 2-R.
+- Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome via BottomSheet com autocomplete inteligente desde a primeira letra, sugestões por ranking de relevância, lista rolável sem limite artificial, seleção de sugestão preenche nome + packageName, packageName manual validado contra apps instalados, jogos fantasmas bloqueados, duplicados bloqueados com mensagem "Já instalado", favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe com validação: packageName inválido bloqueado, packageName duplicado em outro jogo bloqueado, packageName vazio permitido com fallback de ícone, packageName igual ao jogo atual permitido, edição apenas do nome preservada sem validação desnecessária, seleção de GFX Profile local via bottom sheet no detalhe, seleção restrita de apps Android instalados via AppPickerSheet com intent MAIN/LAUNCHER — entrada manual permanece como fallback, exibição de ícone real do app instalado via AppIconWidget quando packageName disponível — fallback genérico quando ausente, app desinstalado ou erro, microcopy final ajustado: contagem exibe "na biblioteca", empty state honesto "Nenhum jogo adicionado ainda.", subtítulo orienta ação real, copy do card Perfis locais reflete que GFX Profile já existe no detalhe de cada jogo, launcher real implementado na GameDetailScreen via botão ABRIR JOGO com Apex Boost Mode visual antes da abertura). Observação (descoberta Fase 2-Q.4 — tratada na Fase 2-R): o launcher abre qualquer packageName válido instalado, incluindo apps não-game como Waze. O Android não diferencia automaticamente neste fluxo. Não é bug técnico — é lacuna de classificação/curadoria gamer. Tratamento implementado na Fase 2-R: badge "JOGO" e toggle "Apenas jogos verificados" no AppPickerSheet, confirmação obrigatória ao adicionar app com isGame == false, e badge "Não verificado" nos cards da Biblioteca para packageName com isGame == false. Nenhum app é bloqueado permanentemente — decisão fica com o usuário. ABRIR JOGO continua funcionando para qualquer packageName válido, sem restrição por isGame.
 - Aba Preparar: placeholder visual. Sem funcionalidade real.
 - Aba Histórico: histórico real implementado e visualmente refinado (Fases 2-Q.5 e 2-Q.7): exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository; estado vazio honesto; status success/attempted/failed exibidos com visual premium; sem duração real; sem "partida concluída"; revisão visual aprovada no Samsung S24 Ultra.
 - Aba Configurações: card "Modo Foco Gamer" implementado (Fase 2-P.4) com UI de permissão. Restante placeholder visual.
@@ -832,6 +832,34 @@ Concluído:
   - Sem novas permissões. Sem Firebase. Sem Usage Stats.
   - flutter analyze passando. flutter test passando (139/139).
   - Aprovado no Samsung S24 Ultra. Sem crash. Sem tela vermelha. Sem overflow.
+- Fase 2-R.1 concluída: InstalledApp.isGame adicionado ao data layer.
+  - Campo isGame (bool, default false) adicionado à entity InstalledApp.
+  - InstalledApp.fromMap lê isGame do mapa retornado pelo MethodChannel Android.
+  - MainActivity.kt retorna isGame usando ApplicationInfo.FLAG_IS_GAME e categoria GAME do Android.
+  - Sem nova permissão. Sem QUERY_ALL_PACKAGES. AndroidManifest não alterado.
+- Fase 2-R.2 concluída: badge "JOGO" e toggle "Apenas jogos verificados" no AppPickerSheet.
+  - Badge verde "JOGO" exibido para apps com isGame == true no AppPickerSheet.
+  - Toggle "Apenas jogos verificados" adicionado (inicia desligado por padrão).
+  - Quando ligado, exibe somente apps com isGame == true.
+  - Quando desligado, exibe lista completa.
+  - Estado vazio honesto quando nenhum jogo verificado corresponde à busca.
+  - Função pura applyPickerFilter criada (testável de forma isolada).
+  - flutter analyze passando. flutter test passando.
+- Fase 2-R.3 concluída: confirmação obrigatória ao adicionar app com isGame == false.
+  - Ao selecionar app com isGame == false no AppPickerSheet, diálogo de confirmação exibido.
+  - Cancelar: não adiciona o app à Biblioteca.
+  - Adicionar mesmo assim: adiciona normalmente, sem bloqueio.
+  - App com isGame == true: adiciona diretamente, sem diálogo.
+  - Nenhum app bloqueado permanentemente. Decisão fica com o usuário.
+  - flutter analyze passando. flutter test passando.
+- Fase 2-R.4 concluída: badge "Não verificado" nos cards da Biblioteca.
+  - Badge laranja "Não verificado" exibido nos cards quando: packageName está definido + app instalado + isGame == false.
+  - Apps com isGame == true não exibem badge.
+  - Apps sem packageName (entrada manual sem vínculo) não exibem badge.
+  - buildNotVerifiedSet helper criado para calcular o conjunto de packageNames não verificados.
+  - flutter analyze passando. flutter test passando (167/167).
+  - Aprovado no Samsung S24 Ultra. Sem crash. Sem tela vermelha. Sem overflow.
+- Fase 2-R.5 concluída: revisão end-to-end da Fase 2-R aprovada no Samsung S24 Ultra + CLAUDE.md atualizado.
 
 Observação sobre a Fase 1.6B:
 
@@ -946,6 +974,14 @@ Arquivos alterados na Fase 2-Q.7:
 
 - lib/presentation/screens/home/tabs/historico_tab.dart (alterado — revisão visual premium: header, cards, status chips, RAM humanizada, copy honesta preservada)
 
+Arquivos relevantes criados ou alterados nas Fases 2-R.1 a 2-R.4:
+
+- lib/domain/entities/installed_app.dart (alterado — campo isGame adicionado com fromMap)
+- android/app/src/main/kotlin/com/allappsengineer/apex_booster_plus/MainActivity.kt (alterado — isGame retornado no MethodChannel de apps instalados via FLAG_IS_GAME + categoria GAME)
+- lib/presentation/widgets/app_picker_sheet.dart (alterado — badge JOGO, toggle filtro, applyPickerFilter)
+- lib/presentation/screens/home/tabs/biblioteca_tab.dart (alterado — confirmação para isGame == false, badge Não verificado, buildNotVerifiedSet)
+- test/presentation/widgets/app_picker_sheet_filter_test.dart (criado — testes da função applyPickerFilter)
+
 Estado visual atual:
 
 Aprovado como checkpoint da Fase 2-O.5: seção "MÉTRICAS REAIS" validada no Samsung S24 Ultra com RAM disponível, RAM total, estado de memória e latência Apex lidos do dispositivo real.
@@ -957,11 +993,12 @@ Fase 2-P.6 aprovada: integração do Modo Foco Gamer ao ABRIR JOGO validada no S
 Fase 2-P.8 aprovada: revisão end-to-end do Modo Foco Gamer validada no Samsung S24 Ultra. Fluxo com permissão e sem permissão aprovados. ABRIR JOGO não bloqueado. Sem crash. Sem tela vermelha. Sem travamento.
 Fase 2-Q.5 implementada: HistoricoTab exibe histórico real de sessões via SharedPreferencesSessionRepository.
 Fase 2-Q.7 aprovada: revisão visual premium da HistoricoTab validada no Samsung S24 Ultra. Header, cards, status e chips refinados. Copy honesta preservada. flutter analyze e flutter test passando (139/139).
+Fase 2-R.5 aprovada: revisão end-to-end da Fase 2-R validada no Samsung S24 Ultra. Badge JOGO, toggle filtro, confirmação não-game e badge Não verificado funcionando. ABRIR JOGO preservado. flutter analyze passando. flutter test passando (167/167).
 Ainda não é o visual final absoluto do produto.
 
 Observação:
 
-A Biblioteca funciona com adição via BottomSheet com autocomplete inteligente (sugestões desde a primeira letra, ranking por relevância, lista rolável), validação de packageName manual contra apps instalados, bloqueio de jogos fantasmas, bloqueio de duplicados com mensagem "Já instalado", favoritar, remover, persistência entre sessões, navegação para detalhe, edição de nome e packageName com validação completa no detalhe (packageName inválido bloqueado, duplicado em outro jogo bloqueado, vazio permitido com fallback de ícone, igual ao jogo atual permitido), seleção de GFX Profile local, seleção restrita de apps instalados via AppPickerSheet (intent MAIN/LAUNCHER), e exibição de ícone real do app via AppIconWidget quando packageName disponível. Entrada manual permanece como fallback. Ícone não é persistido em disco — cache em memória por sessão. Contagem exibe "na biblioteca". Empty state honesto. Launcher real implementado na GameDetailScreen: botão ABRIR JOGO abre o app pelo packageName via Intent Android, precedido por sequência visual honesta Apex Boost Mode. Tratamento de erro presente se app não puder ser aberto. Apex Scan visual implementado na GameDetailScreen: card premium/gamer com animação, glow sutil, checks de status local e indicadores visuais. Status exibido: "Pronto para iniciar", "Cadastro incompleto" ou "App não encontrado". Motor local ApexScanService utilizado sem alteração. Seção "MÉTRICAS REAIS" implementada na GameDetailScreen (Fase 2-O.3): exibe memória disponível, memória total, estado de memória e latência Apex lidos do dispositivo real, com tratamento seguro de loading, erro, timeout e sem rede. Disclaimer exibido: "Snapshot do dispositivo. Não representa alteração de jogos." FPS real e GPU real não implementados.
+A Biblioteca funciona com adição via BottomSheet com autocomplete inteligente (sugestões desde a primeira letra, ranking por relevância, lista rolável), validação de packageName manual contra apps instalados, bloqueio de jogos fantasmas, bloqueio de duplicados com mensagem "Já instalado", favoritar, remover, persistência entre sessões, navegação para detalhe, edição de nome e packageName com validação completa no detalhe (packageName inválido bloqueado, duplicado em outro jogo bloqueado, vazio permitido com fallback de ícone, igual ao jogo atual permitido), seleção de GFX Profile local, seleção restrita de apps instalados via AppPickerSheet (intent MAIN/LAUNCHER), e exibição de ícone real do app via AppIconWidget quando packageName disponível. Entrada manual permanece como fallback. Ícone não é persistido em disco — cache em memória por sessão. Contagem exibe "na biblioteca". Empty state honesto. Launcher real implementado na GameDetailScreen: botão ABRIR JOGO abre o app pelo packageName via Intent Android, precedido por sequência visual honesta Apex Boost Mode. Tratamento de erro presente se app não puder ser aberto. Apex Scan visual implementado na GameDetailScreen: card premium/gamer com animação, glow sutil, checks de status local e indicadores visuais. Status exibido: "Pronto para iniciar", "Cadastro incompleto" ou "App não encontrado". Motor local ApexScanService utilizado sem alteração. Seção "MÉTRICAS REAIS" implementada na GameDetailScreen (Fase 2-O.3): exibe memória disponível, memória total, estado de memória e latência Apex lidos do dispositivo real, com tratamento seguro de loading, erro, timeout e sem rede. Disclaimer exibido: "Snapshot do dispositivo. Não representa alteração de jogos." FPS real e GPU real não implementados. Classificação gamer implementada (Fase 2-R): AppPickerSheet exibe badge "JOGO" para apps com isGame == true, com toggle "Apenas jogos verificados" (inicia desligado). Confirmação obrigatória ao adicionar app com isGame == false — usuário pode cancelar ou adicionar mesmo assim. Badge "Não verificado" exibido nos cards da Biblioteca para apps com packageName definido e isGame == false. Nenhum app bloqueado permanentemente. ABRIR JOGO não restrito por isGame.
 
 Pendências conhecidas:
 
@@ -971,8 +1008,7 @@ Pendências conhecidas:
 - GFX Profile avançado não implementado (perfis futuros: Fluidez, Competitivo, Ultra Visual, Personalizado).
 - Apex Scan: motor local criado (Fase 2M.2). Card visual implementado no Detalhe do Jogo (Fase 2M.4A). Métricas reais parciais implementadas (Fase 2-O.3): RAM disponível, RAM total, estado de memória e latência Apex. Integração na aba Preparar ainda não implementada. FPS real, GPU real, limpeza de RAM, boost real e otimização real não implementados.
 - Boost Engine não implementado.
-- Histórico real: captura, exibição local e revisão visual premium implementadas (Fases 2-Q.1 a 2-Q.7). HistoricoTab exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository com visual premium aprovado. Sem duração real. Sem Usage Stats. Sem Firebase. Apps não-game ainda podem aparecer no histórico (lacuna de classificação/curadoria — Fase 2-R).
-- Classificação/curadoria gamer da Biblioteca: apps não-game podem ser adicionados e abertos se tiverem packageName válido. Exemplo observado: Waze. Não é bug crítico — é lacuna de curadoria. Sem bloqueio atual. Tratamento futuro na Fase 2-R.
+- Histórico real: captura, exibição local e revisão visual premium implementadas (Fases 2-Q.1 a 2-Q.7). HistoricoTab exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository com visual premium aprovado. Sem duração real. Sem Usage Stats. Sem Firebase. Apps não-game podem aparecer no histórico se forem lançados — comportamento esperado, o histórico registra o que foi aberto sem filtro retroativo.
 - Configurações reais não implementadas.
 - Hive não implementado (shared_preferences cobre a necessidade atual).
 - Billing não implementado.
@@ -985,7 +1021,7 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6 e 2-Q.7 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4 e 2-R.5 concluídas.
 
 Fase 2-O — Apex Metrics Real v1 (concluída):
 - Fase 2-O.1: camada de dados de métricas reais criada.
@@ -1042,18 +1078,28 @@ Fase 2-Q — Histórico Real / Sessões (concluída):
   - flutter analyze passando. flutter test passando (139/139).
   - Aprovado no Samsung S24 Ultra. Sem crash. Sem tela vermelha. Sem overflow.
 
-Próximo passo imediato:
-- Fase 2-R — Planejamento de Validação/Classificação Gamer de Apps.
-  - Aguarda aprovação de escopo.
+Fase 2-R — Classificação/Curadoria Gamer de Apps (concluída):
+- Fase 2-R.1: InstalledApp.isGame adicionado ao data layer (leitura de categoria Android via FLAG_IS_GAME + categoria GAME).
+- Fase 2-R.2: badge "JOGO" e toggle "Apenas jogos verificados" no AppPickerSheet.
+  - Badge verde para isGame == true. Toggle inicia desligado. Estado vazio honesto.
+  - Função pura applyPickerFilter criada e testada.
+- Fase 2-R.3: confirmação obrigatória ao adicionar app com isGame == false.
+  - Cancelar não adiciona. Adicionar mesmo assim adiciona. Nenhum app bloqueado permanentemente.
+- Fase 2-R.4: badge "Não verificado" nos cards da Biblioteca para packageName com isGame == false.
+  - Jogos verificados e apps sem packageName não exibem badge.
+  - flutter analyze passando. flutter test passando (167/167).
+  - Aprovado no Samsung S24 Ultra. Sem crash. Sem tela vermelha. Sem overflow.
+- Fase 2-R.5: revisão end-to-end aprovada no Samsung S24 Ultra + CLAUDE.md atualizado.
+  - AppPickerSheet: badge JOGO, toggle, filtro e estado vazio validados.
+  - Fluxo de adição: confirmação de não-game e adição direta de jogo validados.
+  - Biblioteca: badge Não verificado presente em não-game, ausente em verificados e sem packageName.
+  - ABRIR JOGO: funcional e sem restrição por isGame.
+  - Sem tela vermelha. Sem overflow. Sem travamento.
+  - flutter analyze passando. flutter test passando (167/167).
 
-- Fase 2-R — Validação/Classificação Gamer de Apps: não iniciada. Aguarda aprovação de escopo em momento oportuno.
-  - Origem: descoberta da Fase 2-Q.4 — apps não-game (ex: Waze) podem ser adicionados e abertos via packageName válido. Não é bug crítico. É lacuna de classificação/curadoria gamer.
-  - Possível escopo futuro:
-    - detectar categoria GAME quando disponível no Android;
-    - alertar quando o app não for classificado como jogo;
-    - sinalizar ou impedir apps claramente não-game;
-    - manter fallback manual (nem todo jogo se identifica como game no Android);
-    - evitar bloquear jogos reais por classificação incompleta.
+Próximo passo imediato:
+- Definir próxima fase após checkpoint da 2-R.
+  - Aguarda aprovação de escopo.
 
 Nota estratégica:
 - Fase 2M.4B (integração do Apex Scan na aba Preparar): adiada. A aba Preparar pode esperar.
