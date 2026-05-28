@@ -14,6 +14,11 @@ import 'package:apex_booster_plus/presentation/widgets/apex_feature_card.dart';
 import 'package:apex_booster_plus/presentation/widgets/app_icon_widget.dart';
 import 'package:apex_booster_plus/presentation/widgets/app_picker_sheet.dart';
 
+/// Returns the set of packageNames from [apps] that are not verified as games
+/// (isGame == false). Used to drive the "Não verificado" badge on library cards.
+Set<String> buildNotVerifiedSet(List<InstalledApp> apps) =>
+    apps.where((a) => !a.isGame).map((a) => a.packageName).toSet();
+
 class BibliotecaTab extends StatefulWidget {
   const BibliotecaTab({super.key});
 
@@ -24,6 +29,7 @@ class BibliotecaTab extends StatefulWidget {
 class _BibliotecaTabState extends State<BibliotecaTab> {
   late GameLibraryController _controller;
   bool _initialized = false;
+  Set<String> _notVerifiedPkgs = const {};
 
   @override
   void initState() {
@@ -37,6 +43,12 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
       SharedPreferencesGameLibraryRepository(prefs),
     );
     await _controller.loadGames();
+    try {
+      final apps = await InstalledAppsDatasource().getInstalledApps();
+      _notVerifiedPkgs = buildNotVerifiedSet(apps);
+    } catch (_) {
+      _notVerifiedPkgs = const {};
+    }
     if (mounted) setState(() => _initialized = true);
   }
 
@@ -223,6 +235,7 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
               else
                 _GameList(
                   games: state.games,
+                  notVerifiedPkgs: _notVerifiedPkgs,
                   onTap: (id) async {
                     await context.push('/game-detail/$id');
                     if (!mounted) return;
@@ -379,12 +392,14 @@ class _BibliotecaEmptyCard extends StatelessWidget {
 
 class _GameList extends StatelessWidget {
   final List<ApexGame> games;
+  final Set<String> notVerifiedPkgs;
   final void Function(String id) onTap;
   final void Function(String id) onToggleFavorite;
   final void Function(String id, String name) onRemove;
 
   const _GameList({
     required this.games,
+    required this.notVerifiedPkgs,
     required this.onTap,
     required this.onToggleFavorite,
     required this.onRemove,
@@ -406,10 +421,14 @@ class _GameList extends StatelessWidget {
         ...games.asMap().entries.map((entry) {
           final index = entry.key;
           final game = entry.value;
+          final pkg = game.packageName;
+          final isNotVerified =
+              pkg != null && notVerifiedPkgs.contains(pkg);
           return Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: _GameCard(
               game: game,
+              isNotVerified: isNotVerified,
               delay: (index * 60).ms,
               onTap: () => onTap(game.id),
               onToggleFavorite: () => onToggleFavorite(game.id),
@@ -424,6 +443,7 @@ class _GameList extends StatelessWidget {
 
 class _GameCard extends StatelessWidget {
   final ApexGame game;
+  final bool isNotVerified;
   final Duration delay;
   final VoidCallback onTap;
   final VoidCallback onToggleFavorite;
@@ -431,6 +451,7 @@ class _GameCard extends StatelessWidget {
 
   const _GameCard({
     required this.game,
+    required this.isNotVerified,
     required this.delay,
     required this.onTap,
     required this.onToggleFavorite,
@@ -470,15 +491,48 @@ class _GameCard extends StatelessWidget {
                   AppIconWidget(packageName: game.packageName, size: 36),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      game.name,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          game.name,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (isNotVerified) ...[
+                          const SizedBox(height: 3),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.energyOrange
+                                  .withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: AppColors.energyOrange
+                                    .withValues(alpha: 0.35),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Text(
+                              'Não verificado',
+                              style: TextStyle(
+                                color: AppColors.energyOrange
+                                    .withValues(alpha: 0.85),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
                           ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                        ],
+                      ],
                     ),
                   ),
                 ],
