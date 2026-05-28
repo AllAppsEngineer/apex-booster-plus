@@ -4,6 +4,24 @@ import 'package:apex_booster_plus/data/datasources/installed_apps_datasource.dar
 import 'package:apex_booster_plus/domain/entities/installed_app.dart';
 import 'package:apex_booster_plus/presentation/widgets/app_icon_widget.dart';
 
+List<InstalledApp> applyPickerFilter(
+  List<InstalledApp> apps,
+  String query,
+  bool onlyGames,
+) {
+  Iterable<InstalledApp> result = apps;
+  if (onlyGames) result = result.where((a) => a.isGame);
+  if (query.isNotEmpty) {
+    final q = query.toLowerCase();
+    result = result.where(
+      (a) =>
+          a.appName.toLowerCase().contains(q) ||
+          a.packageName.toLowerCase().contains(q),
+    );
+  }
+  return result.toList();
+}
+
 sealed class AppPickerResult {
   const AppPickerResult();
 }
@@ -33,6 +51,7 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
   bool _loading = true;
   bool _failed = false;
   bool _hasText = false;
+  bool _onlyGames = false;
 
   @override
   void initState() {
@@ -53,7 +72,7 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
       if (!mounted) return;
       setState(() {
         _allApps = List.of(apps);
-        _filtered = List.of(apps);
+        _filtered = applyPickerFilter(apps, _searchController.text.toLowerCase().trim(), _onlyGames);
         _loading = false;
       });
     } catch (_) {
@@ -77,15 +96,15 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
     final q = _searchController.text.toLowerCase().trim();
     setState(() {
       _hasText = _searchController.text.isNotEmpty;
-      _filtered = q.isEmpty
-          ? List.of(_allApps)
-          : _allApps
-              .where(
-                (a) =>
-                    a.appName.toLowerCase().contains(q) ||
-                    a.packageName.toLowerCase().contains(q),
-              )
-              .toList();
+      _filtered = applyPickerFilter(_allApps, q, _onlyGames);
+    });
+  }
+
+  void _onToggleFilter(bool value) {
+    final q = _searchController.text.toLowerCase().trim();
+    setState(() {
+      _onlyGames = value;
+      _filtered = applyPickerFilter(_allApps, q, value);
     });
   }
 
@@ -109,6 +128,7 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
             _buildHandle(),
             _buildHeader(context),
             if (!_loading && !_failed && _allApps.isNotEmpty) _buildSearch(),
+            if (!_loading && !_failed && _allApps.isNotEmpty) _buildFilterToggle(),
             Divider(height: 1, color: AppColors.white.withValues(alpha: 0.07)),
             Expanded(child: _buildBody(context)),
           ],
@@ -215,6 +235,42 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
     );
   }
 
+  Widget _buildFilterToggle() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 16, 8),
+      child: Row(
+        children: [
+          Icon(
+            Icons.sports_esports_rounded,
+            color: _onlyGames ? AppColors.apexGreen : AppColors.textGray,
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Apenas jogos verificados',
+              style: TextStyle(
+                color: _onlyGames ? AppColors.apexGreen : AppColors.textGray,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Switch(
+            value: _onlyGames,
+            onChanged: _onToggleFilter,
+            activeThumbColor: AppColors.apexGreen,
+            activeTrackColor: AppColors.apexGreen.withValues(alpha: 0.3),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            trackOutlineColor: WidgetStatePropertyAll(
+              AppColors.textGray.withValues(alpha: 0.3),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBody(BuildContext context) {
     if (_loading) {
       return const Center(
@@ -231,6 +287,9 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
       final query = _searchController.text.trim();
       if (query.isNotEmpty) {
         return _EmptySearchState(query: query, onManual: _useManual);
+      }
+      if (_onlyGames) {
+        return _NoGamesState(onManual: _useManual);
       }
       return _EmptyAppsState(onManual: _useManual);
     }
@@ -295,6 +354,28 @@ class _AppPickerItem extends StatelessWidget {
                 ],
               ),
             ),
+            if (app.isGame)
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.apexGreen.withValues(alpha: 0.15),
+                  border: Border.all(
+                    color: AppColors.apexGreen.withValues(alpha: 0.5),
+                    width: 0.8,
+                  ),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'JOGO',
+                  style: TextStyle(
+                    color: AppColors.apexGreen,
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
             Icon(
               Icons.chevron_right_rounded,
               color: AppColors.cyberBlue.withValues(alpha: 0.5),
@@ -451,6 +532,52 @@ class _PickerErrorState extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
+          _ManualButton(onManual: onManual),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── No games state ───────────────────────────────────────────────────────────
+
+class _NoGamesState extends StatelessWidget {
+  final VoidCallback onManual;
+
+  const _NoGamesState({required this.onManual});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.sports_esports_rounded,
+            color: AppColors.textGray.withValues(alpha: 0.4),
+            size: 44,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Nenhum jogo verificado encontrado.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Desative o filtro para ver todos os apps instalados.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textGray,
+                  fontSize: 12,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
           _ManualButton(onManual: onManual),
         ],
       ),
