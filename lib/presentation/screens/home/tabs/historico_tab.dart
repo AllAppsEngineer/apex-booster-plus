@@ -59,7 +59,7 @@ class _HistoricoTabState extends State<HistoricoTab>
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _HistoricoHeader(),
+                  _HistoricoHeader(sessionCount: _sessions.length),
                   Expanded(
                     child: _sessions.isEmpty
                         ? const _EmptyState()
@@ -72,22 +72,41 @@ class _HistoricoTabState extends State<HistoricoTab>
   }
 }
 
+// ---------------------------------------------------------------------------
+
 class _LoadingState extends StatelessWidget {
   const _LoadingState();
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: CircularProgressIndicator(
-        color: AppColors.apexGreen,
-        strokeWidth: 2,
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const CircularProgressIndicator(
+            color: AppColors.apexGreen,
+            strokeWidth: 2,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Carregando sessões...',
+            style: TextStyle(
+              color: AppColors.textGray,
+              fontSize: 13,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
+// ---------------------------------------------------------------------------
+
 class _HistoricoHeader extends StatelessWidget {
-  const _HistoricoHeader();
+  final int sessionCount;
+
+  const _HistoricoHeader({required this.sessionCount});
 
   @override
   Widget build(BuildContext context) {
@@ -96,20 +115,58 @@ class _HistoricoHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text(
+            'HISTÓRICO',
+            style: TextStyle(
+              color: AppColors.textGray,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2.0,
+            ),
+          ).animate().fadeIn(duration: 400.ms),
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  'Sessões registradas',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.bold,
+                        height: 1.2,
+                      ),
+                )
+                    .animate()
+                    .fadeIn(duration: 500.ms)
+                    .slideY(begin: -0.08, end: 0, duration: 400.ms),
+              ),
+              if (sessionCount > 0)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.cyberBlue.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.cyberBlue.withValues(alpha: 0.35),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    '$sessionCount',
+                    style: const TextStyle(
+                      color: AppColors.cyberBlue,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
+            ],
+          ),
+          const SizedBox(height: 6),
           Text(
-            'Sessões registradas',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: AppColors.white,
-                  fontWeight: FontWeight.bold,
-                  height: 1.2,
-                ),
-          )
-              .animate()
-              .fadeIn(duration: 500.ms)
-              .slideY(begin: -0.08, end: 0, duration: 400.ms),
-          const SizedBox(height: 8),
-          Text(
-            'Histórico local de aberturas e preparações.',
+            'Registro local das suas sessões.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.textGray,
                 ),
@@ -119,6 +176,8 @@ class _HistoricoHeader extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
@@ -135,10 +194,17 @@ class _EmptyState extends StatelessWidget {
               Icons.history_outlined,
               size: 48,
               color: AppColors.textGray.withValues(alpha: 0.5),
-            ),
+            )
+                .animate(onPlay: (c) => c.repeat(reverse: true))
+                .fade(
+                  begin: 0.4,
+                  end: 0.75,
+                  duration: 1400.ms,
+                  curve: Curves.easeInOut,
+                ),
             const SizedBox(height: 20),
             Text(
-              'Nenhuma sessão registrada ainda.',
+              'Nenhuma sessão ainda.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.white,
@@ -147,7 +213,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Abra um jogo pela Biblioteca para registrar sua primeira sessão.',
+              'Abra um jogo pela Biblioteca para começar seu histórico.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textGray,
@@ -160,6 +226,8 @@ class _EmptyState extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
 
 class _SessionList extends StatelessWidget {
   final List<SessionRecord> sessions;
@@ -175,6 +243,7 @@ class _SessionList extends StatelessWidget {
       itemBuilder: (context, index) {
         return _SessionCard(
           session: sessions[index],
+          index: index,
           delay: (index * 60).ms,
         );
       },
@@ -182,28 +251,50 @@ class _SessionList extends StatelessWidget {
   }
 }
 
+// ---------------------------------------------------------------------------
+
 class _SessionCard extends StatelessWidget {
   final SessionRecord session;
+  final int index;
   final Duration delay;
 
-  const _SessionCard({required this.session, required this.delay});
+  const _SessionCard({
+    required this.session,
+    required this.index,
+    required this.delay,
+  });
 
-  ({String label, Color color}) _statusInfo() {
+  ({String label, Color color, IconData icon}) _statusInfo() {
     return switch (session.launchStatus) {
-      'success' => (label: 'Abertura registrada', color: AppColors.apexGreen),
-      'attempted' =>
-        (label: 'Tentativa registrada', color: AppColors.energyOrange),
-      'failed' => (label: 'Falha ao abrir', color: Colors.redAccent),
-      _ => (label: session.launchStatus, color: AppColors.textGray),
+      'success' => (
+          label: 'Abertura registrada',
+          color: AppColors.apexGreen,
+          icon: Icons.check_circle_outline,
+        ),
+      'attempted' => (
+          label: 'Tentativa registrada',
+          color: AppColors.energyOrange,
+          icon: Icons.warning_amber,
+        ),
+      'failed' => (
+          label: 'Falha ao abrir',
+          color: Colors.redAccent,
+          icon: Icons.cancel_outlined,
+        ),
+      _ => (
+          label: session.launchStatus,
+          color: AppColors.textGray,
+          icon: Icons.circle_outlined,
+        ),
     };
   }
 
   String? _focusModeLabel() {
     if (!session.focusModeAttempted) return null;
     return switch (session.focusModeResult) {
-      'enabled' => 'Modo Foco: Ativado',
-      'noPermission' => 'Modo Foco: Sem permissão',
-      'error' => 'Modo Foco: Erro',
+      'enabled' => 'Foco ativo',
+      'noPermission' => 'Sem permissão de foco',
+      'error' => 'Erro no foco',
       _ => null,
     };
   }
@@ -214,6 +305,18 @@ class _SessionCard extends StatelessWidget {
     return '${pad(d.day)}/${pad(d.month)}/${d.year}  ${pad(d.hour)}:${pad(d.minute)}';
   }
 
+  String _formatRam() {
+    final avail = session.memoryAvailableMb!;
+    final total = session.memoryTotalMb!;
+    final availGb = (avail / 1024).toStringAsFixed(1);
+    final totalGb = (total / 1024).toStringAsFixed(1);
+    final state = session.memoryState;
+    if (state != null && state.isNotEmpty) {
+      return '$availGb GB livre • $state';
+    }
+    return '$availGb GB / $totalGb GB';
+  }
+
   @override
   Widget build(BuildContext context) {
     final status = _statusInfo();
@@ -221,7 +324,8 @@ class _SessionCard extends StatelessWidget {
     final hasRam =
         session.memoryAvailableMb != null && session.memoryTotalMb != null;
     final hasLatency = session.apexLatencyMs != null;
-    final hasExtras = hasRam || hasLatency || focusLabel != null;
+    final hasGfxProfile = session.gfxProfile != null;
+    final hasExtras = hasRam || hasLatency || focusLabel != null || hasGfxProfile;
 
     return Container(
       decoration: BoxDecoration(
@@ -253,9 +357,9 @@ class _SessionCard extends StatelessWidget {
                   color: AppColors.white.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
-                  'SESS',
-                  style: TextStyle(
+                child: Text(
+                  '#${(index + 1).toString().padLeft(2, '0')}',
+                  style: const TextStyle(
                     color: AppColors.textGray,
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -282,20 +386,11 @@ class _SessionCard extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
           ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Icon(Icons.circle, size: 8, color: status.color),
-              const SizedBox(width: 6),
-              Text(
-                status.label,
-                style: TextStyle(
-                  color: status.color,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+          const SizedBox(height: 8),
+          _StatusBadge(
+            label: status.label,
+            color: status.color,
+            icon: status.icon,
           ),
           if (hasExtras) ...[
             const SizedBox(height: 12),
@@ -305,19 +400,29 @@ class _SessionCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Wrap(
-              spacing: 16,
+              spacing: 8,
               runSpacing: 6,
               children: [
                 if (hasRam)
                   _MetricChip(
-                    label:
-                        'RAM: ${session.memoryAvailableMb} MB / ${session.memoryTotalMb} MB',
+                    icon: Icons.memory,
+                    label: _formatRam(),
                   ),
                 if (hasLatency)
                   _MetricChip(
-                    label: 'Latência Apex: ${session.apexLatencyMs} ms',
+                    icon: Icons.network_check,
+                    label: '${session.apexLatencyMs} ms',
                   ),
-                if (focusLabel != null) _MetricChip(label: focusLabel),
+                if (focusLabel != null)
+                  _MetricChip(
+                    icon: Icons.do_not_disturb_on,
+                    label: focusLabel,
+                  ),
+                if (hasGfxProfile)
+                  _MetricChip(
+                    icon: Icons.tune,
+                    label: session.gfxProfile!,
+                  ),
               ],
             ),
           ],
@@ -330,18 +435,83 @@ class _SessionCard extends StatelessWidget {
   }
 }
 
-class _MetricChip extends StatelessWidget {
-  final String label;
+// ---------------------------------------------------------------------------
 
-  const _MetricChip({required this.label});
+class _StatusBadge extends StatelessWidget {
+  final String label;
+  final Color color;
+  final IconData icon;
+
+  const _StatusBadge({
+    required this.label,
+    required this.color,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: const TextStyle(
-        color: AppColors.textGray,
-        fontSize: 12,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: color.withValues(alpha: 0.30),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+class _MetricChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _MetricChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.white.withValues(alpha: 0.12),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: AppColors.textGray),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.textGray,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }
