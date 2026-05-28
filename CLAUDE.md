@@ -416,7 +416,7 @@ Estado funcional das abas da Home:
 - Aba Início: placeholder visual refinado. Sem funcionalidade real.
 - Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome via BottomSheet com autocomplete inteligente desde a primeira letra, sugestões por ranking de relevância, lista rolável sem limite artificial, seleção de sugestão preenche nome + packageName, packageName manual validado contra apps instalados, jogos fantasmas bloqueados, duplicados bloqueados com mensagem "Já instalado", favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe com validação: packageName inválido bloqueado, packageName duplicado em outro jogo bloqueado, packageName vazio permitido com fallback de ícone, packageName igual ao jogo atual permitido, edição apenas do nome preservada sem validação desnecessária, seleção de GFX Profile local via bottom sheet no detalhe, seleção restrita de apps Android instalados via AppPickerSheet com intent MAIN/LAUNCHER — entrada manual permanece como fallback, exibição de ícone real do app instalado via AppIconWidget quando packageName disponível — fallback genérico quando ausente, app desinstalado ou erro, microcopy final ajustado: contagem exibe "na biblioteca", empty state honesto "Nenhum jogo adicionado ainda.", subtítulo orienta ação real, copy do card Perfis locais reflete que GFX Profile já existe no detalhe de cada jogo, launcher real implementado na GameDetailScreen via botão ABRIR JOGO com Apex Boost Mode visual antes da abertura). Observação (descoberta Fase 2-Q.4): o launcher abre qualquer packageName válido instalado, incluindo apps não-game como Waze. O Android não diferencia automaticamente neste fluxo. Não é bug técnico — é lacuna de classificação/curadoria gamer. Não quebrou a Fase 2-Q.4. Tratamento futuro planejado na Fase 2-R.
 - Aba Preparar: placeholder visual. Sem funcionalidade real.
-- Aba Histórico: histórico real implementado (Fase 2-Q.5): exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository; estado vazio honesto; status success/attempted/failed exibidos sem prometer duração real; revisão visual premium pendente (Fase 2-Q.7).
+- Aba Histórico: histórico real implementado e visualmente refinado (Fases 2-Q.5 e 2-Q.7): exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository; estado vazio honesto; status success/attempted/failed exibidos com visual premium; sem duração real; sem "partida concluída"; revisão visual aprovada no Samsung S24 Ultra.
 - Aba Configurações: card "Modo Foco Gamer" implementado (Fase 2-P.4) com UI de permissão. Restante placeholder visual.
 
 ---
@@ -822,6 +822,16 @@ Concluído:
   - Placeholder visual substituído por funcionalidade real.
   - Apps não-game podem aparecer no histórico se forem abertos por packageName válido (lacuna de curadoria, não bug crítico).
   - flutter analyze passando. flutter test passando.
+- Fase 2-Q.7 concluída: revisão visual premium da HistoricoTab.
+  - Header refinado com identidade gamer premium.
+  - Cards de sessão refinados com hierarquia clara.
+  - Status success / attempted / failed mais legíveis e distintos visualmente.
+  - Métricas opcionais exibidas como chips (ex: RAM).
+  - RAM humanizada em MB.
+  - Copy honesta preservada: sem duração real, sem tempo jogado, sem "partida concluída".
+  - Sem novas permissões. Sem Firebase. Sem Usage Stats.
+  - flutter analyze passando. flutter test passando (139/139).
+  - Aprovado no Samsung S24 Ultra. Sem crash. Sem tela vermelha. Sem overflow.
 
 Observação sobre a Fase 1.6B:
 
@@ -932,6 +942,10 @@ Arquivos relevantes criados ou alterados nas Fases 2-Q.1 a 2-Q.5:
 - lib/presentation/screens/game_detail/game_detail_screen.dart (alterado — registro de sessão ao abrir jogo)
 - lib/presentation/screens/home/tabs/historico_tab.dart (alterado — exibição real de sessões)
 
+Arquivos alterados na Fase 2-Q.7:
+
+- lib/presentation/screens/home/tabs/historico_tab.dart (alterado — revisão visual premium: header, cards, status chips, RAM humanizada, copy honesta preservada)
+
 Estado visual atual:
 
 Aprovado como checkpoint da Fase 2-O.5: seção "MÉTRICAS REAIS" validada no Samsung S24 Ultra com RAM disponível, RAM total, estado de memória e latência Apex lidos do dispositivo real.
@@ -941,7 +955,8 @@ Fase 2-O.6 concluída por diagnóstico: demora de ~3s observada apenas no cold s
 Fase 2-P.4 aprovada: UI de permissão do Modo Foco Gamer validada no Samsung S24 Ultra. flutter analyze e flutter test passando (102/102).
 Fase 2-P.6 aprovada: integração do Modo Foco Gamer ao ABRIR JOGO validada no Samsung S24 Ultra com e sem permissão concedida. flutter analyze e flutter test passando (102/102).
 Fase 2-P.8 aprovada: revisão end-to-end do Modo Foco Gamer validada no Samsung S24 Ultra. Fluxo com permissão e sem permissão aprovados. ABRIR JOGO não bloqueado. Sem crash. Sem tela vermelha. Sem travamento.
-Fase 2-Q.5 implementada: HistoricoTab exibe histórico real de sessões via SharedPreferencesSessionRepository. Revisão visual premium pendente (Fase 2-Q.7).
+Fase 2-Q.5 implementada: HistoricoTab exibe histórico real de sessões via SharedPreferencesSessionRepository.
+Fase 2-Q.7 aprovada: revisão visual premium da HistoricoTab validada no Samsung S24 Ultra. Header, cards, status e chips refinados. Copy honesta preservada. flutter analyze e flutter test passando (139/139).
 Ainda não é o visual final absoluto do produto.
 
 Observação:
@@ -956,7 +971,7 @@ Pendências conhecidas:
 - GFX Profile avançado não implementado (perfis futuros: Fluidez, Competitivo, Ultra Visual, Personalizado).
 - Apex Scan: motor local criado (Fase 2M.2). Card visual implementado no Detalhe do Jogo (Fase 2M.4A). Métricas reais parciais implementadas (Fase 2-O.3): RAM disponível, RAM total, estado de memória e latência Apex. Integração na aba Preparar ainda não implementada. FPS real, GPU real, limpeza de RAM, boost real e otimização real não implementados.
 - Boost Engine não implementado.
-- Histórico real: captura e exibição local implementadas (Fases 2-Q.1 a 2-Q.5). HistoricoTab exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository. Revisão visual premium da HistoricoTab pendente (Fase 2-Q.7).
+- Histórico real: captura, exibição local e revisão visual premium implementadas (Fases 2-Q.1 a 2-Q.7). HistoricoTab exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository com visual premium aprovado. Sem duração real. Sem Usage Stats. Sem Firebase. Apps não-game ainda podem aparecer no histórico (lacuna de classificação/curadoria — Fase 2-R).
 - Classificação/curadoria gamer da Biblioteca: apps não-game podem ser adicionados e abertos se tiverem packageName válido. Exemplo observado: Waze. Não é bug crítico — é lacuna de curadoria. Sem bloqueio atual. Tratamento futuro na Fase 2-R.
 - Configurações reais não implementadas.
 - Hive não implementado (shared_preferences cobre a necessidade atual).
@@ -970,7 +985,7 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5 e 2-Q.6 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6 e 2-Q.7 concluídas.
 
 Fase 2-O — Apex Metrics Real v1 (concluída):
 - Fase 2-O.1: camada de dados de métricas reais criada.
@@ -1006,7 +1021,7 @@ Fase 2-P — Modo Foco Gamer (concluída):
   - Fluxo sem permissão aprovado: jogo abre normalmente, app não abre configurações automaticamente, fluxo não trava.
   - ABRIR JOGO não bloqueado em nenhum cenário.
 
-Fase 2-Q — Histórico Real / Sessões (captura e exibição local concluídas; revisão visual premium pendente):
+Fase 2-Q — Histórico Real / Sessões (concluída):
 - Fase 2-Q.1: domínio SessionRecord criado.
 - Fase 2-Q.2: repositório local de histórico criado (SharedPreferencesSessionRepository).
 - Fase 2-Q.3: integração ao launcher implementada (sessão registrada ao abrir jogo).
@@ -1017,12 +1032,20 @@ Fase 2-Q — Histórico Real / Sessões (captura e exibição local concluídas;
   - Estado vazio honesto. Status sem termos falsos (sem duração, sem tempo jogado).
   - Apps não-game podem aparecer se abertos por packageName válido (lacuna de curadoria).
 - Fase 2-Q.6: CLAUDE.md atualizado para refletir Fase 2-Q.5 e setup auxiliar de skills.
+- Fase 2-Q.7: revisão visual premium da HistoricoTab concluída.
+  - Header refinado com identidade gamer premium.
+  - Cards de sessão refinados com hierarquia clara.
+  - Status success / attempted / failed mais legíveis e distintos visualmente.
+  - Métricas opcionais como chips. RAM humanizada em MB.
+  - Copy honesta preservada: sem duração real, sem tempo jogado, sem "partida concluída".
+  - Sem novas permissões. Sem Firebase. Sem Usage Stats.
+  - flutter analyze passando. flutter test passando (139/139).
+  - Aprovado no Samsung S24 Ultra. Sem crash. Sem tela vermelha. Sem overflow.
 
 Próximo passo imediato:
-- Fase 2-Q.7 — Revisão visual premium da HistoricoTab no Samsung S24 Ultra com apoio do UI/UX Pro Max.
+- Fase 2-R — Planejamento de Validação/Classificação Gamer de Apps.
   - Aguarda aprovação de escopo.
 
-Fase futura sugerida:
 - Fase 2-R — Validação/Classificação Gamer de Apps: não iniciada. Aguarda aprovação de escopo em momento oportuno.
   - Origem: descoberta da Fase 2-Q.4 — apps não-game (ex: Waze) podem ser adicionados e abertos via packageName válido. Não é bug crítico. É lacuna de classificação/curadoria gamer.
   - Possível escopo futuro:
