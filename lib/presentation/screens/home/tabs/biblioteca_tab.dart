@@ -20,7 +20,8 @@ Set<String> buildNotVerifiedSet(List<InstalledApp> apps) =>
     apps.where((a) => !a.isGame).map((a) => a.packageName).toSet();
 
 class BibliotecaTab extends StatefulWidget {
-  const BibliotecaTab({super.key});
+  final bool isActive;
+  const BibliotecaTab({super.key, required this.isActive});
 
   @override
   State<BibliotecaTab> createState() => _BibliotecaTabState();
@@ -28,28 +29,45 @@ class BibliotecaTab extends StatefulWidget {
 
 class _BibliotecaTabState extends State<BibliotecaTab> {
   late GameLibraryController _controller;
-  bool _initialized = false;
+  bool _gamesLoaded = false;
+  bool _installedAppsLoaded = false;
   Set<String> _notVerifiedPkgs = const {};
 
   @override
   void initState() {
     super.initState();
-    _initialize();
+    _loadGames();
   }
 
-  Future<void> _initialize() async {
+  @override
+  void didUpdateWidget(BibliotecaTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive && !_installedAppsLoaded) {
+      _loadInstalledApps();
+    }
+  }
+
+  Future<void> _loadGames() async {
     final prefs = await SharedPreferences.getInstance();
     _controller = GameLibraryController(
       SharedPreferencesGameLibraryRepository(prefs),
     );
     await _controller.loadGames();
+    if (mounted) setState(() => _gamesLoaded = true);
+  }
+
+  Future<void> _loadInstalledApps() async {
     try {
       final apps = await InstalledAppsDatasource().getInstalledApps();
-      _notVerifiedPkgs = buildNotVerifiedSet(apps);
+      if (mounted) {
+        setState(() {
+          _notVerifiedPkgs = buildNotVerifiedSet(apps);
+          _installedAppsLoaded = true;
+        });
+      }
     } catch (_) {
-      _notVerifiedPkgs = const {};
+      if (mounted) setState(() => _installedAppsLoaded = true);
     }
-    if (mounted) setState(() => _initialized = true);
   }
 
   static String _normalize(String s) =>
@@ -202,7 +220,7 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_initialized) {
+    if (!_gamesLoaded) {
       return const ApexBackground(
         child: Center(
           child: CircularProgressIndicator(color: AppColors.cyberBlue),
@@ -211,14 +229,6 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
     }
 
     final state = _controller.state;
-
-    if (state.isLoading) {
-      return const ApexBackground(
-        child: Center(
-          child: CircularProgressIndicator(color: AppColors.cyberBlue),
-        ),
-      );
-    }
 
     return ApexBackground(
       child: SafeArea(

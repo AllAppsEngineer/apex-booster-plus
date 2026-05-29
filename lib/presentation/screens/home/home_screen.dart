@@ -18,12 +18,12 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   DateTime? _lastBackPress;
 
-  static const List<Widget> _tabs = [
-    InicioTab(),
-    BibliotecaTab(),
-    PrepararTab(),
-    HistoricoTab(),
-    ConfiguracoesTab(),
+  List<Widget> get _tabs => [
+    const InicioTab(),
+    BibliotecaTab(isActive: _selectedIndex == 1),
+    const PrepararTab(),
+    const HistoricoTab(),
+    const ConfiguracoesTab(),
   ];
 
   Future<bool> _onPopInvoked() async {
