@@ -860,6 +860,18 @@ Concluído:
   - flutter analyze passando. flutter test passando (167/167).
   - Aprovado no Samsung S24 Ultra. Sem crash. Sem tela vermelha. Sem overflow.
 - Fase 2-R.5 concluída: revisão end-to-end da Fase 2-R aprovada no Samsung S24 Ultra + CLAUDE.md atualizado.
+- Fase PERF-G1.5 concluída: carregamento de apps instalados sob demanda na BibliotecaTab.
+  - getInstalledApps não roda mais no cold start da HomeScreen.
+  - BibliotecaTab carrega apps instalados sob demanda: quando a aba fica ativa ou no fluxo adicionar/escolher app.
+  - Passagem entre telas ficou mais fluida, sem engasgos.
+  - Commit: b5bca87 — perf: carregar apps instalados sob demanda na biblioteca.
+  - flutter analyze passando. flutter test passando (177/177).
+- Tentativa UI-G1.5 rejeitada: redesign visual pesado da BibliotecaTab reprovado no celular físico.
+  - Quebrou visualmente cards e botões.
+  - Revertida com git restore. Working tree limpo após reversão.
+  - BibliotecaTab voltou ao estado do commit b5bca87.
+  - Decisão registrada: manter a Biblioteca como está. Qualquer ajuste futuro deve ser mínimo, pontual e somente se o usuário pedir explicitamente.
+  - flutter analyze passando. flutter test passando (177/177).
 
 Observação sobre a Fase 1.6B:
 
@@ -994,6 +1006,8 @@ Fase 2-P.8 aprovada: revisão end-to-end do Modo Foco Gamer validada no Samsung 
 Fase 2-Q.5 implementada: HistoricoTab exibe histórico real de sessões via SharedPreferencesSessionRepository.
 Fase 2-Q.7 aprovada: revisão visual premium da HistoricoTab validada no Samsung S24 Ultra. Header, cards, status e chips refinados. Copy honesta preservada. flutter analyze e flutter test passando (139/139).
 Fase 2-R.5 aprovada: revisão end-to-end da Fase 2-R validada no Samsung S24 Ultra. Badge JOGO, toggle filtro, confirmação não-game e badge Não verificado funcionando. ABRIR JOGO preservado. flutter analyze passando. flutter test passando (167/167).
+Fase PERF-G1.5 aprovada: carregamento de apps instalados sob demanda implementado e validado no Samsung S24 Ultra. getInstalledApps não roda mais no cold start da HomeScreen. BibliotecaTab carrega apps sob demanda — passagem entre telas mais fluida. Commit b5bca87. flutter analyze passando. flutter test passando (177/177).
+Tentativa UI-G1.5 rejeitada e revertida: redesign visual pesado da BibliotecaTab quebrou cards e botões no celular físico. Revertida com git restore para o estado do commit b5bca87. BibliotecaTab mantida como está. Não insistir em redesign visual pesado dessa tela — qualquer ajuste futuro deve ser mínimo, pontual e somente se explicitamente solicitado.
 Ainda não é o visual final absoluto do produto.
 
 Observação:
@@ -1021,7 +1035,7 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4 e 2-R.5 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5 e PERF-G1.5 concluídas.
 
 Fase 2-O — Apex Metrics Real v1 (concluída):
 - Fase 2-O.1: camada de dados de métricas reais criada.
@@ -1097,12 +1111,27 @@ Fase 2-R — Classificação/Curadoria Gamer de Apps (concluída):
   - Sem tela vermelha. Sem overflow. Sem travamento.
   - flutter analyze passando. flutter test passando (167/167).
 
+Fase PERF-G1.5 — Lazy Load de Apps Instalados (concluída):
+- getInstalledApps removido do cold start da HomeScreen.
+- BibliotecaTab carrega apps sob demanda: ao ativar a aba ou abrir fluxo adicionar/escolher app.
+- Passagem entre telas mais fluida, sem engasgos.
+- Commit: b5bca87. flutter analyze passando. flutter test passando (177/177).
+- Aprovado no Samsung S24 Ultra.
+
+Tentativa UI-G1.5 — Redesign Visual da BibliotecaTab (rejeitada e revertida):
+- Proposta de redesign visual pesado reprovada no celular físico.
+- Quebrou cards e botões visualmente.
+- Revertida com git restore para o estado do commit b5bca87.
+- Decisão: BibliotecaTab mantida como está. Não insistir em redesign visual pesado.
+- Qualquer ajuste futuro na BibliotecaTab deve ser mínimo, pontual e somente se explicitamente solicitado pelo usuário.
+
 Próximo passo imediato:
-- Definir próxima fase após checkpoint da 2-R.
+- Definir próxima fase após checkpoint PERF-G1.5 + UI-G1.5.
   - Aguarda aprovação de escopo.
 
 Nota estratégica:
 - Fase 2M.4B (integração do Apex Scan na aba Preparar): adiada. A aba Preparar pode esperar.
+- BibliotecaTab visual: congelada. Não alterar sem solicitação explícita.
 
 Regra:
 
