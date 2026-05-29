@@ -19,7 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   DateTime? _lastBackPress;
 
   List<Widget> get _tabs => [
-    const InicioTab(),
+    InicioTab(isActive: _selectedIndex == 0),
     BibliotecaTab(isActive: _selectedIndex == 1),
     const PrepararTab(),
     const HistoricoTab(),

@@ -12,7 +12,9 @@ import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_feature_card.dart';
 
 class InicioTab extends StatefulWidget {
-  const InicioTab({super.key});
+  final bool isActive;
+
+  const InicioTab({super.key, required this.isActive});
 
   @override
   State<InicioTab> createState() => _InicioTabState();
@@ -29,6 +31,14 @@ class _InicioTabState extends State<InicioTab> {
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void didUpdateWidget(InicioTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _loadData();
+    }
   }
 
   Future<void> _loadData() async {
