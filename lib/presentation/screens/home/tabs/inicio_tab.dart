@@ -1,12 +1,13 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
+import 'package:apex_booster_plus/data/datasources/installed_apps_datasource.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_game_library_repository.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_session_repository.dart';
 import 'package:apex_booster_plus/domain/entities/session_record.dart';
-import 'package:apex_booster_plus/presentation/widgets/app_icon_widget.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_feature_card.dart';
 
@@ -22,6 +23,7 @@ class _InicioTabState extends State<InicioTab> {
   int _gameCount = 0;
   int _sessionCount = 0;
   SessionRecord? _lastSession;
+  Uint8List? _lastIconBytes;
 
   @override
   void initState() {
@@ -34,19 +36,46 @@ class _InicioTabState extends State<InicioTab> {
     final gameRepo = SharedPreferencesGameLibraryRepository(prefs);
     final sessionRepo = SharedPreferencesSessionRepository(prefs);
 
-    final gamesFuture = gameRepo.getGames();
-    final sessionsFuture = sessionRepo.getSessions();
+    final games = await gameRepo.getGames();
+    final sessions = await sessionRepo.getSessions();
 
-    final games = await gamesFuture;
-    final sessions = await sessionsFuture;
+    final lastSession = sessions.isEmpty ? null : sessions.first;
+    Uint8List? iconBytes;
+
+    if (lastSession?.packageName != null) {
+      // Synchronous prefs read — no MethodChannel, no Android main-thread block
+      iconBytes = InstalledAppsDatasource.preCacheFromPrefs(
+          prefs, lastSession!.packageName!);
+    }
 
     if (!mounted) return;
     setState(() {
       _gameCount = games.length;
       _sessionCount = sessions.length;
-      _lastSession = sessions.isEmpty ? null : sessions.first;
+      _lastSession = lastSession;
+      _lastIconBytes = iconBytes;
       _loading = false;
     });
+
+    // Cache miss: defer MethodChannel to after the first frame so the UI
+    // renders immediately with a placeholder instead of blocking.
+    if (lastSession?.packageName != null && iconBytes == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _loadIconInBackground(lastSession!.packageName!, prefs);
+        }
+      });
+    }
+  }
+
+  Future<void> _loadIconInBackground(
+      String packageName, SharedPreferences prefs) async {
+    final bytes = await InstalledAppsDatasource().getAppIcon(packageName);
+    if (bytes != null) {
+      await InstalledAppsDatasource.saveIconToPrefs(prefs, packageName, bytes);
+    }
+    if (!mounted) return;
+    setState(() => _lastIconBytes = bytes);
   }
 
   @override
@@ -62,7 +91,10 @@ class _InicioTabState extends State<InicioTab> {
               const _InicioHeader(),
               const SizedBox(height: 28),
               if (_lastSession != null) ...[
-                _LastSessionCard(session: _lastSession!),
+                _LastSessionCard(
+                  session: _lastSession!,
+                  iconBytes: _lastIconBytes,
+                ),
                 const SizedBox(height: 16),
               ],
               _QuickStatsRow(
@@ -163,8 +195,12 @@ class _InicioHeader extends StatelessWidget {
 
 class _LastSessionCard extends StatelessWidget {
   final SessionRecord session;
+  final Uint8List? iconBytes;
 
-  const _LastSessionCard({required this.session});
+  const _LastSessionCard({
+    required this.session,
+    required this.iconBytes,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -202,7 +238,7 @@ class _LastSessionCard extends StatelessWidget {
           const SizedBox(height: 14),
           Row(
             children: [
-              AppIconWidget(packageName: session.packageName, size: 44),
+              _IconSlot(bytes: iconBytes, size: 44),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -235,8 +271,7 @@ class _LastSessionCard extends StatelessWidget {
             width: double.infinity,
             height: 44,
             child: OutlinedButton(
-              onPressed: () =>
-                  context.push('/game-detail/${session.gameId}'),
+              onPressed: () => context.push('/game-detail/${session.gameId}'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.apexGreen,
                 side: BorderSide(
@@ -275,7 +310,54 @@ class _LastSessionCard extends StatelessWidget {
   }
 }
 
-// ── Inline badge (sem largura fixa) ──────────────────────────────────────────
+// ── Icon slot — cache-aware, zero MethodChannel ──────────────────────────────
+// Renders Image.memory immediately when bytes are available, or a static
+// premium placeholder when not. Never triggers a platform channel call.
+
+class _IconSlot extends StatelessWidget {
+  final Uint8List? bytes;
+  final double size;
+
+  const _IconSlot({required this.bytes, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    if (bytes != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(size * 0.22),
+        child: Image.memory(
+          bytes!,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _buildPlaceholder(),
+        ),
+      );
+    }
+    return _buildPlaceholder();
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: AppColors.apexGreen.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(size * 0.22),
+        border: Border.all(
+          color: AppColors.apexGreen.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Icon(
+        Icons.videogame_asset_rounded,
+        color: AppColors.apexGreen.withValues(alpha: 0.65),
+        size: size * 0.5,
+      ),
+    );
+  }
+}
+
+// ── Inline badge ─────────────────────────────────────────────────────────────
 
 class _InlineBadge extends StatelessWidget {
   final String label;

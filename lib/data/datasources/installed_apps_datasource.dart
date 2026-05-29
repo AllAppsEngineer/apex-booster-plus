@@ -1,9 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/domain/entities/installed_app.dart';
 
 class InstalledAppsDatasource {
   static const _channel =
       MethodChannel('com.allappsengineer.apex_booster_plus/apps');
+
+  static const String _iconPrefPrefix = 'apex_icon_b64_';
 
   // Session-only caches — nothing is persisted to disk
   static final Map<String, Uint8List?> _iconCache = {};
@@ -38,6 +42,29 @@ class InstalledAppsDatasource {
       _iconCache[packageName] = null;
       return null;
     }
+  }
+
+  /// Reads icon bytes from [prefs] and populates the in-memory cache so that
+  /// [getAppIcon] returns instantly on the next call — no MethodChannel needed.
+  /// Returns cached bytes on hit, null on miss. Synchronous after prefs init.
+  static Uint8List? preCacheFromPrefs(
+      SharedPreferences prefs, String packageName) {
+    final raw = prefs.getString('$_iconPrefPrefix$packageName');
+    if (raw == null) return null;
+    try {
+      final bytes = base64Decode(raw);
+      _iconCache[packageName] = bytes;
+      return bytes;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Persists icon bytes to [prefs] so the next cold start can skip MethodChannel.
+  static Future<void> saveIconToPrefs(
+      SharedPreferences prefs, String packageName, Uint8List bytes) async {
+    await prefs.setString(
+        '$_iconPrefPrefix$packageName', base64Encode(bytes));
   }
 
   /// Throws [PlatformException] with code 'APP_NOT_FOUND' if the app has no
