@@ -522,9 +522,8 @@ class _GameCard extends StatelessWidget {
                             ),
                             child: Text(
                               'Não verificado',
-                              style: TextStyle(
-                                color: AppColors.energyOrange
-                                    .withValues(alpha: 0.85),
+                              style: const TextStyle(
+                                color: Colors.white,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w500,
                                 letterSpacing: 0.3,

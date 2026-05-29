@@ -18,17 +18,32 @@ class ApexBadge extends StatelessWidget {
       height: 28,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            color.withValues(alpha: 0.26),
+            color.withValues(alpha: 0.12),
+          ],
+        ),
         borderRadius: BorderRadius.circular(4),
         border: Border.all(
-          color: color.withValues(alpha: 0.55),
+          color: color.withValues(alpha: 0.80),
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.30),
+            blurRadius: 10,
+            spreadRadius: -1,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: color,
+        style: const TextStyle(
+          color: Colors.white,
           fontWeight: FontWeight.bold,
           fontSize: 10,
           letterSpacing: 1.4,

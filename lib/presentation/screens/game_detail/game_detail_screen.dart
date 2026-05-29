@@ -664,8 +664,8 @@ class _Badge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: color,
+        style: const TextStyle(
+          color: Colors.white,
           fontWeight: FontWeight.bold,
           fontSize: 10,
           letterSpacing: 1.2,
@@ -698,7 +698,7 @@ class _FavoriteBadge extends StatelessWidget {
           Text(
             'FAVORITO',
             style: TextStyle(
-              color: AppColors.apexGreen,
+              color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 10,
               letterSpacing: 1.2,
