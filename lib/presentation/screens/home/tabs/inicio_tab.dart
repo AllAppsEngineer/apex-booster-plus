@@ -212,8 +212,20 @@ class _LastSessionCard extends StatelessWidget {
     required this.iconBytes,
   });
 
+  List<String> _collectChips() {
+    final chips = <String>[];
+    final gfx = session.gfxProfile;
+    if (gfx != null && gfx.isNotEmpty) chips.add('GFX · $gfx');
+    final ram = session.memoryAvailableMb;
+    if (ram != null && ram > 0) chips.add('RAM $ram MB');
+    final lat = session.apexLatencyMs;
+    if (lat != null) chips.add('$lat ms');
+    return chips;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final chips = _collectChips();
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -276,6 +288,15 @@ class _LastSessionCard extends StatelessWidget {
               ),
             ],
           ),
+          if (chips.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children:
+                  chips.map((label) => _MetricChip(label: label)).toList(),
+            ),
+          ],
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
@@ -434,6 +455,37 @@ class _StatusChip extends StatelessWidget {
           fontSize: 11,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Metric chip — subtle info pill from SessionRecord ────────────────────────
+
+class _MetricChip extends StatelessWidget {
+  final String label;
+
+  const _MetricChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: AppColors.white.withValues(alpha: 0.12),
+        ),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppColors.textGray,
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0.5,
         ),
       ),
     );
