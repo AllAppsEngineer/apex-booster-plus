@@ -404,7 +404,7 @@ Telas já existentes na base atual:
 - HomeScreen (com Bottom Navigation — 5 abas)
   - Aba Início (placeholder refinado visualmente)
   - Aba Biblioteca (placeholder refinado visualmente)
-  - Aba Preparar (placeholder refinado visualmente)
+  - Aba Preparar (funcionalidade real implementada — Fase 2-S.4)
   - Aba Histórico (placeholder refinado visualmente)
   - Aba Configurações (placeholder refinado visualmente)
 - GameDetailScreen
@@ -415,7 +415,7 @@ Estado funcional das abas da Home:
 
 - Aba Início: placeholder visual refinado. Sem funcionalidade real.
 - Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome via BottomSheet com autocomplete inteligente desde a primeira letra, sugestões por ranking de relevância, lista rolável sem limite artificial, seleção de sugestão preenche nome + packageName, packageName manual validado contra apps instalados, jogos fantasmas bloqueados, duplicados bloqueados com mensagem "Já instalado", favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe com validação: packageName inválido bloqueado, packageName duplicado em outro jogo bloqueado, packageName vazio permitido com fallback de ícone, packageName igual ao jogo atual permitido, edição apenas do nome preservada sem validação desnecessária, seleção de GFX Profile local via bottom sheet no detalhe, seleção restrita de apps Android instalados via AppPickerSheet com intent MAIN/LAUNCHER — entrada manual permanece como fallback, exibição de ícone real do app instalado via AppIconWidget quando packageName disponível — fallback genérico quando ausente, app desinstalado ou erro, microcopy final ajustado: contagem exibe "na biblioteca", empty state honesto "Nenhum jogo adicionado ainda.", subtítulo orienta ação real, copy do card Perfis locais reflete que GFX Profile já existe no detalhe de cada jogo, launcher real implementado na GameDetailScreen via botão ABRIR JOGO com Apex Boost Mode visual antes da abertura). Observação (descoberta Fase 2-Q.4 — tratada na Fase 2-R): o launcher abre qualquer packageName válido instalado, incluindo apps não-game como Waze. O Android não diferencia automaticamente neste fluxo. Não é bug técnico — é lacuna de classificação/curadoria gamer. Tratamento implementado na Fase 2-R: badge "JOGO" e toggle "Apenas jogos verificados" no AppPickerSheet, confirmação obrigatória ao adicionar app com isGame == false, e badge "Não verificado" nos cards da Biblioteca para packageName com isGame == false. Nenhum app é bloqueado permanentemente — decisão fica com o usuário. ABRIR JOGO continua funcionando para qualquer packageName válido, sem restrição por isGame.
-- Aba Preparar: placeholder visual. Sem funcionalidade real.
+- Aba Preparar: funcionalidade real implementada (Fase 2-S.4): seletor de jogo com botão TROCAR (visível quando há mais de 1 jogo na biblioteca), pré-seleção automática por histórico (último jogo lançado → primeiro da biblioteca → null se vazia), Apex Scan local com 3 checks honestos (App vinculado, Perfil GFX, Prioridade — sem métricas falsas), snapshot real do dispositivo (RAM disponível, RAM total, estado de memória, latência Apex, Modo Foco), CTA "CONTINUAR PARA DETALHES" funcional com disable state quando não há jogo selecionado, navegação para GameDetailScreen via context.push, dois disclaimers honestos visíveis. Sem promessa de boost, FPS, GPU, ping ou otimização automática. Funções puras exportadas e cobertas por testes (selectGameForPreparation, buildIsLaunchableHint).
 - Aba Histórico: histórico real implementado e visualmente refinado (Fases 2-Q.5 e 2-Q.7): exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository; estado vazio honesto; status success/attempted/failed exibidos com visual premium; sem duração real; sem "partida concluída"; revisão visual aprovada no Samsung S24 Ultra.
 - Aba Configurações: card "Modo Foco Gamer" implementado (Fase 2-P.4) com UI de permissão. Restante placeholder visual.
 
@@ -872,6 +872,21 @@ Concluído:
   - BibliotecaTab voltou ao estado do commit b5bca87.
   - Decisão registrada: manter a Biblioteca como está. Qualquer ajuste futuro deve ser mínimo, pontual e somente se o usuário pedir explicitamente.
   - flutter analyze passando. flutter test passando (177/177).
+- Fase 2-S.4 concluída (documentada retroativamente por auditoria): PrepararTab — snapshot do dispositivo + CTA final.
+  - PrepararTab deixou de ser placeholder visual.
+  - Seletor de jogo implementado com botão TROCAR (visível quando _games.length > 1) → abre _GameSelectorSheet.
+  - Pré-seleção automática: último jogo lançado (via SessionRecord) → primeiro da biblioteca → null se vazia.
+  - Apex Scan local (_PrepScanCard): checks honestos de App vinculado, Perfil GFX e Prioridade. Não usa ApexScanService diretamente.
+  - Snapshot real do dispositivo (_DeviceSnapshotCard): RAM disponível, RAM total, estado de memória, latência Apex, Modo Foco — via DeviceMetricsServiceImpl e FocusModeServiceImpl. Timeout de 6s. Fallback "Indisponível" por campo.
+  - CTA "CONTINUAR PARA DETALHES": leva para GameDetailScreen via context.push('/game-detail/:id'). Desabilitado quando game == null.
+  - Dois disclaimers honestos sempre visíveis: "Snapshot local. Sem alteração automática de desempenho." e "Snapshot local. Não representa alteração automática no jogo."
+  - Sem promessa de boost, FPS, GPU, ping ou otimização automática.
+  - Funções puras exportadas para testes: selectGameForPreparation, buildIsLaunchableHint.
+  - Testes existentes: test/presentation/screens/home/tabs/preparar_tab_selection_test.dart (cobrindo selectGameForPreparation e buildIsLaunchableHint).
+  - Arquivo principal: lib/presentation/screens/home/tabs/preparar_tab.dart.
+  - Nenhum arquivo Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão.
+  - flutter analyze passando. flutter test passando (177/177).
+  - Aprovação visual no celular físico: pendente.
 
 Observação sobre a Fase 1.6B:
 
@@ -1008,6 +1023,7 @@ Fase 2-Q.7 aprovada: revisão visual premium da HistoricoTab validada no Samsung
 Fase 2-R.5 aprovada: revisão end-to-end da Fase 2-R validada no Samsung S24 Ultra. Badge JOGO, toggle filtro, confirmação não-game e badge Não verificado funcionando. ABRIR JOGO preservado. flutter analyze passando. flutter test passando (167/167).
 Fase PERF-G1.5 aprovada: carregamento de apps instalados sob demanda implementado e validado no Samsung S24 Ultra. getInstalledApps não roda mais no cold start da HomeScreen. BibliotecaTab carrega apps sob demanda — passagem entre telas mais fluida. Commit b5bca87. flutter analyze passando. flutter test passando (177/177).
 Tentativa UI-G1.5 rejeitada e revertida: redesign visual pesado da BibliotecaTab quebrou cards e botões no celular físico. Revertida com git restore para o estado do commit b5bca87. BibliotecaTab mantida como está. Não insistir em redesign visual pesado dessa tela — qualquer ajuste futuro deve ser mínimo, pontual e somente se explicitamente solicitado.
+Fase 2-S.4 aprovada por auditoria: PrepararTab deixou de ser placeholder. Seletor de jogo, pré-seleção por histórico, Apex Scan local, snapshot real do dispositivo e CTA funcional verificados. flutter analyze passando. flutter test passando (177/177). Aprovação visual no celular físico: pendente.
 Ainda não é o visual final absoluto do produto.
 
 Observação:
@@ -1020,7 +1036,7 @@ Pendências conhecidas:
 - Localização multilíngue ainda não foi implementada.
 - Tela Add Game separada não implementada (adição atual é diálogo inline na BibliotecaTab).
 - GFX Profile avançado não implementado (perfis futuros: Fluidez, Competitivo, Ultra Visual, Personalizado).
-- Apex Scan: motor local criado (Fase 2M.2). Card visual implementado no Detalhe do Jogo (Fase 2M.4A). Métricas reais parciais implementadas (Fase 2-O.3): RAM disponível, RAM total, estado de memória e latência Apex. Integração na aba Preparar ainda não implementada. FPS real, GPU real, limpeza de RAM, boost real e otimização real não implementados.
+- Apex Scan: motor local criado (Fase 2M.2). Card visual implementado no Detalhe do Jogo (Fase 2M.4A). Métricas reais parciais implementadas (Fase 2-O.3): RAM disponível, RAM total, estado de memória e latência Apex. PrepararTab possui _PrepScanCard com checks locais honestos (app vinculado, GFX, prioridade) — não usa ApexScanService diretamente. Integração da aba Preparar com ApexScanService completo: pendente (Fase 2M.4B adiada). FPS real, GPU real, limpeza de RAM, boost real e otimização real não implementados.
 - Boost Engine não implementado.
 - Histórico real: captura, exibição local e revisão visual premium implementadas (Fases 2-Q.1 a 2-Q.7). HistoricoTab exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository com visual premium aprovado. Sem duração real. Sem Usage Stats. Sem Firebase. Apps não-game podem aparecer no histórico se forem lançados — comportamento esperado, o histórico registra o que foi aberto sem filtro retroativo.
 - Configurações reais não implementadas.
@@ -1035,7 +1051,7 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5 e PERF-G1.5 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5 e 2-S.4 concluídas.
 
 Fase 2-O — Apex Metrics Real v1 (concluída):
 - Fase 2-O.1: camada de dados de métricas reais criada.
@@ -1125,12 +1141,25 @@ Tentativa UI-G1.5 — Redesign Visual da BibliotecaTab (rejeitada e revertida):
 - Decisão: BibliotecaTab mantida como está. Não insistir em redesign visual pesado.
 - Qualquer ajuste futuro na BibliotecaTab deve ser mínimo, pontual e somente se explicitamente solicitado pelo usuário.
 
+Fase 2-S — PrepararTab funcional (concluída):
+- Fase 2-S.4: PrepararTab — snapshot do dispositivo + CTA final.
+  - Seletor de jogo com botão TROCAR (visível quando há mais de 1 jogo).
+  - Pré-seleção por histórico: último jogo lançado → primeiro da biblioteca → null (empty state honesto).
+  - Apex Scan local (_PrepScanCard): checks honestos de app vinculado, perfil GFX e prioridade. Não usa ApexScanService diretamente.
+  - Snapshot real do dispositivo (_DeviceSnapshotCard): RAM disponível, RAM total, estado de memória, latência Apex, Modo Foco.
+  - CTA "CONTINUAR PARA DETALHES" com disable state correto quando sem jogo.
+  - Dois disclaimers honestos visíveis.
+  - Nenhum Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão.
+  - flutter analyze passando. flutter test passando (177/177).
+  - Aprovação visual no celular físico: pendente.
+
 Próximo passo imediato:
-- Definir próxima fase após checkpoint PERF-G1.5 + UI-G1.5.
+- Definir próxima fase após checkpoint 2-S.4.
+  - Candidatos: validação visual da PrepararTab no Samsung S24 Ultra, InicioTab funcional, ou avanço para Fase 3 (Boost Engine).
   - Aguarda aprovação de escopo.
 
 Nota estratégica:
-- Fase 2M.4B (integração do Apex Scan na aba Preparar): adiada. A aba Preparar pode esperar.
+- Fase 2M.4B (integração do ApexScanService completo na aba Preparar): continua adiada. PrepararTab já tem _PrepScanCard com checks locais — integração com ApexScanService é refinamento futuro, não bloqueador.
 - BibliotecaTab visual: congelada. Não alterar sem solicitação explícita.
 
 Regra:
@@ -1369,7 +1398,7 @@ Motor local criado. Puro Dart. Sem permissões.
 - Ausência de GFX Profile usa mensagem neutra: "perfil padrão será usado".
 - Não usa PACKAGE_USAGE_STATS, SYSTEM_ALERT_WINDOW, AccessibilityService.
 - UI do Detalhe do Jogo implementada (Fase 2M.4A): card premium/gamer com animação, status local e indicadores visuais.
-- Apex Scan ainda não aparece na aba Preparar.
+- PrepararTab possui _PrepScanCard com checks locais (app vinculado, GFX, prioridade) — não usa ApexScanService. Integração com ApexScanService completo na aba Preparar: pendente (Fase 2M.4B adiada).
 - Seção "MÉTRICAS REAIS" implementada na GameDetailScreen (Fase 2-O.3):
   - Memória disponível: leitura real do dispositivo.
   - Memória total: leitura real do dispositivo.
