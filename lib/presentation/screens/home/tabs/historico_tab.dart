@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_session_repository.dart';
 import 'package:apex_booster_plus/domain/entities/session_record.dart';
+import 'package:apex_booster_plus/domain/entities/gfx_profile.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 
 class HistoricoTab extends StatefulWidget {
@@ -324,7 +325,8 @@ class _SessionCard extends StatelessWidget {
     final hasRam =
         session.memoryAvailableMb != null && session.memoryTotalMb != null;
     final hasLatency = session.apexLatencyMs != null;
-    final hasGfxProfile = session.gfxProfile != null;
+    final resolvedGfxProfile = GfxProfile.fromLabel(session.gfxProfile);
+    final hasGfxProfile = resolvedGfxProfile != null;
     final hasExtras = hasRam || hasLatency || focusLabel != null || hasGfxProfile;
 
     return Container(
@@ -418,10 +420,11 @@ class _SessionCard extends StatelessWidget {
                     icon: Icons.do_not_disturb_on,
                     label: focusLabel,
                   ),
-                if (hasGfxProfile)
+                if (resolvedGfxProfile != null)
                   _MetricChip(
-                    icon: Icons.tune,
-                    label: session.gfxProfile!,
+                    icon: resolvedGfxProfile.icon,
+                    label: 'GFX: ${resolvedGfxProfile.label}',
+                    accentColor: resolvedGfxProfile.accentColor,
                   ),
               ],
             ),
@@ -484,30 +487,40 @@ class _StatusBadge extends StatelessWidget {
 class _MetricChip extends StatelessWidget {
   final IconData icon;
   final String label;
+  final Color? accentColor;
 
-  const _MetricChip({required this.icon, required this.label});
+  const _MetricChip({
+    required this.icon,
+    required this.label,
+    this.accentColor,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final color = accentColor;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.05),
+        color: color != null
+            ? color.withValues(alpha: 0.12)
+            : AppColors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppColors.white.withValues(alpha: 0.12),
+          color: color != null
+              ? color.withValues(alpha: 0.30)
+              : AppColors.white.withValues(alpha: 0.12),
           width: 1,
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: AppColors.textGray),
+          Icon(icon, size: 13, color: color ?? AppColors.textGray),
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(
-              color: AppColors.textGray,
+            style: TextStyle(
+              color: color != null ? Colors.white : AppColors.textGray,
               fontSize: 12,
             ),
           ),
