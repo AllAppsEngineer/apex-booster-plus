@@ -413,7 +413,7 @@ A existência dessas telas não significa aprovação visual final.
 
 Estado funcional das abas da Home:
 
-- Aba Início: refresh on tab focus implementado (Fase 2-T.1): contagem de jogos e dados de sessão atualizam ao retornar para a aba. Visual placeholder refinado preservado.
+- Aba Início: refresh on tab focus implementado (Fase 2-T.1) e chips de métricas reais da última sessão implementados (Fase 2-T.2A): contagem de jogos, dados de sessão e chips de métricas reais atualizam ao retornar para a aba. Chips usam apenas dados reais já existentes no SessionRecord — sem nova query, sem novo MethodChannel, sem getInstalledApps. Nenhum dado inventado. Layout estrutural preservado.
 - Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome via BottomSheet com autocomplete inteligente desde a primeira letra, sugestões por ranking de relevância, lista rolável sem limite artificial, seleção de sugestão preenche nome + packageName, packageName manual validado contra apps instalados, jogos fantasmas bloqueados, duplicados bloqueados com mensagem "Já instalado", favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe com validação: packageName inválido bloqueado, packageName duplicado em outro jogo bloqueado, packageName vazio permitido com fallback de ícone, packageName igual ao jogo atual permitido, edição apenas do nome preservada sem validação desnecessária, seleção de GFX Profile local via bottom sheet no detalhe, seleção restrita de apps Android instalados via AppPickerSheet com intent MAIN/LAUNCHER — entrada manual permanece como fallback, exibição de ícone real do app instalado via AppIconWidget quando packageName disponível — fallback genérico quando ausente, app desinstalado ou erro, microcopy final ajustado: contagem exibe "na biblioteca", empty state honesto "Nenhum jogo adicionado ainda.", subtítulo orienta ação real, copy do card Perfis locais reflete que GFX Profile já existe no detalhe de cada jogo, launcher real implementado na GameDetailScreen via botão ABRIR JOGO com Apex Boost Mode visual antes da abertura). Observação (descoberta Fase 2-Q.4 — tratada na Fase 2-R): o launcher abre qualquer packageName válido instalado, incluindo apps não-game como Waze. O Android não diferencia automaticamente neste fluxo. Não é bug técnico — é lacuna de classificação/curadoria gamer. Tratamento implementado na Fase 2-R: badge "JOGO" e toggle "Apenas jogos verificados" no AppPickerSheet, confirmação obrigatória ao adicionar app com isGame == false, e badge "Não verificado" nos cards da Biblioteca para packageName com isGame == false. Nenhum app é bloqueado permanentemente — decisão fica com o usuário. ABRIR JOGO continua funcionando para qualquer packageName válido, sem restrição por isGame.
 - Aba Preparar: funcionalidade real implementada (Fase 2-S.4): seletor de jogo com botão TROCAR (visível quando há mais de 1 jogo na biblioteca), pré-seleção automática por histórico (último jogo lançado → primeiro da biblioteca → null se vazia), Apex Scan local com 3 checks honestos (App vinculado, Perfil GFX, Prioridade — sem métricas falsas), snapshot real do dispositivo (RAM disponível, RAM total, estado de memória, latência Apex, Modo Foco), CTA "CONTINUAR PARA DETALHES" funcional com disable state quando não há jogo selecionado, navegação para GameDetailScreen via context.push, dois disclaimers honestos visíveis. Sem promessa de boost, FPS, GPU, ping ou otimização automática. Funções puras exportadas e cobertas por testes (selectGameForPreparation, buildIsLaunchableHint).
 - Aba Histórico: histórico real implementado e visualmente refinado (Fases 2-Q.5 e 2-Q.7): exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository; estado vazio honesto; status success/attempted/failed exibidos com visual premium; sem duração real; sem "partida concluída"; revisão visual aprovada no Samsung S24 Ultra.
@@ -910,6 +910,17 @@ Concluído:
   - BibliotecaTab e lazy load da PERF-G1.5 preservados intactos.
   - Nenhum arquivo Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão.
   - flutter analyze passando. flutter test passando com baseline atual.
+- Fase 2-T.2A concluída: InicioTab — chips de métricas reais na última sessão.
+  - Chips de métricas reais exibidos no card de última sessão da InicioTab.
+  - Chips usam apenas dados reais já existentes no SessionRecord.
+  - Nenhum dado inventado ou simulado exibido.
+  - Nenhuma nova query. Nenhum novo MethodChannel. Nenhuma chamada a getInstalledApps.
+  - Cache de ícone aprovado preservado. Layout estrutural da InicioTab preservado.
+  - BibliotecaTab e lazy load da PERF-G1.5 preservados intactos.
+  - Nenhum arquivo Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão.
+  - flutter analyze passando. flutter test passando (177/177).
+  - Commit: 33fb6c2 — ux: exibir metricas reais na ultima sessao da inicio.
+  - Aprovado no Samsung S24 Ultra.
 
 Observação sobre a Fase 1.6B:
 
@@ -1049,6 +1060,7 @@ Tentativa UI-G1.5 rejeitada e revertida: redesign visual pesado da BibliotecaTab
 Fase 2-S.4 aprovada por auditoria: PrepararTab deixou de ser placeholder. Seletor de jogo, pré-seleção por histórico, Apex Scan local, snapshot real do dispositivo e CTA funcional verificados. flutter analyze passando. flutter test passando (177/177).
 Fase 2-S.5 aprovada: validação end-to-end da jornada principal no Samsung S24 Ultra. "Tudo certo, tudo fluido." — aprovado pelo usuário. Jornada principal: abertura do app → Home → Biblioteca → Preparar → Detalhe do Jogo → ABRIR JOGO → retorno → Histórico → troca de abas. Sem crash. Sem tela vermelha. Sem overflow. Sem engasgos. Produto com jornada principal funcional e validada.
 Fase 2-T.1 aprovada: InicioTab refresh on tab focus implementado e validado no Samsung S24 Ultra. Contagem de jogos e dados de sessão atualizam ao retornar para a aba. Sem novo atraso perceptível. BibliotecaTab e lazy load PERF-G1.5 preservados. flutter analyze passando. flutter test passando.
+Fase 2-T.2A aprovada: InicioTab exibe chips de métricas reais no card de última sessão. Dados reais apenas (SessionRecord existente). Sem nova query, novo MethodChannel ou getInstalledApps. Nenhum dado inventado. Layout estrutural preservado. BibliotecaTab e lazy load PERF-G1.5 intactos. flutter analyze passando. flutter test passando (177/177). Commit 33fb6c2. Aprovado no Samsung S24 Ultra.
 Ainda não é o visual final absoluto do produto.
 
 Observação:
@@ -1076,7 +1088,7 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5, 2-S.4, 2-S.5 e 2-T.1 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5, 2-S.4, 2-S.5, 2-T.1 e 2-T.2A concluídas.
 
 Fase 2-O — Apex Metrics Real v1 (concluída):
 - Fase 2-O.1: camada de dados de métricas reais criada.
@@ -1194,11 +1206,21 @@ Fase 2-T — InicioTab funcional (concluída):
   - Nenhum arquivo Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão.
   - flutter analyze passando. flutter test passando com baseline atual.
   - Aprovado no Samsung S24 Ultra.
+- Fase 2-T.2A: InicioTab — chips de métricas reais na última sessão.
+  - Chips de métricas reais exibidos no card de última sessão.
+  - Dados reais apenas (SessionRecord existente): sem nova query, sem novo MethodChannel, sem getInstalledApps.
+  - Nenhum dado inventado ou simulado.
+  - Cache de ícone aprovado preservado. Layout estrutural da InicioTab preservado.
+  - BibliotecaTab e lazy load da PERF-G1.5 preservados intactos.
+  - Nenhum arquivo Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão.
+  - flutter analyze passando. flutter test passando (177/177).
+  - Commit: 33fb6c2 — ux: exibir metricas reais na ultima sessao da inicio.
+  - Aprovado no Samsung S24 Ultra.
 
 Próximo passo imediato:
-- Fase 2-T.1 concluída. InicioTab atualiza dados ao focar na aba.
+- Fase 2-T.2A concluída. InicioTab exibe chips de métricas reais na última sessão.
 - Definir próxima fase.
-  - Candidatos: InicioTab visual funcional completa (Fase 2-T.2 — cards reais de resumo), polimento visual geral (Fase 2-U), ou avanço para Fase 3 (Boost Engine).
+  - Candidato sinalizado: GFX Profile expandido — tela dedicada de GFX Profile ou melhoria da experiência de seleção de perfil por jogo.
   - Aguarda aprovação de escopo.
 
 Nota estratégica:
