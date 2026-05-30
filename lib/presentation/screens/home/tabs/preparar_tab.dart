@@ -10,6 +10,7 @@ import 'package:apex_booster_plus/data/services/device_metrics_service_impl.dart
 import 'package:apex_booster_plus/data/services/focus_mode_service_impl.dart';
 import 'package:apex_booster_plus/domain/entities/apex_game.dart';
 import 'package:apex_booster_plus/domain/entities/device_metrics.dart';
+import 'package:apex_booster_plus/domain/entities/gfx_profile.dart';
 import 'package:apex_booster_plus/domain/entities/session_record.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_badge.dart';
@@ -40,6 +41,19 @@ ApexGame? selectGameForPreparation(
 bool buildIsLaunchableHint(ApexGame game) =>
     game.packageName != null && game.packageName!.isNotEmpty;
 
+/// Returns the semantic message for a GFX profile name in the local prep scan.
+/// Falls back to 'Perfil padrão será usado' for null or unrecognized values.
+String buildGfxScanMessage(String? localProfileName) {
+  final profile = GfxProfile.fromLabel(localProfileName);
+  if (profile == null) return 'Perfil padrão será usado';
+  return switch (profile) {
+    GfxProfile.balanced => 'Equilibrado — balanço entre visual e fluidez',
+    GfxProfile.performance => 'Desempenho — priorizando fluidez local',
+    GfxProfile.quality => 'Qualidade — priorizando visual local',
+    GfxProfile.economy => 'Economia — priorizando autonomia da bateria',
+  };
+}
+
 // ── Private scan model ────────────────────────────────────────────────────────
 
 enum _PrepScanStatus { ok, warn, info }
@@ -68,10 +82,8 @@ List<_PrepScanCheck> _buildScanChecks(ApexGame game) {
     ),
     _PrepScanCheck(
       label: 'Perfil GFX',
-      message: game.localProfileName != null
-          ? 'Perfil ${game.localProfileName} configurado'
-          : 'Perfil padrão será usado',
-      status: game.localProfileName != null
+      message: buildGfxScanMessage(game.localProfileName),
+      status: GfxProfile.fromLabel(game.localProfileName) != null
           ? _PrepScanStatus.ok
           : _PrepScanStatus.info,
     ),
@@ -430,7 +442,9 @@ class _SelectedGameCard extends StatelessWidget {
                       children: [
                         _InfoChip(
                           label: 'GFX: ${game.localProfileName ?? "Padrão"}',
-                          color: AppColors.energyOrange,
+                          color: GfxProfile.fromLabel(game.localProfileName)
+                                  ?.accentColor ??
+                              AppColors.energyOrange,
                         ),
                         if (game.isFavorite)
                           const _InfoChip(

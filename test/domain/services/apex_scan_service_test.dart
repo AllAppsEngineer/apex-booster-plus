@@ -140,7 +140,19 @@ void main() {
   // --- Check: perfil ---
 
   group('check perfil', () {
-    test('ok when localProfileName is set', () {
+    test('Equilibrado retorna mensagem semantica e status ok', () {
+      final result = service.scan(
+        game: makeGame(
+            packageName: 'com.example.game',
+            localProfileName: 'Equilibrado'),
+        isLaunchable: true,
+      );
+      final check = result.checks.firstWhere((c) => c.id == 'perfil');
+      expect(check.status, ScanCheckStatus.ok);
+      expect(check.message, 'Equilibrado — balanço entre visual e fluidez');
+    });
+
+    test('Desempenho retorna mensagem semantica e status ok', () {
       final result = service.scan(
         game: makeGame(
             packageName: 'com.example.game',
@@ -149,10 +161,34 @@ void main() {
       );
       final check = result.checks.firstWhere((c) => c.id == 'perfil');
       expect(check.status, ScanCheckStatus.ok);
-      expect(check.message, 'Perfil Desempenho configurado');
+      expect(check.message, 'Desempenho — priorizando fluidez local');
     });
 
-    test('info when localProfileName is null', () {
+    test('Qualidade retorna mensagem semantica e status ok', () {
+      final result = service.scan(
+        game: makeGame(
+            packageName: 'com.example.game',
+            localProfileName: 'Qualidade'),
+        isLaunchable: true,
+      );
+      final check = result.checks.firstWhere((c) => c.id == 'perfil');
+      expect(check.status, ScanCheckStatus.ok);
+      expect(check.message, 'Qualidade — priorizando visual local');
+    });
+
+    test('Economia retorna mensagem semantica e status ok', () {
+      final result = service.scan(
+        game: makeGame(
+            packageName: 'com.example.game',
+            localProfileName: 'Economia'),
+        isLaunchable: true,
+      );
+      final check = result.checks.firstWhere((c) => c.id == 'perfil');
+      expect(check.status, ScanCheckStatus.ok);
+      expect(check.message, 'Economia — priorizando autonomia da bateria');
+    });
+
+    test('null retorna fallback padrao com status info', () {
       final result = service.scan(
         game: makeGame(packageName: 'com.example.game'),
         isLaunchable: true,
@@ -162,9 +198,31 @@ void main() {
       expect(check.message, 'Perfil padrão será usado');
     });
 
-    test('info perfil does not change score to incompleto', () {
+    test('perfil invalido retorna fallback padrao com status info', () {
+      final result = service.scan(
+        game: makeGame(
+            packageName: 'com.example.game',
+            localProfileName: 'ProfileDesconhecido'),
+        isLaunchable: true,
+      );
+      final check = result.checks.firstWhere((c) => c.id == 'perfil');
+      expect(check.status, ScanCheckStatus.info);
+      expect(check.message, 'Perfil padrão será usado');
+    });
+
+    test('perfil nao afeta score pronto', () {
       final result = service.scan(
         game: makeGame(packageName: 'com.example.game', localProfileName: null),
+        isLaunchable: true,
+      );
+      expect(result.score, ScanScore.pronto);
+    });
+
+    test('perfil invalido nao afeta score', () {
+      final result = service.scan(
+        game: makeGame(
+            packageName: 'com.example.game',
+            localProfileName: 'ProfileDesconhecido'),
         isLaunchable: true,
       );
       expect(result.score, ScanScore.pronto);

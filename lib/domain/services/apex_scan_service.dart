@@ -1,5 +1,6 @@
 import '../entities/apex_game.dart';
 import '../entities/apex_scan_result.dart';
+import '../entities/gfx_profile.dart';
 
 class ApexScanService {
   ApexScanResult scan({
@@ -61,16 +62,21 @@ class ApexScanService {
   }
 
   ScanCheck _perfil(ApexGame game) {
-    final hasPerfil = game.localProfileName != null;
+    final profile = GfxProfile.fromLabel(game.localProfileName);
     return ScanCheck(
       id: 'perfil',
       label: 'Perfil GFX',
-      status: hasPerfil ? ScanCheckStatus.ok : ScanCheckStatus.info,
-      message: hasPerfil
-          ? 'Perfil ${game.localProfileName} configurado'
-          : 'Perfil padrão será usado',
+      status: profile != null ? ScanCheckStatus.ok : ScanCheckStatus.info,
+      message: profile != null ? _perfilMessage(profile) : 'Perfil padrão será usado',
     );
   }
+
+  static String _perfilMessage(GfxProfile profile) => switch (profile) {
+        GfxProfile.balanced => 'Equilibrado — balanço entre visual e fluidez',
+        GfxProfile.performance => 'Desempenho — priorizando fluidez local',
+        GfxProfile.quality => 'Qualidade — priorizando visual local',
+        GfxProfile.economy => 'Economia — priorizando autonomia da bateria',
+      };
 
   ScanCheck _prioridade(ApexGame game) {
     return ScanCheck(

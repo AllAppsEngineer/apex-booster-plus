@@ -105,4 +105,59 @@ void main() {
       expect(buildIsLaunchableHint(game), isFalse);
     });
   });
+
+  group('buildGfxScanMessage', () {
+    test('Equilibrado retorna mensagem semantica', () {
+      expect(
+        buildGfxScanMessage('Equilibrado'),
+        'Equilibrado — balanço entre visual e fluidez',
+      );
+    });
+
+    test('Desempenho retorna mensagem semantica', () {
+      expect(
+        buildGfxScanMessage('Desempenho'),
+        'Desempenho — priorizando fluidez local',
+      );
+    });
+
+    test('Qualidade retorna mensagem semantica', () {
+      expect(
+        buildGfxScanMessage('Qualidade'),
+        'Qualidade — priorizando visual local',
+      );
+    });
+
+    test('Economia retorna mensagem semantica', () {
+      expect(
+        buildGfxScanMessage('Economia'),
+        'Economia — priorizando autonomia da bateria',
+      );
+    });
+
+    test('null retorna fallback padrao', () {
+      expect(buildGfxScanMessage(null), 'Perfil padrão será usado');
+    });
+
+    test('nome invalido retorna fallback padrao', () {
+      expect(buildGfxScanMessage('XYZ'), 'Perfil padrão será usado');
+    });
+
+    test('string vazia retorna fallback padrao', () {
+      expect(buildGfxScanMessage(''), 'Perfil padrão será usado');
+    });
+
+    test('mensagens nao contem linguagem proibida', () {
+      const perfis = ['Equilibrado', 'Desempenho', 'Qualidade', 'Economia'];
+      for (final p in perfis) {
+        final msg = buildGfxScanMessage(p).toLowerCase();
+        expect(msg, isNot(contains('fps')));
+        expect(msg, isNot(contains('gpu')));
+        expect(msg, isNot(contains('ram')));
+        expect(msg, isNot(contains('ping')));
+        expect(msg, isNot(contains('otimiz')));
+        expect(msg, isNot(contains('performance')));
+      }
+    });
+  });
 }
