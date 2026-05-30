@@ -9,7 +9,6 @@ import 'package:apex_booster_plus/core/constants/app_colors.dart';
 import 'package:apex_booster_plus/data/datasources/installed_apps_datasource.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_game_library_repository.dart';
 import 'package:apex_booster_plus/domain/entities/apex_game.dart';
-import 'package:apex_booster_plus/domain/entities/gfx_profile.dart';
 import 'package:apex_booster_plus/domain/entities/installed_app.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/data/services/device_metrics_service_impl.dart';
@@ -300,35 +299,12 @@ class _GameDetailScreenState extends State<GameDetailScreen>
 
   Future<void> _openProfileSelector() async {
     final game = _game;
-    final repo = _repo;
-    if (game == null || repo == null) return;
+    if (game == null) return;
 
-    // Returns: profile.label to select, '' to clear, null if dismissed
-    final result = await showModalBottomSheet<String?>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _GfxProfileSheet(currentLabel: game.localProfileName),
-    );
+    await context.push('/gfx-profile/${game.id}');
 
-    if (result == null) return;
     if (!mounted) return;
-
-    final ApexGame updated;
-    if (result.isEmpty) {
-      updated = game.copyWith(
-        clearLocalProfileName: true,
-        updatedAt: DateTime.now(),
-      );
-    } else {
-      updated = game.copyWith(
-        localProfileName: result,
-        updatedAt: DateTime.now(),
-      );
-    }
-
-    await repo.updateGame(updated);
-    final scan = await _buildScan(updated);
-    if (mounted) setState(() { _game = updated; _scanResult = scan; });
+    await _loadGame();
   }
 
   @override
@@ -822,181 +798,6 @@ class _InfoRow extends StatelessWidget {
         .animate()
         .fadeIn(delay: delay, duration: 400.ms)
         .slideX(begin: 0.03, end: 0, delay: delay, duration: 300.ms);
-  }
-}
-
-// ─── GFX Profile bottom sheet ─────────────────────────────────────────────────
-
-class _GfxProfileSheet extends StatelessWidget {
-  final String? currentLabel;
-
-  const _GfxProfileSheet({required this.currentLabel});
-
-  @override
-  Widget build(BuildContext context) {
-    final current = GfxProfile.fromLabel(currentLabel);
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF111318),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.textGray.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.tune_rounded,
-                    color: AppColors.energyOrange,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Perfil GFX',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 6),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                'Preferência salva localmente. Não altera jogos de terceiros.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textGray,
-                      fontSize: 11,
-                      fontStyle: FontStyle.italic,
-                    ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Divider(
-              height: 1,
-              color: AppColors.white.withValues(alpha: 0.07),
-            ),
-            for (final profile in GfxProfile.values)
-              _ProfileOption(
-                profile: profile,
-                isSelected: current == profile,
-                onTap: () => Navigator.of(context).pop(profile.label),
-              ),
-            _ProfileNoneOption(
-              isSelected: current == null,
-              onTap: () => Navigator.of(context).pop(''),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProfileOption extends StatelessWidget {
-  final GfxProfile profile;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _ProfileOption({
-    required this.profile,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        child: Row(
-          children: [
-            Icon(profile.icon, color: profile.accentColor, size: 20),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                profile.label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.white,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
-                    ),
-              ),
-            ),
-            if (isSelected)
-              const Icon(
-                Icons.check_rounded,
-                color: AppColors.apexGreen,
-                size: 20,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProfileNoneOption extends StatelessWidget {
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _ProfileNoneOption({
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        child: Row(
-          children: [
-            Icon(
-              Icons.remove_circle_outline_rounded,
-              color: AppColors.textGray.withValues(alpha: 0.5),
-              size: 20,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                'Nenhum',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textGray,
-                      fontStyle: FontStyle.italic,
-                    ),
-              ),
-            ),
-            if (isSelected)
-              const Icon(
-                Icons.check_rounded,
-                color: AppColors.apexGreen,
-                size: 20,
-              ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
