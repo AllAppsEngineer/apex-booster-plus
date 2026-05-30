@@ -517,13 +517,8 @@ class _GameDetailContent extends StatelessWidget {
             delay: 100.ms,
           ),
           const SizedBox(height: 10),
-          _InfoRow(
-            title: 'Perfil GFX',
-            icon: Icons.tune_rounded,
-            value: game.localProfileName,
-            emptyMessage: 'Nenhum perfil configurado',
-            accentColor: AppColors.energyOrange,
-            delay: 180.ms,
+          _GfxProfileActionCard(
+            profileName: game.localProfileName,
             onTap: onSelectProfile,
           ),
           const SizedBox(height: 10),
@@ -693,7 +688,6 @@ class _InfoRow extends StatelessWidget {
   final String? emptyMessage;
   final Color accentColor;
   final Duration delay;
-  final VoidCallback? onTap;
 
   const _InfoRow({
     required this.title,
@@ -702,7 +696,6 @@ class _InfoRow extends StatelessWidget {
     this.emptyMessage,
     required this.accentColor,
     this.delay = Duration.zero,
-    this.onTap,
   });
 
   @override
@@ -710,94 +703,192 @@ class _InfoRow extends StatelessWidget {
     final hasValue = value != null && value!.isNotEmpty;
     final displayValue = hasValue ? value! : (emptyMessage ?? '—');
 
-    final decoration = BoxDecoration(
-      color: AppColors.white.withValues(alpha: 0.04),
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(
-        color: hasValue
-            ? accentColor.withValues(alpha: 0.2)
-            : AppColors.white.withValues(alpha: 0.07),
-        width: 1,
-      ),
-    );
-
-    final rowContent = Row(
-      children: [
-        Icon(
-          icon,
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
           color: hasValue
-              ? accentColor
-              : AppColors.textGray.withValues(alpha: 0.4),
-          size: 18,
+              ? accentColor.withValues(alpha: 0.2)
+              : AppColors.white.withValues(alpha: 0.07),
+          width: 1,
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: hasValue
+                ? accentColor
+                : AppColors.textGray.withValues(alpha: 0.4),
+            size: 18,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textGray,
+                        fontSize: 11,
+                        letterSpacing: 0.5,
+                      ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  displayValue,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: hasValue
+                            ? AppColors.white
+                            : AppColors.textGray.withValues(alpha: 0.55),
+                        fontSize: 13,
+                        fontStyle:
+                            hasValue ? FontStyle.normal : FontStyle.italic,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(delay: delay, duration: 400.ms)
+        .slideX(begin: 0.03, end: 0, delay: delay, duration: 300.ms);
+  }
+}
+
+// ─── GFX Profile action card ──────────────────────────────────────────────────
+
+class _GfxProfileActionCard extends StatelessWidget {
+  final String? profileName;
+  final VoidCallback? onTap;
+
+  const _GfxProfileActionCard({this.profileName, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasProfile = profileName != null && profileName!.isNotEmpty;
+
+    return Ink(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D1016),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.energyOrange
+              .withValues(alpha: hasProfile ? 0.45 : 0.22),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.energyOrange
+                .withValues(alpha: hasProfile ? 0.09 : 0.04),
+            blurRadius: 14,
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        splashColor: AppColors.energyOrange.withValues(alpha: 0.09),
+        highlightColor: AppColors.energyOrange.withValues(alpha: 0.04),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textGray,
-                      fontSize: 11,
-                      letterSpacing: 0.5,
-                    ),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.energyOrange.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppColors.energyOrange.withValues(alpha: 0.28),
+                    width: 1,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.tune_rounded,
+                  color: AppColors.energyOrange,
+                  size: 20,
+                ),
               ),
-              const SizedBox(height: 3),
-              Text(
-                displayValue,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: hasValue
-                          ? AppColors.white
-                          : AppColors.textGray.withValues(alpha: 0.55),
-                      fontSize: 13,
-                      fontStyle:
-                          hasValue ? FontStyle.normal : FontStyle.italic,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Perfil GFX',
+                      style: TextStyle(
+                        color: AppColors.textGray,
+                        fontSize: 11,
+                        letterSpacing: 0.5,
+                      ),
                     ),
+                    const SizedBox(height: 3),
+                    Text(
+                      hasProfile ? profileName! : 'Nenhum perfil definido',
+                      style: TextStyle(
+                        color: hasProfile
+                            ? AppColors.white
+                            : AppColors.textGray.withValues(alpha: 0.55),
+                        fontWeight:
+                            hasProfile ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 14,
+                        fontStyle:
+                            hasProfile ? FontStyle.normal : FontStyle.italic,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Toque para ajustar a preparação local',
+                      style: TextStyle(
+                        color: AppColors.textGray.withValues(alpha: 0.55),
+                        fontSize: 10,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.energyOrange.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: AppColors.energyOrange.withValues(alpha: 0.35),
+                    width: 1,
+                  ),
+                ),
+                child: const Text(
+                  'AJUSTAR',
+                  style: TextStyle(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 10,
+                    letterSpacing: 1.2,
+                  ),
+                ),
               ),
             ],
           ),
         ),
-        if (onTap != null) ...[
-          const SizedBox(width: 4),
-          Icon(
-            Icons.chevron_right_rounded,
-            color: accentColor.withValues(alpha: 0.7),
-            size: 18,
-          ),
-        ],
-      ],
-    );
-
-    final Widget built;
-    if (onTap != null) {
-      built = Ink(
-        width: double.infinity,
-        decoration: decoration,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
-          splashColor: accentColor.withValues(alpha: 0.1),
-          highlightColor: accentColor.withValues(alpha: 0.05),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: rowContent,
-          ),
-        ),
-      );
-    } else {
-      built = Container(
-        width: double.infinity,
-        decoration: decoration,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: rowContent,
-      );
-    }
-
-    return built
+      ),
+    )
         .animate()
-        .fadeIn(delay: delay, duration: 400.ms)
-        .slideX(begin: 0.03, end: 0, delay: delay, duration: 300.ms);
+        .fadeIn(delay: 180.ms, duration: 400.ms)
+        .slideX(begin: 0.03, end: 0, delay: 180.ms, duration: 300.ms);
   }
 }
 
