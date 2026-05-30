@@ -408,6 +408,7 @@ Telas já existentes na base atual:
   - Aba Histórico (placeholder refinado visualmente)
   - Aba Configurações (placeholder refinado visualmente)
 - GameDetailScreen
+- GfxProfileScreen (tela dedicada de GFX Profile — criada na Fase GFX-U1.1)
 
 A existência dessas telas não significa aprovação visual final.
 
@@ -921,6 +922,21 @@ Concluído:
   - flutter analyze passando. flutter test passando (177/177).
   - Commit: 33fb6c2 — ux: exibir metricas reais na ultima sessao da inicio.
   - Aprovado no Samsung S24 Ultra.
+- Fase GFX-U1.1 concluída: tela dedicada de GFX Profile criada.
+  - GfxProfileScreen criada com cards selecionáveis para Equilibrado, Desempenho, Qualidade, Economia e Nenhum.
+  - Seleção persiste por jogo via localProfileName (SharedPreferencesGameLibraryRepository, sem alteração no repositório).
+  - Ao selecionar um perfil, o app retorna ao Detalhe do Jogo e atualiza o valor exibido.
+  - Bottom sheet legado de GFX Profile removido (código morto detectado pelo flutter analyze).
+  - Rota /gfx-profile/:id criada no app_router.dart.
+  - Disclaimer obrigatório preservado: "Preferências salvas localmente. Não altera jogos de terceiros."
+  - Nenhum arquivo Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão.
+  - flutter analyze passando. flutter test passando (177/177).
+  - Aprovado visualmente no Samsung S24 Ultra.
+- Fase GFX-U1.1A concluída: acesso ao GFX Profile no Detalhe do Jogo melhorado.
+  - Item Perfil GFX no Detalhe do Jogo deixou de parecer linha secundária.
+  - Passou a ter peso visual de botão/card premium.
+  - Aprovado visualmente pelo usuário no Samsung S24 Ultra.
+  - flutter analyze passando. flutter test passando (177/177).
 
 Observação sobre a Fase 1.6B:
 
@@ -1043,6 +1059,12 @@ Arquivos relevantes criados ou alterados nas Fases 2-R.1 a 2-R.4:
 - lib/presentation/screens/home/tabs/biblioteca_tab.dart (alterado — confirmação para isGame == false, badge Não verificado, buildNotVerifiedSet)
 - test/presentation/widgets/app_picker_sheet_filter_test.dart (criado — testes da função applyPickerFilter)
 
+Arquivos criados ou alterados nas Fases GFX-U1.1 e GFX-U1.1A:
+
+- lib/presentation/screens/gfx_profile/gfx_profile_screen.dart (criado — GfxProfileScreen com cards selecionáveis)
+- lib/core/routing/app_router.dart (alterado — rota /gfx-profile/:id adicionada)
+- lib/presentation/screens/game_detail/game_detail_screen.dart (alterado — bottom sheet legado removido, acesso GFX Profile com visual premium, navegação para GfxProfileScreen)
+
 Estado visual atual:
 
 Aprovado como checkpoint da Fase 2-O.5: seção "MÉTRICAS REAIS" validada no Samsung S24 Ultra com RAM disponível, RAM total, estado de memória e latência Apex lidos do dispositivo real.
@@ -1061,6 +1083,8 @@ Fase 2-S.4 aprovada por auditoria: PrepararTab deixou de ser placeholder. Seleto
 Fase 2-S.5 aprovada: validação end-to-end da jornada principal no Samsung S24 Ultra. "Tudo certo, tudo fluido." — aprovado pelo usuário. Jornada principal: abertura do app → Home → Biblioteca → Preparar → Detalhe do Jogo → ABRIR JOGO → retorno → Histórico → troca de abas. Sem crash. Sem tela vermelha. Sem overflow. Sem engasgos. Produto com jornada principal funcional e validada.
 Fase 2-T.1 aprovada: InicioTab refresh on tab focus implementado e validado no Samsung S24 Ultra. Contagem de jogos e dados de sessão atualizam ao retornar para a aba. Sem novo atraso perceptível. BibliotecaTab e lazy load PERF-G1.5 preservados. flutter analyze passando. flutter test passando.
 Fase 2-T.2A aprovada: InicioTab exibe chips de métricas reais no card de última sessão. Dados reais apenas (SessionRecord existente). Sem nova query, novo MethodChannel ou getInstalledApps. Nenhum dado inventado. Layout estrutural preservado. BibliotecaTab e lazy load PERF-G1.5 intactos. flutter analyze passando. flutter test passando (177/177). Commit 33fb6c2. Aprovado no Samsung S24 Ultra.
+Fase GFX-U1.1 aprovada: tela dedicada de GFX Profile validada no Samsung S24 Ultra. Cards selecionáveis para Equilibrado, Desempenho, Qualidade, Economia e Nenhum. Seleção persiste por jogo. Retorno ao Detalhe do Jogo atualiza valor exibido. Bottom sheet legado removido. flutter analyze passando. flutter test passando (177/177). Commits: feat: adicionar tela dedicada de perfil gfx + ux: destacar perfil gfx como acao no detalhe.
+Fase GFX-U1.1A aprovada: acesso ao GFX Profile no Detalhe do Jogo com peso visual de card/botão premium. Aprovado pelo usuário no Samsung S24 Ultra. flutter analyze passando. flutter test passando (177/177).
 Ainda não é o visual final absoluto do produto.
 
 Observação:
@@ -1072,7 +1096,7 @@ Pendências conhecidas:
 - Logo/asset oficial interno ainda não foi aprovado para uso definitivo nas telas Flutter.
 - Localização multilíngue ainda não foi implementada.
 - Tela Add Game separada não implementada (adição atual é diálogo inline na BibliotecaTab).
-- GFX Profile avançado não implementado (perfis futuros: Fluidez, Competitivo, Ultra Visual, Personalizado).
+- GFX Profile: tela dedicada GfxProfileScreen criada (Fase GFX-U1.1) com Equilibrado, Desempenho, Qualidade, Economia e Nenhum. Acesso no Detalhe do Jogo com visual premium (Fase GFX-U1.1A). Perfis avançados não implementados (futuros: Fluidez, Competitivo, Ultra Visual, Personalizado). Influência na jornada (PrepararTab, Apex Scan, Histórico, InicioTab, recomendações locais): pendente (GFX-U2).
 - Apex Scan: motor local criado (Fase 2M.2). Card visual implementado no Detalhe do Jogo (Fase 2M.4A). Métricas reais parciais implementadas (Fase 2-O.3): RAM disponível, RAM total, estado de memória e latência Apex. PrepararTab possui _PrepScanCard com checks locais honestos (app vinculado, GFX, prioridade) — não usa ApexScanService diretamente. Integração da aba Preparar com ApexScanService completo: pendente (Fase 2M.4B adiada). FPS real, GPU real, limpeza de RAM, boost real e otimização real não implementados.
 - Boost Engine não implementado.
 - Histórico real: captura, exibição local e revisão visual premium implementadas (Fases 2-Q.1 a 2-Q.7). HistoricoTab exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository com visual premium aprovado. Sem duração real. Sem Usage Stats. Sem Firebase. Apps não-game podem aparecer no histórico se forem lançados — comportamento esperado, o histórico registra o que foi aberto sem filtro retroativo.
@@ -1088,7 +1112,7 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5, 2-S.4, 2-S.5, 2-T.1 e 2-T.2A concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5, 2-S.4, 2-S.5, 2-T.1, 2-T.2A, GFX-U1.1 e GFX-U1.1A concluídas.
 
 Fase 2-O — Apex Metrics Real v1 (concluída):
 - Fase 2-O.1: camada de dados de métricas reais criada.
@@ -1217,10 +1241,25 @@ Fase 2-T — InicioTab funcional (concluída):
   - Commit: 33fb6c2 — ux: exibir metricas reais na ultima sessao da inicio.
   - Aprovado no Samsung S24 Ultra.
 
+Fase GFX-U — GFX Profile Expandido (em andamento):
+- Fase GFX-U1.1: tela dedicada de GFX Profile criada e aprovada no Samsung S24 Ultra.
+  - GfxProfileScreen com cards selecionáveis (Equilibrado, Desempenho, Qualidade, Economia, Nenhum).
+  - Seleção persiste por jogo via localProfileName.
+  - Retorno ao Detalhe do Jogo atualiza valor exibido.
+  - Bottom sheet legado removido (código morto).
+  - flutter analyze passando. flutter test passando (177/177).
+- Fase GFX-U1.1A: acesso ao GFX Profile no Detalhe do Jogo com visual premium aprovado.
+  - Item Perfil GFX deixou de parecer linha secundária.
+  - Visual de card/botão premium aprovado no Samsung S24 Ultra.
+  - flutter analyze passando. flutter test passando (177/177).
+- Fase GFX-U2: pendente — GFX Profile influenciando a jornada.
+  - Escopo previsto: PrepararTab, Apex Scan local, Histórico, InicioTab, recomendações locais.
+  - Posicionamento correto: Perfil GFX aplicado à preparação local da sessão — sem prometer alteração de FPS, GPU, resolução, textura ou gráficos internos de jogos terceiros.
+  - Aguarda aprovação de escopo.
+
 Próximo passo imediato:
-- Fase 2-T.2A concluída. InicioTab exibe chips de métricas reais na última sessão.
-- Definir próxima fase.
-  - Candidato sinalizado: GFX Profile expandido — tela dedicada de GFX Profile ou melhoria da experiência de seleção de perfil por jogo.
+- Fases GFX-U1.1 e GFX-U1.1A concluídas e aprovadas. GFX Profile tem tela dedicada e acesso com visual premium no Detalhe do Jogo.
+- Próxima fase: GFX-U2 — GFX Profile influenciando a jornada.
   - Aguarda aprovação de escopo.
 
 Nota estratégica:
@@ -1401,13 +1440,17 @@ Não pode:
 
 ## 24. GFX PROFILE
 
-Perfis implementados na Fase 2E.1:
+Perfis implementados (Fases 2E.1 e GFX-U1.1):
 
 - Equilibrado
 - Desempenho
 - Qualidade
 - Economia
 - Nenhum (remoção do perfil — ausência de localProfileName)
+
+Seleção via GfxProfileScreen (tela dedicada criada na Fase GFX-U1.1).
+Bottom sheet legado removido na Fase GFX-U1.1 (código morto).
+Acesso no Detalhe do Jogo com visual de card/botão premium (Fase GFX-U1.1A).
 
 Perfis planejados para fases futuras (não implementados):
 
