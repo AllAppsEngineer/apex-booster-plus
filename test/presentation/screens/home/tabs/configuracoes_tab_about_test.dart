@@ -78,4 +78,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('ABRIR AJUSTES'), findsNothing);
   });
+
+  testWidgets('placeholder CFG nao aparece na aba Configuracoes',
+      (tester) async {
+    await tester.pumpWidget(_wrapConfig());
+    await tester.pumpAndSettle();
+    expect(find.text('Preferências em preparação'), findsNothing);
+  });
+
+  testWidgets('card LANG nao aparece na aba Configuracoes', (tester) async {
+    await tester.pumpWidget(_wrapConfig());
+    await tester.pumpAndSettle();
+    expect(find.text('Idioma do app'), findsNothing);
+  });
 }

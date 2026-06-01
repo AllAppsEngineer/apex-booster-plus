@@ -7,7 +7,6 @@ import 'package:apex_booster_plus/data/services/focus_mode_service_impl.dart';
 import 'package:apex_booster_plus/domain/services/focus_mode_service.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_badge.dart';
-import 'package:apex_booster_plus/presentation/widgets/apex_feature_card.dart';
 
 class ConfiguracoesTab extends StatelessWidget {
   const ConfiguracoesTab({super.key});
@@ -24,19 +23,9 @@ class ConfiguracoesTab extends StatelessWidget {
             children: [
               const _ConfiguracoesHeader(),
               const SizedBox(height: 28),
-              const _ConfiguracoesMainCard(),
-              const SizedBox(height: 16),
               const _FocusModeCard(),
               const SizedBox(height: 12),
               const _ClearHistoryCard(),
-              const SizedBox(height: 12),
-              ApexFeatureCard(
-                badge: 'LANG',
-                title: 'Idioma do app',
-                subtitle: 'Português, inglês e espanhol serão adicionados em fase futura.',
-                accentColor: AppColors.apexGreen,
-                delay: 100.ms,
-              ),
               const SizedBox(height: 12),
               const _AboutCard(),
             ],
@@ -75,68 +64,6 @@ class _ConfiguracoesHeader extends StatelessWidget {
         ).animate().fadeIn(delay: 100.ms, duration: 500.ms),
       ],
     );
-  }
-}
-
-class _ConfiguracoesMainCard extends StatelessWidget {
-  const _ConfiguracoesMainCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.energyOrange.withValues(alpha: 0.12),
-            AppColors.white.withValues(alpha: 0.04),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.energyOrange.withValues(alpha: 0.25),
-          width: 1,
-        ),
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const ApexBadge(label: 'CFG', color: AppColors.energyOrange),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: AppColors.energyOrange.withValues(alpha: 0.45),
-                size: 14,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Preferências em preparação',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Idioma, aparência e ajustes do app serão organizados nas próximas etapas.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textGray,
-                  fontSize: 13,
-                ),
-          ),
-        ],
-      ),
-    )
-        .animate()
-        .fadeIn(duration: 600.ms)
-        .slideY(begin: 0.04, end: 0, duration: 400.ms);
   }
 }
 
