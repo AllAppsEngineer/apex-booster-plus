@@ -8,7 +8,9 @@ import 'package:apex_booster_plus/domain/entities/gfx_profile.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 
 class HistoricoTab extends StatefulWidget {
-  const HistoricoTab({super.key});
+  final bool isActive;
+
+  const HistoricoTab({super.key, this.isActive = false});
 
   @override
   State<HistoricoTab> createState() => _HistoricoTabState();
@@ -24,6 +26,14 @@ class _HistoricoTabState extends State<HistoricoTab>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadSessions();
+  }
+
+  @override
+  void didUpdateWidget(HistoricoTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _loadSessions();
+    }
   }
 
   @override

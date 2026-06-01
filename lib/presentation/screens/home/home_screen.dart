@@ -22,7 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
     InicioTab(isActive: _selectedIndex == 0),
     BibliotecaTab(isActive: _selectedIndex == 1),
     PrepararTab(isActive: _selectedIndex == 2),
-    const HistoricoTab(),
+    HistoricoTab(isActive: _selectedIndex == 3),
     const ConfiguracoesTab(),
   ];
 

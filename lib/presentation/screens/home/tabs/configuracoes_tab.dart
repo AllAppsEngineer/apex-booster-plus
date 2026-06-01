@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
+import 'package:apex_booster_plus/data/repositories/shared_preferences_session_repository.dart';
 import 'package:apex_booster_plus/data/services/focus_mode_service_impl.dart';
 import 'package:apex_booster_plus/domain/services/focus_mode_service.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
@@ -25,6 +27,8 @@ class ConfiguracoesTab extends StatelessWidget {
               const _ConfiguracoesMainCard(),
               const SizedBox(height: 16),
               const _FocusModeCard(),
+              const SizedBox(height: 12),
+              const _ClearHistoryCard(),
               const SizedBox(height: 12),
               ApexFeatureCard(
                 badge: 'LANG',
@@ -403,6 +407,163 @@ class _FocusModeCardState extends State<_FocusModeCard>
         ),
       ),
     );
+  }
+}
+
+// ─── Limpar Histórico ────────────────────────────────────────────────────────
+
+class _ClearHistoryCard extends StatelessWidget {
+  const _ClearHistoryCard();
+
+  Future<void> _onTap(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text(
+          'Limpar histórico?',
+          style: TextStyle(
+            color: AppColors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 17,
+          ),
+        ),
+        content: const Text(
+          'Todas as sessões serão apagadas. Esta ação não pode ser desfeita.',
+          style: TextStyle(
+            color: AppColors.textGray,
+            fontSize: 13,
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text(
+              'CANCELAR',
+              style: TextStyle(
+                color: AppColors.textGray,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFEF4444),
+            ),
+            child: const Text(
+              'LIMPAR',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    if (!context.mounted) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final repo = SharedPreferencesSessionRepository(prefs);
+    await repo.clearAll();
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Histórico apagado com sucesso.'),
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: () => _onTap(context),
+        borderRadius: BorderRadius.circular(12),
+        splashColor: const Color(0xFFEF4444).withValues(alpha: 0.08),
+        highlightColor: const Color(0xFFEF4444).withValues(alpha: 0.04),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFFEF4444).withValues(alpha: 0.08),
+                AppColors.white.withValues(alpha: 0.03),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFFEF4444).withValues(alpha: 0.22),
+              width: 1,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.delete_sweep_outlined,
+                  color: Color(0xFFEF4444),
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Limpar histórico de sessões',
+                      style: TextStyle(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Apaga todas as sessões salvas localmente.',
+                      style: TextStyle(
+                        color: AppColors.textGray.withValues(alpha: 0.8),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: const Color(0xFFEF4444).withValues(alpha: 0.45),
+                size: 18,
+              ),
+            ],
+          ),
+        ),
+      ),
+    )
+        .animate()
+        .fadeIn(delay: 80.ms, duration: 500.ms)
+        .slideY(begin: 0.04, end: 0, duration: 380.ms);
   }
 }
 
