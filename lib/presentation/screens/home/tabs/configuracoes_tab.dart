@@ -38,15 +38,7 @@ class ConfiguracoesTab extends StatelessWidget {
                 delay: 100.ms,
               ),
               const SizedBox(height: 12),
-              ApexFeatureCard(
-                badge: 'APP',
-                title: 'Experiência Apex',
-                subtitle: 'Ajustes visuais e informações do app serão centralizados aqui.',
-                accentColor: AppColors.cyberBlue,
-                delay: 200.ms,
-              ),
-              const SizedBox(height: 32),
-              const _ConfiguracoesCTA(),
+              const _AboutCard(),
             ],
           ),
         ),
@@ -567,43 +559,122 @@ class _ClearHistoryCard extends StatelessWidget {
   }
 }
 
-// ─── CTA bottom ─────────────────────────────────────────────────────────────
+// ─── Sobre o app ─────────────────────────────────────────────────────────────
 
-class _ConfiguracoesCTA extends StatelessWidget {
-  const _ConfiguracoesCTA();
+class _AboutCard extends StatelessWidget {
+  const _AboutCard();
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: double.infinity,
-      height: 52,
-      child: ElevatedButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Configurações serão ativadas em etapa futura.'),
-              duration: Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.energyOrange,
-          foregroundColor: AppColors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          elevation: 0,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.apexGreen.withValues(alpha: 0.08),
+            AppColors.white.withValues(alpha: 0.03),
+          ],
         ),
-        child: const Text(
-          'ABRIR AJUSTES',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            letterSpacing: 1.5,
-          ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.apexGreen.withValues(alpha: 0.22),
+          width: 1,
         ),
       ),
-    ).animate().fadeIn(delay: 300.ms, duration: 500.ms);
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const ApexBadge(label: 'SOBRE', color: AppColors.apexGreen),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.apexGreen.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: AppColors.apexGreen.withValues(alpha: 0.28),
+                    width: 1,
+                  ),
+                ),
+                child: const Text(
+                  'Versão 1.0.0',
+                  style: TextStyle(
+                    color: AppColors.apexGreen,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Apex Booster+',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Prepare. Analise. Jogue.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.apexGreen,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.lock_open_rounded,
+                size: 14,
+                color: AppColors.textGray.withValues(alpha: 0.7),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Instalação gratuita · Desbloqueio único',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textGray,
+                      fontSize: 12,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                size: 14,
+                color: AppColors.textGray.withValues(alpha: 0.5),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Não altera jogos de terceiros automaticamente.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textGray.withValues(alpha: 0.7),
+                        fontSize: 12,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(delay: 200.ms, duration: 600.ms)
+        .slideY(begin: 0.04, end: 0, duration: 400.ms);
   }
 }
