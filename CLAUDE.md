@@ -970,6 +970,20 @@ Concluído:
   - BibliotecaTab, PrepararTab, HistoricoTab, GameDetailScreen, GfxProfileScreen, ApexScanService, SessionRecord, repositories, services, Kotlin, AndroidManifest e pubspec não alterados.
   - flutter analyze passando. flutter test passando (190/190).
   - Aprovado no Samsung S24 Ultra.
+- Fase GFX-U2 — validação end-to-end física concluída no Samsung S24 Ultra.
+  - Ciclo completo validado: Detalhe do Jogo → GFX Profile → Preparar → Apex Scan → Abrir Jogo → Histórico → Início.
+  - Todos os perfis validados fisicamente: Desempenho, Qualidade, Economia, Equilibrado e Nenhum.
+  - Detalhe do Jogo: perfil selecionado exibido corretamente para cada perfil.
+  - PrepararTab: cor, label e mensagem contextual corretos por perfil.
+  - Apex Scan local: contextualiza o perfil sem alterar score nem status.
+  - Abrir Jogo: registra sessão normalmente independente do perfil ativo.
+  - Histórico: chip GFX exibido com perfil correto para cada sessão registrada.
+  - Início: chip GFX da última sessão exibido com semântica correta.
+  - Perfil "Nenhum": não gera chip falso, "GFX: null" ou chip vazio em nenhuma tela.
+  - Sessões antigas: preservam o perfil registrado no momento da abertura.
+  - Sem crash. Sem tela vermelha. Sem overflow relevante. Sem engasgos relevantes.
+  - flutter analyze passando. flutter test passando (190/190).
+  - GFX-U2 marcada como concluída end-to-end.
 
 Observação sobre a Fase 1.6B:
 
@@ -1129,6 +1143,7 @@ Fase GFX-U1.1A aprovada: acesso ao GFX Profile no Detalhe do Jogo com peso visua
 Fase GFX-U2.A+B aprovada: GFX Profile influenciando a jornada local de preparação. PrepararTab exibe perfil com cor/semântica real. Apex Scan local usa mensagem contextual por perfil — score e status preservados. Sem promessa falsa. Nenhum Kotlin, AndroidManifest ou pubspec alterado. flutter analyze passando. flutter test passando (190/190). Aprovado no Samsung S24 Ultra.
 Fase GFX-U2.C aprovada: Histórico exibe chip de Perfil GFX por sessão. Chip usa GfxProfile.fromLabel com cor e label semântico por perfil (Desempenho → verde, Equilibrado → azul, Qualidade → laranja, Economia → cinza). Fallback seguro para nulos e desconhecidos. Sessões sem perfil não exibem chip. Nenhum Kotlin, AndroidManifest ou pubspec alterado. flutter analyze passando. flutter test passando (190/190). Aprovado no Samsung S24 Ultra.
 Fase GFX-U2.D aprovada: InicioTab exibe chip de Perfil GFX semântico da última sessão. Chip usa GfxProfile.fromLabel com cor e label semântico por perfil. Fallback seguro para nulos, vazios e desconhecidos. Sessões sem perfil não exibem chip. Chips de RAM e latência preservados. _loadData, cache de ícone e navegação intactos. Nenhum Kotlin, AndroidManifest ou pubspec alterado. flutter analyze passando. flutter test passando (190/190). Aprovado no Samsung S24 Ultra.
+Fase GFX-U2 aprovada end-to-end no Samsung S24 Ultra: ciclo completo validado fisicamente — Detalhe do Jogo → GFX Profile → Preparar → Apex Scan → Abrir Jogo → Histórico → Início. Todos os perfis validados (Desempenho, Qualidade, Economia, Equilibrado, Nenhum). Perfil "Nenhum" não gera chip falso em nenhuma tela. Sessões antigas preservam perfil original. Sem crash, sem tela vermelha, sem overflow, sem engasgos. flutter analyze passando. flutter test passando (190/190). GFX-U2 marcada como concluída end-to-end.
 Ainda não é o visual final absoluto do produto.
 
 Observação:
@@ -1285,7 +1300,7 @@ Fase 2-T — InicioTab funcional (concluída):
   - Commit: 33fb6c2 — ux: exibir metricas reais na ultima sessao da inicio.
   - Aprovado no Samsung S24 Ultra.
 
-Fase GFX-U — GFX Profile Expandido (em andamento):
+Fase GFX-U — GFX Profile Expandido (GFX-U2 concluída end-to-end):
 - Fase GFX-U1.1: tela dedicada de GFX Profile criada e aprovada no Samsung S24 Ultra.
   - GfxProfileScreen com cards selecionáveis (Equilibrado, Desempenho, Qualidade, Economia, Nenhum).
   - Seleção persiste por jogo via localProfileName.
@@ -1323,13 +1338,27 @@ Fase GFX-U — GFX Profile Expandido (em andamento):
   - BibliotecaTab, PrepararTab, HistoricoTab, GameDetailScreen, GfxProfileScreen, ApexScanService, SessionRecord, repositories, services, Kotlin, AndroidManifest e pubspec não alterados.
   - flutter analyze passando. flutter test passando (190/190).
   - Aprovado no Samsung S24 Ultra.
+- Fase GFX-U2 — validação end-to-end física concluída no Samsung S24 Ultra.
+  - Ciclo completo validado: Detalhe do Jogo → GFX Profile → Preparar → Apex Scan → Abrir Jogo → Histórico → Início.
+  - Todos os perfis validados fisicamente: Desempenho, Qualidade, Economia, Equilibrado e Nenhum.
+  - Detalhe do Jogo: perfil selecionado exibido corretamente para cada perfil.
+  - PrepararTab: cor, label e mensagem contextual corretos por perfil.
+  - Apex Scan local: contextualiza o perfil sem alterar score nem status.
+  - Abrir Jogo: registra sessão normalmente independente do perfil ativo.
+  - Histórico: chip GFX exibido com perfil correto para cada sessão registrada.
+  - Início: chip GFX da última sessão exibido com semântica correta.
+  - Perfil "Nenhum": não gera chip falso, "GFX: null" ou chip vazio em nenhuma tela.
+  - Sessões antigas: preservam o perfil registrado no momento da abertura.
+  - Sem crash. Sem tela vermelha. Sem overflow relevante. Sem engasgos relevantes.
+  - flutter analyze passando. flutter test passando (190/190).
+  - GFX-U2 marcada como concluída end-to-end.
 - Fase GFX-U2.E+: pendente — recomendações locais baseadas em perfil GFX.
   - Aguarda aprovação de escopo.
 
 Próximo passo imediato:
-- GFX-U2 concluída nas quatro frentes: GFX-U2.A+B (PrepararTab + Apex Scan local), GFX-U2.C (Histórico), GFX-U2.D (InicioTab). GFX Profile com presença semântica em toda a jornada principal.
+- GFX-U2 concluída end-to-end: todas as frentes (GFX-U2.A+B, GFX-U2.C, GFX-U2.D) validadas fisicamente no Samsung S24 Ultra. GFX Profile com presença semântica completa em toda a jornada principal.
 - Próxima fase sugerida: aguarda definição de escopo pelo usuário.
-  - Candidatos: GFX-U2.E (recomendações locais), perfis avançados, InicioTab visual refinement, ou nova feature de produto.
+  - Candidatos: GFX-U2.E (recomendações locais baseadas em perfil), perfis avançados (Fluidez, Competitivo, Ultra Visual, Personalizado), nova feature de produto.
 
 Nota estratégica:
 - Fase 2M.4B (integração do ApexScanService completo na aba Preparar): continua adiada. PrepararTab já tem _PrepScanCard com checks locais — integração com ApexScanService é refinamento futuro, não bloqueador.
