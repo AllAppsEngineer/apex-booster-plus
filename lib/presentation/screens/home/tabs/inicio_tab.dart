@@ -7,6 +7,7 @@ import 'package:apex_booster_plus/core/constants/app_colors.dart';
 import 'package:apex_booster_plus/data/datasources/installed_apps_datasource.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_game_library_repository.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_session_repository.dart';
+import 'package:apex_booster_plus/domain/entities/gfx_profile.dart';
 import 'package:apex_booster_plus/domain/entities/session_record.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_feature_card.dart';
@@ -214,8 +215,6 @@ class _LastSessionCard extends StatelessWidget {
 
   List<String> _collectChips() {
     final chips = <String>[];
-    final gfx = session.gfxProfile;
-    if (gfx != null && gfx.isNotEmpty) chips.add('GFX · $gfx');
     final ram = session.memoryAvailableMb;
     if (ram != null && ram > 0) chips.add('RAM $ram MB');
     final lat = session.apexLatencyMs;
@@ -226,6 +225,8 @@ class _LastSessionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chips = _collectChips();
+    final gfxProfile = GfxProfile.fromLabel(session.gfxProfile);
+    final hasChips = chips.isNotEmpty || gfxProfile != null;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -288,13 +289,20 @@ class _LastSessionCard extends StatelessWidget {
               ),
             ],
           ),
-          if (chips.isNotEmpty) ...[
+          if (hasChips) ...[
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 6,
-              children:
-                  chips.map((label) => _MetricChip(label: label)).toList(),
+              children: [
+                if (gfxProfile != null)
+                  _MetricChip(
+                    label: 'GFX: ${gfxProfile.label}',
+                    accentColor: gfxProfile.accentColor,
+                    icon: gfxProfile.icon,
+                  ),
+                ...chips.map((label) => _MetricChip(label: label)),
+              ],
             ),
           ],
           const SizedBox(height: 16),
@@ -465,28 +473,54 @@ class _StatusChip extends StatelessWidget {
 
 class _MetricChip extends StatelessWidget {
   final String label;
+  final Color? accentColor;
+  final IconData? icon;
 
-  const _MetricChip({required this.label});
+  const _MetricChip({
+    required this.label,
+    this.accentColor,
+    this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final color = accentColor;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.06),
+        color: color != null
+            ? color.withValues(alpha: 0.10)
+            : AppColors.white.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(4),
         border: Border.all(
-          color: AppColors.white.withValues(alpha: 0.12),
+          color: color != null
+              ? color.withValues(alpha: 0.30)
+              : AppColors.white.withValues(alpha: 0.12),
         ),
       ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: AppColors.textGray,
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.5,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(
+              icon,
+              size: 11,
+              color: color ?? AppColors.textGray,
+            ),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            label,
+            style: TextStyle(
+              color: color != null
+                  ? AppColors.white.withValues(alpha: 0.90)
+                  : AppColors.textGray,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
       ),
     );
   }
