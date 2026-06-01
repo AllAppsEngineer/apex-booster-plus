@@ -418,7 +418,7 @@ Estado funcional das abas da Home:
 - Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome via BottomSheet com autocomplete inteligente desde a primeira letra, sugestões por ranking de relevância, lista rolável sem limite artificial, seleção de sugestão preenche nome + packageName, packageName manual validado contra apps instalados, jogos fantasmas bloqueados, duplicados bloqueados com mensagem "Já instalado", favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe com validação: packageName inválido bloqueado, packageName duplicado em outro jogo bloqueado, packageName vazio permitido com fallback de ícone, packageName igual ao jogo atual permitido, edição apenas do nome preservada sem validação desnecessária, seleção de GFX Profile local via bottom sheet no detalhe, seleção restrita de apps Android instalados via AppPickerSheet com intent MAIN/LAUNCHER — entrada manual permanece como fallback, exibição de ícone real do app instalado via AppIconWidget quando packageName disponível — fallback genérico quando ausente, app desinstalado ou erro, microcopy final ajustado: contagem exibe "na biblioteca", empty state honesto "Nenhum jogo adicionado ainda.", subtítulo orienta ação real, copy do card Perfis locais reflete que GFX Profile já existe no detalhe de cada jogo, launcher real implementado na GameDetailScreen via botão ABRIR JOGO com Apex Boost Mode visual antes da abertura). Observação (descoberta Fase 2-Q.4 — tratada na Fase 2-R): o launcher abre qualquer packageName válido instalado, incluindo apps não-game como Waze. O Android não diferencia automaticamente neste fluxo. Não é bug técnico — é lacuna de classificação/curadoria gamer. Tratamento implementado na Fase 2-R: badge "JOGO" e toggle "Apenas jogos verificados" no AppPickerSheet, confirmação obrigatória ao adicionar app com isGame == false, e badge "Não verificado" nos cards da Biblioteca para packageName com isGame == false. Nenhum app é bloqueado permanentemente — decisão fica com o usuário. ABRIR JOGO continua funcionando para qualquer packageName válido, sem restrição por isGame.
 - Aba Preparar: funcionalidade real implementada (Fase 2-S.4): seletor de jogo com botão TROCAR (visível quando há mais de 1 jogo na biblioteca), pré-seleção automática por histórico (último jogo lançado → primeiro da biblioteca → null se vazia), Apex Scan local com 3 checks honestos (App vinculado, Perfil GFX, Prioridade — sem métricas falsas), snapshot real do dispositivo (RAM disponível, RAM total, estado de memória, latência Apex, Modo Foco), CTA "CONTINUAR PARA DETALHES" funcional com disable state quando não há jogo selecionado, navegação para GameDetailScreen via context.push, dois disclaimers honestos visíveis. Sem promessa de boost, FPS, GPU, ping ou otimização automática. Funções puras exportadas e cobertas por testes (selectGameForPreparation, buildIsLaunchableHint). Fase GFX-U2.A: Perfil GFX exibido na PrepararTab com cor e semântica por perfil selecionado (verde/Desempenho, azul/Qualidade, laranja/Economia, neutro/Equilibrado, cinza/Nenhum). Fase GFX-U2.B: Apex Scan local usa mensagem contextual por perfil GFX selecionado no check de Perfil GFX — sem alterar score nem status do scan. Fase GFX-U2.E.1: seção "Sugestões" exibida no _PrepScanCard quando há Perfil GFX selecionado — sugestões locais, leves e baseadas no perfil; Perfil "Nenhum" não exibe seção; sem promessa de FPS, GPU, resolução ou alteração real; refresh correto ao retornar da GfxProfileScreen.
 - Aba Histórico: histórico real implementado e visualmente refinado (Fases 2-Q.5 e 2-Q.7): exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository; estado vazio honesto; status success/attempted/failed exibidos com visual premium; sem duração real; sem "partida concluída"; revisão visual aprovada no Samsung S24 Ultra. Fase GFX-U2.C: chip de Perfil GFX exibido nos cards de sessão quando presente, usando GfxProfile.fromLabel(session.gfxProfile) com cor e label semânticos por perfil; fallback seguro para nulos e valores desconhecidos; sessões sem perfil não exibem chip. Fase SET-U1.1: refresh ao ganhar foco via isActive implementado — após limpeza de histórico nas Configurações, HistoricoTab exibe estado vazio imediatamente sem necessidade de reiniciar o app.
-- Aba Configurações: card "Modo Foco Gamer" implementado (Fase 2-P.4) com UI de permissão. Ação "Limpar histórico de sessões" implementada (Fase SET-U1.1) com diálogo de confirmação — CANCELAR preserva sessões, LIMPAR apaga apenas apex_sessions. Card "Sobre" implementado (Fase SET-U1.2): exibe nome do app (Apex Booster+), versão (1.0.0), tagline "Prepare. Analise. Jogue.", modelo comercial "Instalação gratuita · Desbloqueio único" e disclaimer "Não altera jogos de terceiros automaticamente." — placeholder APP removido, CTA morta "ABRIR AJUSTES" removida. Restante placeholder visual.
+- Aba Configurações: card "Modo Foco Gamer" implementado (Fase 2-P.4) com UI de permissão. Ação "Limpar histórico de sessões" implementada (Fase SET-U1.1) com diálogo de confirmação — CANCELAR preserva sessões, LIMPAR apaga apenas apex_sessions. Card "Sobre" implementado (Fase SET-U1.2): exibe nome do app (Apex Booster+), versão (1.0.0), tagline "Prepare. Analise. Jogue.", modelo comercial "Instalação gratuita · Desbloqueio único" e disclaimer "Não altera jogos de terceiros automaticamente." — placeholder APP removido, CTA morta "ABRIR AJUSTES" removida. Fase SET-U1.3: card "Preferências em preparação" removido, card "Idioma do app" placeholder removido, import órfão de apex_feature_card.dart removido — aba exibe apenas itens reais: Modo Foco Gamer, Limpar histórico, Sobre.
 
 ---
 
@@ -1024,6 +1024,17 @@ Concluído:
   - flutter analyze passando. flutter test passando (239/239).
   - Commit: 5a614b7 — feat: adicionar sobre do app nas configuracoes.
   - Aprovado no Samsung S24 Ultra.
+- Fase SET-U1.3 concluída: Limpeza dos placeholders restantes em Configurações.
+  - Card "Preferências em preparação" removido da ConfiguraçõesTab.
+  - Card "Idioma do app" placeholder removido da ConfiguraçõesTab.
+  - Import órfão de apex_feature_card.dart removido.
+  - Aba Configurações exibe apenas itens reais/funcionais: Header, Modo Foco Gamer, Limpar histórico de sessões, Sobre o Apex Booster+.
+  - Modo Foco Gamer, Limpar histórico e Sobre preservados e funcionais.
+  - Observação estratégica: remoção do card "Idioma do app" não elimina a necessidade de idioma no produto — foi removido um placeholder morto. Idioma retorna futuramente como funcionalidade real em fase própria (LANG-U1).
+  - Nenhum arquivo Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão. Nenhuma nova dependência.
+  - flutter analyze passando. flutter test passando (241/241).
+  - Commit: ad75f54 — ux: remover placeholders das configuracoes.
+  - Aprovado no Samsung S24 Ultra. Sem crash. Sem tela vermelha. Sem overflow. Sem atraso novo relevante.
 
 Observação sobre a Fase 1.6B:
 
@@ -1178,6 +1189,10 @@ Arquivos alterados na Fase SET-U1.2:
 - lib/presentation/screens/home/tabs/configuracoes_tab.dart (alterado — card "Sobre" adicionado; placeholder APP e CTA morta removidos)
 - test/presentation/screens/home/tabs/configuracoes_tab_about_test.dart (criado — testes do card Sobre)
 
+Arquivos alterados na Fase SET-U1.3:
+
+- lib/presentation/screens/home/tabs/configuracoes_tab.dart (alterado — card "Preferências em preparação" removido, card "Idioma do app" removido, import órfão de apex_feature_card.dart removido)
+
 Estado visual atual:
 
 Aprovado como checkpoint da Fase 2-O.5: seção "MÉTRICAS REAIS" validada no Samsung S24 Ultra com RAM disponível, RAM total, estado de memória e latência Apex lidos do dispositivo real.
@@ -1205,6 +1220,7 @@ Fase GFX-U2 aprovada end-to-end no Samsung S24 Ultra: ciclo completo validado fi
 Fase GFX-U2.E.1 aprovada: recomendações locais por Perfil GFX implementadas na PrepararTab e validadas no Samsung S24 Ultra. Seção "Sugestões" exibida por perfil. Perfil "Nenhum" não exibe seção. Refresh correto ao retornar da GfxProfileScreen. Score/status do Apex Scan e CTA preservados. Sem nova permissão, dependência ou chamada de MethodChannel. flutter analyze passando. flutter test passando (226/226). Commit 3fc4a7a.
 Fase SET-U1.1 aprovada: ação "Limpar histórico de sessões" implementada na ConfiguraçõesTab e validada no Samsung S24 Ultra. Diálogo de confirmação funcional. CANCELAR preserva sessões. LIMPAR apaga apenas apex_sessions. Biblioteca, jogos, perfis GFX e demais dados intactos. HistoricoTab exibe estado vazio imediatamente após limpeza. InicioTab não mantém última sessão antiga. Sem nova permissão, dependência, Kotlin, AndroidManifest ou pubspec alterado. flutter analyze passando. flutter test passando (233/233). Commit 6fc286f. Fecha a primeira configuração real mínima do app.
 Fase SET-U1.2 aprovada: card "Sobre" implementado na ConfiguraçõesTab e validado no Samsung S24 Ultra. Exibe nome do app, versão 1.0.0, tagline, modelo comercial e disclaimer. Placeholder APP removido. CTA morta removida. Sem package_info_plus. Sem nova permissão, dependência, Kotlin, AndroidManifest ou pubspec alterado. flutter analyze passando. flutter test passando (239/239). Commit 5a614b7.
+Fase SET-U1.3 aprovada: placeholders restantes removidos da ConfiguraçõesTab e validado no Samsung S24 Ultra. Card "Preferências em preparação" e card "Idioma do app" removidos. Import órfão de apex_feature_card.dart removido. Aba exibe apenas Modo Foco Gamer, Limpar histórico e Sobre — todos funcionais. Sem nova permissão, dependência, Kotlin, AndroidManifest ou pubspec alterado. flutter analyze passando. flutter test passando (241/241). Commit ad75f54.
 Ainda não é o visual final absoluto do produto.
 
 Observação:
@@ -1220,7 +1236,7 @@ Pendências conhecidas:
 - Apex Scan: motor local criado (Fase 2M.2). Card visual implementado no Detalhe do Jogo (Fase 2M.4A). Métricas reais parciais implementadas (Fase 2-O.3): RAM disponível, RAM total, estado de memória e latência Apex. PrepararTab possui _PrepScanCard com checks locais honestos (app vinculado, GFX, prioridade) — não usa ApexScanService diretamente. Integração da aba Preparar com ApexScanService completo: pendente (Fase 2M.4B adiada). FPS real, GPU real, limpeza de RAM, boost real e otimização real não implementados.
 - Boost Engine não implementado.
 - Histórico real: captura, exibição local e revisão visual premium implementadas (Fases 2-Q.1 a 2-Q.7). HistoricoTab exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository com visual premium aprovado. Sem duração real. Sem Usage Stats. Sem Firebase. Apps não-game podem aparecer no histórico se forem lançados — comportamento esperado, o histórico registra o que foi aberto sem filtro retroativo.
-- Configurações: Limpar histórico de sessões implementado (Fase SET-U1.1). Card Sobre implementado (Fase SET-U1.2 — nome, versão 1.0.0, tagline, modelo comercial, disclaimer). Demais configurações reais pendentes (outras a definir).
+- Configurações: Limpar histórico de sessões implementado (Fase SET-U1.1). Card Sobre implementado (Fase SET-U1.2 — nome, versão 1.0.0, tagline, modelo comercial, disclaimer). Placeholders removidos (Fase SET-U1.3 — card "Preferências em preparação" e card "Idioma do app"). Idioma real pendente (LANG-U1 — futura). Demais configurações reais pendentes (outras a definir).
 - Hive não implementado (shared_preferences cobre a necessidade atual).
 - Billing não implementado.
 - Firebase não implementado.
@@ -1232,7 +1248,7 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5, 2-S.4, 2-S.5, 2-T.1, 2-T.2A, GFX-U1.1, GFX-U1.1A, GFX-U2.A+B, GFX-U2.C, GFX-U2.D, GFX-U2.E.1, SET-U1.1 e SET-U1.2 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5, 2-S.4, 2-S.5, 2-T.1, 2-T.2A, GFX-U1.1, GFX-U1.1A, GFX-U2.A+B, GFX-U2.C, GFX-U2.D, GFX-U2.E.1, SET-U1.1, SET-U1.2 e SET-U1.3 concluídas.
 
 Fase 2-O — Apex Metrics Real v1 (concluída):
 - Fase 2-O.1: camada de dados de métricas reais criada.
@@ -1450,12 +1466,23 @@ Fase SET-U — Configurações reais mínimas:
   - flutter analyze passando. flutter test passando (239/239).
   - Commit: 5a614b7 — feat: adicionar sobre do app nas configuracoes.
   - Aprovado no Samsung S24 Ultra.
-- Fase SET-U1.3 e seguintes: pendentes, aguardam aprovação de escopo.
+- Fase SET-U1.3: Limpeza dos placeholders restantes (concluída).
+  - Card "Preferências em preparação" removido da ConfiguraçõesTab.
+  - Card "Idioma do app" placeholder removido.
+  - Import órfão de apex_feature_card.dart removido.
+  - Aba exibe apenas itens reais: Modo Foco Gamer, Limpar histórico, Sobre.
+  - Observação estratégica: idioma retorna futuramente como LANG-U1 — funcionalidade real, não placeholder.
+  - Nenhum Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão ou dependência.
+  - flutter analyze passando. flutter test passando (241/241).
+  - Commit: ad75f54 — ux: remover placeholders das configuracoes.
+  - Aprovado no Samsung S24 Ultra.
+- Fase LANG-U1 e seguintes: pendentes, aguardam aprovação de escopo.
 
 Próximo passo imediato:
-- SET-U1.1 e SET-U1.2 concluídas: aba Configurações tem Limpar histórico e card Sobre funcionais.
-- Próxima fase sugerida: nova feature de produto ou polimento visual de tela existente.
-  - Candidatos a discutir: SET-U1.3 (outra configuração real), refinamento visual, Boost Engine (Fase 3), ou outro a definir.
+- SET-U1.1, SET-U1.2 e SET-U1.3 concluídas: aba Configurações tem Limpar histórico, card Sobre e apenas itens reais/funcionais.
+- Próxima fase sugerida: LANG-U1 — Idioma real nas Configurações, ou outra feature de produto.
+  - LANG-U1: troca efetiva de idioma (PT-BR / EN-US / ES) com persistência local — sem dependência nova imediata (shared_preferences já disponível).
+  - Candidatos alternativos: refinamento visual, Boost Engine (Fase 3), ou outro a definir.
 
 Nota estratégica:
 - Fase 2M.4B (integração do ApexScanService completo na aba Preparar): continua adiada. PrepararTab já tem _PrepScanCard com checks locais — integração com ApexScanService é refinamento futuro, não bloqueador.
