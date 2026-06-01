@@ -414,7 +414,7 @@ A existência dessas telas não significa aprovação visual final.
 
 Estado funcional das abas da Home:
 
-- Aba Início: refresh on tab focus implementado (Fase 2-T.1) e chips de métricas reais da última sessão implementados (Fase 2-T.2A): contagem de jogos, dados de sessão e chips de métricas reais atualizam ao retornar para a aba. Chips usam apenas dados reais já existentes no SessionRecord — sem nova query, sem novo MethodChannel, sem getInstalledApps. Nenhum dado inventado. Layout estrutural preservado.
+- Aba Início: refresh on tab focus implementado (Fase 2-T.1) e chips de métricas reais da última sessão implementados (Fase 2-T.2A): contagem de jogos, dados de sessão e chips de métricas reais atualizam ao retornar para a aba. Chips usam apenas dados reais já existentes no SessionRecord — sem nova query, sem novo MethodChannel, sem getInstalledApps. Nenhum dado inventado. Layout estrutural preservado. Fase GFX-U2.D: chip de Perfil GFX da última sessão exibido na InicioTab usando GfxProfile.fromLabel(session.gfxProfile) com cor e label semânticos — fallback seguro para nulos, vazios e valores desconhecidos; sessões sem perfil não exibem chip; chips de RAM e latência preservados; _loadData, cache de ícone e navegação não alterados.
 - Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome via BottomSheet com autocomplete inteligente desde a primeira letra, sugestões por ranking de relevância, lista rolável sem limite artificial, seleção de sugestão preenche nome + packageName, packageName manual validado contra apps instalados, jogos fantasmas bloqueados, duplicados bloqueados com mensagem "Já instalado", favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe com validação: packageName inválido bloqueado, packageName duplicado em outro jogo bloqueado, packageName vazio permitido com fallback de ícone, packageName igual ao jogo atual permitido, edição apenas do nome preservada sem validação desnecessária, seleção de GFX Profile local via bottom sheet no detalhe, seleção restrita de apps Android instalados via AppPickerSheet com intent MAIN/LAUNCHER — entrada manual permanece como fallback, exibição de ícone real do app instalado via AppIconWidget quando packageName disponível — fallback genérico quando ausente, app desinstalado ou erro, microcopy final ajustado: contagem exibe "na biblioteca", empty state honesto "Nenhum jogo adicionado ainda.", subtítulo orienta ação real, copy do card Perfis locais reflete que GFX Profile já existe no detalhe de cada jogo, launcher real implementado na GameDetailScreen via botão ABRIR JOGO com Apex Boost Mode visual antes da abertura). Observação (descoberta Fase 2-Q.4 — tratada na Fase 2-R): o launcher abre qualquer packageName válido instalado, incluindo apps não-game como Waze. O Android não diferencia automaticamente neste fluxo. Não é bug técnico — é lacuna de classificação/curadoria gamer. Tratamento implementado na Fase 2-R: badge "JOGO" e toggle "Apenas jogos verificados" no AppPickerSheet, confirmação obrigatória ao adicionar app com isGame == false, e badge "Não verificado" nos cards da Biblioteca para packageName com isGame == false. Nenhum app é bloqueado permanentemente — decisão fica com o usuário. ABRIR JOGO continua funcionando para qualquer packageName válido, sem restrição por isGame.
 - Aba Preparar: funcionalidade real implementada (Fase 2-S.4): seletor de jogo com botão TROCAR (visível quando há mais de 1 jogo na biblioteca), pré-seleção automática por histórico (último jogo lançado → primeiro da biblioteca → null se vazia), Apex Scan local com 3 checks honestos (App vinculado, Perfil GFX, Prioridade — sem métricas falsas), snapshot real do dispositivo (RAM disponível, RAM total, estado de memória, latência Apex, Modo Foco), CTA "CONTINUAR PARA DETALHES" funcional com disable state quando não há jogo selecionado, navegação para GameDetailScreen via context.push, dois disclaimers honestos visíveis. Sem promessa de boost, FPS, GPU, ping ou otimização automática. Funções puras exportadas e cobertas por testes (selectGameForPreparation, buildIsLaunchableHint). Fase GFX-U2.A: Perfil GFX exibido na PrepararTab com cor e semântica por perfil selecionado (verde/Desempenho, azul/Qualidade, laranja/Economia, neutro/Equilibrado, cinza/Nenhum). Fase GFX-U2.B: Apex Scan local usa mensagem contextual por perfil GFX selecionado no check de Perfil GFX — sem alterar score nem status do scan.
 - Aba Histórico: histórico real implementado e visualmente refinado (Fases 2-Q.5 e 2-Q.7): exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository; estado vazio honesto; status success/attempted/failed exibidos com visual premium; sem duração real; sem "partida concluída"; revisão visual aprovada no Samsung S24 Ultra. Fase GFX-U2.C: chip de Perfil GFX exibido nos cards de sessão quando presente, usando GfxProfile.fromLabel(session.gfxProfile) com cor e label semânticos por perfil; fallback seguro para nulos e valores desconhecidos; sessões sem perfil não exibem chip.
@@ -960,6 +960,16 @@ Concluído:
   - Nenhum arquivo Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão.
   - flutter analyze passando. flutter test passando (190/190).
   - Aprovado no Samsung S24 Ultra.
+- Fase GFX-U2.D concluída: InicioTab exibindo Perfil GFX semântico da última sessão.
+  - Chip "GFX: [Perfil]" exibido no card de última sessão da InicioTab quando session.gfxProfile está presente.
+  - Chip usa GfxProfile.fromLabel(session.gfxProfile): cor e label semânticos por perfil.
+  - Perfil nulo, vazio ou desconhecido não exibe chip — fallback seguro.
+  - Chips de RAM e latência preservados visualmente.
+  - Nenhuma lógica de sessão alterada.
+  - _loadData, cache de ícone e navegação permaneceram intactos.
+  - BibliotecaTab, PrepararTab, HistoricoTab, GameDetailScreen, GfxProfileScreen, ApexScanService, SessionRecord, repositories, services, Kotlin, AndroidManifest e pubspec não alterados.
+  - flutter analyze passando. flutter test passando (190/190).
+  - Aprovado no Samsung S24 Ultra.
 
 Observação sobre a Fase 1.6B:
 
@@ -1118,6 +1128,7 @@ Fase GFX-U1.1 aprovada: tela dedicada de GFX Profile validada no Samsung S24 Ult
 Fase GFX-U1.1A aprovada: acesso ao GFX Profile no Detalhe do Jogo com peso visual de card/botão premium. Aprovado pelo usuário no Samsung S24 Ultra. flutter analyze passando. flutter test passando (177/177).
 Fase GFX-U2.A+B aprovada: GFX Profile influenciando a jornada local de preparação. PrepararTab exibe perfil com cor/semântica real. Apex Scan local usa mensagem contextual por perfil — score e status preservados. Sem promessa falsa. Nenhum Kotlin, AndroidManifest ou pubspec alterado. flutter analyze passando. flutter test passando (190/190). Aprovado no Samsung S24 Ultra.
 Fase GFX-U2.C aprovada: Histórico exibe chip de Perfil GFX por sessão. Chip usa GfxProfile.fromLabel com cor e label semântico por perfil (Desempenho → verde, Equilibrado → azul, Qualidade → laranja, Economia → cinza). Fallback seguro para nulos e desconhecidos. Sessões sem perfil não exibem chip. Nenhum Kotlin, AndroidManifest ou pubspec alterado. flutter analyze passando. flutter test passando (190/190). Aprovado no Samsung S24 Ultra.
+Fase GFX-U2.D aprovada: InicioTab exibe chip de Perfil GFX semântico da última sessão. Chip usa GfxProfile.fromLabel com cor e label semântico por perfil. Fallback seguro para nulos, vazios e desconhecidos. Sessões sem perfil não exibem chip. Chips de RAM e latência preservados. _loadData, cache de ícone e navegação intactos. Nenhum Kotlin, AndroidManifest ou pubspec alterado. flutter analyze passando. flutter test passando (190/190). Aprovado no Samsung S24 Ultra.
 Ainda não é o visual final absoluto do produto.
 
 Observação:
@@ -1129,7 +1140,7 @@ Pendências conhecidas:
 - Logo/asset oficial interno ainda não foi aprovado para uso definitivo nas telas Flutter.
 - Localização multilíngue ainda não foi implementada.
 - Tela Add Game separada não implementada (adição atual é diálogo inline na BibliotecaTab).
-- GFX Profile: tela dedicada GfxProfileScreen criada (Fase GFX-U1.1) com Equilibrado, Desempenho, Qualidade, Economia e Nenhum. Acesso no Detalhe do Jogo com visual premium (Fase GFX-U1.1A). Influência na jornada — PrepararTab e Apex Scan local: implementada (Fase GFX-U2.A+B). Influência no Histórico: implementada (Fase GFX-U2.C — chip GFX nos cards do Histórico). Perfis avançados não implementados (futuros: Fluidez, Competitivo, Ultra Visual, Personalizado). Influência na InicioTab e recomendações locais: pendente (GFX-U2.D+).
+- GFX Profile: tela dedicada GfxProfileScreen criada (Fase GFX-U1.1) com Equilibrado, Desempenho, Qualidade, Economia e Nenhum. Acesso no Detalhe do Jogo com visual premium (Fase GFX-U1.1A). Influência na jornada — PrepararTab e Apex Scan local: implementada (Fase GFX-U2.A+B). Influência no Histórico: implementada (Fase GFX-U2.C — chip GFX nos cards do Histórico). Influência na InicioTab: implementada (Fase GFX-U2.D — chip GFX semântico no card de última sessão). Perfis avançados não implementados (futuros: Fluidez, Competitivo, Ultra Visual, Personalizado). Recomendações locais baseadas em perfil: pendente (GFX-U2.E+).
 - Apex Scan: motor local criado (Fase 2M.2). Card visual implementado no Detalhe do Jogo (Fase 2M.4A). Métricas reais parciais implementadas (Fase 2-O.3): RAM disponível, RAM total, estado de memória e latência Apex. PrepararTab possui _PrepScanCard com checks locais honestos (app vinculado, GFX, prioridade) — não usa ApexScanService diretamente. Integração da aba Preparar com ApexScanService completo: pendente (Fase 2M.4B adiada). FPS real, GPU real, limpeza de RAM, boost real e otimização real não implementados.
 - Boost Engine não implementado.
 - Histórico real: captura, exibição local e revisão visual premium implementadas (Fases 2-Q.1 a 2-Q.7). HistoricoTab exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository com visual premium aprovado. Sem duração real. Sem Usage Stats. Sem Firebase. Apps não-game podem aparecer no histórico se forem lançados — comportamento esperado, o histórico registra o que foi aberto sem filtro retroativo.
@@ -1145,7 +1156,7 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5, 2-S.4, 2-S.5, 2-T.1, 2-T.2A, GFX-U1.1, GFX-U1.1A, GFX-U2.A+B e GFX-U2.C concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5, 2-S.4, 2-S.5, 2-T.1, 2-T.2A, GFX-U1.1, GFX-U1.1A, GFX-U2.A+B, GFX-U2.C e GFX-U2.D concluídas.
 
 Fase 2-O — Apex Metrics Real v1 (concluída):
 - Fase 2-O.1: camada de dados de métricas reais criada.
@@ -1303,13 +1314,22 @@ Fase GFX-U — GFX Profile Expandido (em andamento):
   - Nenhum arquivo Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão.
   - flutter analyze passando. flutter test passando (190/190).
   - Aprovado no Samsung S24 Ultra.
-- Fase GFX-U2.D+: pendente — InicioTab e recomendações locais com influência do GFX Profile.
+- Fase GFX-U2.D concluída: InicioTab exibindo Perfil GFX semântico da última sessão.
+  - Chip "GFX: [Perfil]" exibido no card de última sessão da InicioTab quando session.gfxProfile está presente.
+  - Chip usa GfxProfile.fromLabel(session.gfxProfile): cor e label semânticos por perfil.
+  - Perfil nulo, vazio ou desconhecido não exibe chip — fallback seguro.
+  - Chips de RAM e latência preservados visualmente.
+  - _loadData, cache de ícone e navegação permaneceram intactos.
+  - BibliotecaTab, PrepararTab, HistoricoTab, GameDetailScreen, GfxProfileScreen, ApexScanService, SessionRecord, repositories, services, Kotlin, AndroidManifest e pubspec não alterados.
+  - flutter analyze passando. flutter test passando (190/190).
+  - Aprovado no Samsung S24 Ultra.
+- Fase GFX-U2.E+: pendente — recomendações locais baseadas em perfil GFX.
   - Aguarda aprovação de escopo.
 
 Próximo passo imediato:
-- Fases GFX-U1.1, GFX-U1.1A, GFX-U2.A+B e GFX-U2.C concluídas e aprovadas. GFX Profile tem tela dedicada, acesso premium no Detalhe do Jogo, influência na PrepararTab + Apex Scan local e chip semântico no Histórico.
-- Próxima fase sugerida: GFX-U2.D — InicioTab exibindo Perfil GFX da última sessão.
-  - Aguarda aprovação de escopo.
+- GFX-U2 concluída nas quatro frentes: GFX-U2.A+B (PrepararTab + Apex Scan local), GFX-U2.C (Histórico), GFX-U2.D (InicioTab). GFX Profile com presença semântica em toda a jornada principal.
+- Próxima fase sugerida: aguarda definição de escopo pelo usuário.
+  - Candidatos: GFX-U2.E (recomendações locais), perfis avançados, InicioTab visual refinement, ou nova feature de produto.
 
 Nota estratégica:
 - Fase 2M.4B (integração do ApexScanService completo na aba Preparar): continua adiada. PrepararTab já tem _PrepScanCard com checks locais — integração com ApexScanService é refinamento futuro, não bloqueador.
@@ -1500,10 +1520,12 @@ Perfis implementados (Fases 2E.1 e GFX-U1.1):
 Seleção via GfxProfileScreen (tela dedicada criada na Fase GFX-U1.1).
 Bottom sheet legado removido na Fase GFX-U1.1 (código morto).
 Acesso no Detalhe do Jogo com visual de card/botão premium (Fase GFX-U1.1A).
-Influência na jornada implementada (Fase GFX-U2.A+B):
+Influência na jornada implementada (Fases GFX-U2.A+B, GFX-U2.C e GFX-U2.D):
 - PrepararTab exibe o perfil com cor e semântica por tipo (GFX-U2.A).
 - Apex Scan local usa mensagem contextual por perfil — score e status preservados (GFX-U2.B).
-- Histórico: implementado (Fase GFX-U2.C — chip GFX nos cards do Histórico). InicioTab/recomendações: pendente (GFX-U2.D+).
+- Histórico: implementado (Fase GFX-U2.C — chip GFX nos cards do Histórico).
+- InicioTab: implementado (Fase GFX-U2.D — chip GFX semântico no card de última sessão).
+- Recomendações locais: pendente (GFX-U2.E+).
 
 Perfis planejados para fases futuras (não implementados):
 
