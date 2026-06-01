@@ -54,6 +54,63 @@ String buildGfxScanMessage(String? localProfileName) {
   };
 }
 
+/// Returns up to 3 actionable preparation suggestions for the given GFX profile.
+/// Returns an empty list when [profile] is null — no suggestions rendered.
+/// Safe with null [metrics] and null [focusGranted].
+List<String> buildGfxRecommendations(
+  GfxProfile? profile,
+  DeviceMetrics? metrics,
+  bool? focusGranted,
+) {
+  if (profile == null) return const [];
+
+  final recs = <String>[];
+
+  switch (profile) {
+    case GfxProfile.performance:
+      recs.add('Feche apps em segundo plano antes de iniciar');
+      if (focusGranted == false) {
+        recs.add('Ative o Modo Foco para reduzir interrupções');
+      }
+      if (metrics?.isLowMemory == true) {
+        recs.add('RAM limitada — feche apps pesados antes de jogar');
+      } else {
+        recs.add('Prefira conexão Wi-Fi estável');
+      }
+
+    case GfxProfile.quality:
+      recs.add('Mantenha o dispositivo carregado durante a sessão');
+      if (metrics != null && metrics.latencyStatus != LatencyStatus.success) {
+        recs.add('Conexão estável favorece uma sessão mais consistente');
+      }
+      if (focusGranted == false) {
+        recs.add('Ative o Modo Foco para reduzir interrupções visuais');
+      }
+
+    case GfxProfile.economy:
+      recs.add('Reduza o brilho da tela para preservar bateria');
+      if (metrics?.isLowMemory == true) {
+        recs.add('Feche apps em segundo plano antes de iniciar');
+      } else {
+        recs.add('Prefira sessões mais curtas ou jogue com carga suficiente');
+      }
+      if (focusGranted == false) {
+        recs.add('Modo Foco ajuda a reduzir interrupções na sessão');
+      }
+
+    case GfxProfile.balanced:
+      recs.add('Prepare a sessão com conexão estável');
+      if (metrics?.isLowMemory == true) {
+        recs.add('Feche apps que não usa antes de iniciar');
+      }
+      if (focusGranted == false) {
+        recs.add('Ative o Modo Foco para reduzir interrupções');
+      }
+  }
+
+  return recs.take(3).toList();
+}
+
 // ── Private scan model ────────────────────────────────────────────────────────
 
 enum _PrepScanStatus { ok, warn, info }
@@ -99,7 +156,9 @@ List<_PrepScanCheck> _buildScanChecks(ApexGame game) {
 // ── Widget ────────────────────────────────────────────────────────────────────
 
 class PrepararTab extends StatefulWidget {
-  const PrepararTab({super.key});
+  final bool isActive;
+
+  const PrepararTab({super.key, this.isActive = false});
 
   @override
   State<PrepararTab> createState() => _PrepararTabState();
@@ -124,6 +183,14 @@ class _PrepararTabState extends State<PrepararTab> {
     _loadMetrics(); // runs concurrently, never blocks game display
   }
 
+  @override
+  void didUpdateWidget(PrepararTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _refreshSelectedGame();
+    }
+  }
+
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     final gameRepo = SharedPreferencesGameLibraryRepository(prefs);
@@ -146,6 +213,36 @@ class _PrepararTabState extends State<PrepararTab> {
         _loading = false;
       });
     }
+  }
+
+  /// Reloads the selected game from SharedPreferences to pick up changes
+  /// (e.g. a GFX profile update) made in GameDetail/GfxProfile.
+  /// Does NOT call getInstalledApps or any MethodChannel.
+  Future<void> _refreshSelectedGame() async {
+    if (_selectedGame == null) return;
+    final currentId = _selectedGame!.id;
+    final prefs = await SharedPreferences.getInstance();
+    final gameRepo = SharedPreferencesGameLibraryRepository(prefs);
+    final games = await gameRepo.getGames();
+    final updated = games.cast<ApexGame?>().firstWhere(
+          (g) => g?.id == currentId,
+          orElse: () => null,
+        );
+    if (!mounted) return;
+    setState(() {
+      _games = games;
+      if (updated != null) {
+        _selectedGame = updated;
+        _scanChecks = _buildScanChecks(updated);
+      }
+    });
+  }
+
+  Future<void> _navigateToDetails() async {
+    if (_selectedGame == null || !mounted) return;
+    await context.push('/game-detail/${_selectedGame!.id}');
+    if (!mounted) return;
+    await _refreshSelectedGame();
   }
 
   Future<void> _loadMetrics() async {
@@ -239,6 +336,8 @@ class _PrepararTabState extends State<PrepararTab> {
                       _PrepScanCard(
                         checks: _scanChecks,
                         game: _selectedGame!,
+                        metrics: _metrics,
+                        focusGranted: _focusGranted,
                       ),
                     ],
                     const SizedBox(height: 16),
@@ -248,7 +347,10 @@ class _PrepararTabState extends State<PrepararTab> {
                       focusGranted: _focusGranted,
                     ),
                     const SizedBox(height: 32),
-                    _PrepararCTA(game: _selectedGame),
+                    _PrepararCTA(
+                      game: _selectedGame,
+                      onContinue: _navigateToDetails,
+                    ),
                   ],
                 ),
               ),
@@ -499,8 +601,15 @@ class _InfoChip extends StatelessWidget {
 class _PrepScanCard extends StatelessWidget {
   final List<_PrepScanCheck> checks;
   final ApexGame game;
+  final DeviceMetrics? metrics;
+  final bool? focusGranted;
 
-  const _PrepScanCard({required this.checks, required this.game});
+  const _PrepScanCard({
+    required this.checks,
+    required this.game,
+    this.metrics,
+    this.focusGranted,
+  });
 
   bool get _isReady => buildIsLaunchableHint(game);
 
@@ -597,6 +706,7 @@ class _PrepScanCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           ...checks.map((c) => _ScanCheckRow(check: c)),
+          ..._buildSuggestions(context),
           const SizedBox(height: 10),
           Divider(
             color: AppColors.white.withValues(alpha: 0.08),
@@ -618,6 +728,66 @@ class _PrepScanCard extends StatelessWidget {
         .animate()
         .fadeIn(delay: 100.ms, duration: 500.ms)
         .slideY(begin: 0.04, end: 0, duration: 400.ms);
+  }
+
+  List<Widget> _buildSuggestions(BuildContext context) {
+    final profile = GfxProfile.fromLabel(game.localProfileName);
+    final recs = buildGfxRecommendations(profile, metrics, focusGranted);
+    if (recs.isEmpty) return const [];
+
+    return [
+      const SizedBox(height: 10),
+      Divider(
+        color: AppColors.white.withValues(alpha: 0.08),
+        thickness: 1,
+        height: 1,
+      ),
+      const SizedBox(height: 10),
+      Text(
+        'SUGESTÕES',
+        style: TextStyle(
+          color: AppColors.cyberBlue.withValues(alpha: 0.75),
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.2,
+        ),
+      ),
+      const SizedBox(height: 6),
+      ...recs.map((r) => _RecommendationRow(text: r)),
+    ];
+  }
+}
+
+class _RecommendationRow extends StatelessWidget {
+  final String text;
+
+  const _RecommendationRow({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.arrow_right_rounded,
+            size: 14,
+            color: AppColors.cyberBlue.withValues(alpha: 0.6),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: AppColors.textGray.withValues(alpha: 0.85),
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -941,8 +1111,9 @@ class _SnapshotRow extends StatelessWidget {
 
 class _PrepararCTA extends StatelessWidget {
   final ApexGame? game;
+  final VoidCallback? onContinue;
 
-  const _PrepararCTA({required this.game});
+  const _PrepararCTA({required this.game, required this.onContinue});
 
   @override
   Widget build(BuildContext context) {
@@ -951,8 +1122,7 @@ class _PrepararCTA extends StatelessWidget {
       width: double.infinity,
       height: 52,
       child: ElevatedButton(
-        onPressed:
-            enabled ? () => context.push('/game-detail/${game!.id}') : null,
+        onPressed: enabled ? onContinue : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.apexGreen,
           foregroundColor: AppColors.background,

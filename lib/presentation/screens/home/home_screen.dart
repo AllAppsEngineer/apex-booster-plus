@@ -21,7 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Widget> get _tabs => [
     InicioTab(isActive: _selectedIndex == 0),
     BibliotecaTab(isActive: _selectedIndex == 1),
-    const PrepararTab(),
+    PrepararTab(isActive: _selectedIndex == 2),
     const HistoricoTab(),
     const ConfiguracoesTab(),
   ];
