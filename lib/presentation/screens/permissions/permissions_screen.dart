@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/i18n/app_language.dart';
+import '../../../core/i18n/app_strings.dart';
 import '../../widgets/apex_background.dart';
 import '../../widgets/apex_feature_card.dart';
 
@@ -10,55 +12,61 @@ class PermissionsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: ApexBackground(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-                _buildBackNav(context),
-                const SizedBox(height: 20),
-                _buildHeader(context),
-                const SizedBox(height: 8),
-                _buildSubtitle(context),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    child: Column(
-                      children: [
-                        _buildCards(),
-                        const SizedBox(height: 20),
-                        _buildTrustMessage(context),
-                        const SizedBox(height: 8),
-                      ],
+    return ListenableBuilder(
+      listenable: languageNotifier,
+      builder: (context, _) {
+        final s = AppStrings(languageNotifier.value);
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: ApexBackground(
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 8),
+                    _buildBackNav(context, s),
+                    const SizedBox(height: 20),
+                    _buildHeader(context, s),
+                    const SizedBox(height: 8),
+                    _buildSubtitle(context, s),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: Column(
+                          children: [
+                            _buildCards(s),
+                            const SizedBox(height: 20),
+                            _buildTrustMessage(context, s),
+                            const SizedBox(height: 8),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    _buildCta(context, s),
+                    const SizedBox(height: 24),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                _buildCta(context),
-                const SizedBox(height: 24),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildBackNav(BuildContext context) {
+  Widget _buildBackNav(BuildContext context, AppStrings s) {
     return GestureDetector(
       onTap: () {
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            context.go('/how-it-works');
-          }
-        },
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/how-it-works');
+        }
+      },
       child: const Icon(
         Icons.arrow_back_ios,
         color: AppColors.apexGreen,
@@ -67,9 +75,9 @@ class PermissionsScreen extends StatelessWidget {
     ).animate().fadeIn(duration: 300.ms);
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, AppStrings s) {
     return Text(
-      'Permissões com transparência',
+      s.permissionsTitle,
       style: Theme.of(context).textTheme.headlineMedium?.copyWith(
         color: AppColors.white,
         fontWeight: FontWeight.bold,
@@ -78,9 +86,9 @@ class PermissionsScreen extends StatelessWidget {
     ).animate().fadeIn(delay: 100.ms, duration: 500.ms);
   }
 
-  Widget _buildSubtitle(BuildContext context) {
+  Widget _buildSubtitle(BuildContext context, AppStrings s) {
     return Text(
-      'O Apex Booster+ só pede o necessário para preparar melhor sua sessão.',
+      s.permissionsSubtitle,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
         color: AppColors.textGray,
         height: 1.5,
@@ -88,39 +96,37 @@ class PermissionsScreen extends StatelessWidget {
     ).animate().fadeIn(delay: 160.ms, duration: 500.ms);
   }
 
-  Widget _buildCards() {
+  Widget _buildCards(AppStrings s) {
     return Column(
       children: [
         ApexFeatureCard(
           badge: 'NOTIF',
-          title: 'Notificações',
-          subtitle: 'Alertas opcionais de sessão e lembretes de preparação.',
+          title: s.permissionsCardNotifTitle,
+          subtitle: s.permissionsCardNotifSubtitle,
           accentColor: AppColors.apexGreen,
           delay: 240.ms,
         ),
         const SizedBox(height: 12),
         ApexFeatureCard(
           badge: 'APPS',
-          title: 'Apps instalados',
-          subtitle:
-              'Usado futuramente para detectar jogos no aparelho. Você também poderá adicionar jogos manualmente.',
+          title: s.permissionsCardAppsTitle,
+          subtitle: s.permissionsCardAppsSubtitle,
           accentColor: AppColors.apexGreen,
           delay: 360.ms,
         ),
         const SizedBox(height: 12),
         ApexFeatureCard(
-          badge: 'REDE',
-          title: 'Rede',
-          subtitle: 'Usado para leitura de conexão e diagnóstico do Apex Scan.',
+          badge: s.permissionsCardNetBadge,
+          title: s.permissionsCardNetTitle,
+          subtitle: s.permissionsCardNetSubtitle,
           accentColor: AppColors.apexGreen,
           delay: 480.ms,
         ),
         const SizedBox(height: 12),
         ApexFeatureCard(
-          badge: 'FOCO',
-          title: 'Foco',
-          subtitle:
-              'O app pode orientar você a ativar modos de foco, mas não altera configurações sensíveis automaticamente.',
+          badge: s.focusBadge,
+          title: s.permissionsCardFocusTitle,
+          subtitle: s.permissionsCardFocusSubtitle,
           accentColor: AppColors.apexGreen,
           delay: 600.ms,
         ),
@@ -128,9 +134,9 @@ class PermissionsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTrustMessage(BuildContext context) {
+  Widget _buildTrustMessage(BuildContext context, AppStrings s) {
     return Text(
-      'Sem anúncios. Sem tracking. Sem promessa falsa de boost real.',
+      s.permissionsTrustMessage,
       textAlign: TextAlign.center,
       style: Theme.of(context).textTheme.bodySmall?.copyWith(
         color: AppColors.apexGreen.withValues(alpha: 0.7),
@@ -140,7 +146,7 @@ class PermissionsScreen extends StatelessWidget {
     ).animate().fadeIn(delay: 720.ms, duration: 500.ms);
   }
 
-  Widget _buildCta(BuildContext context) {
+  Widget _buildCta(BuildContext context, AppStrings s) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(6),
@@ -167,9 +173,9 @@ class PermissionsScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
             ),
           ),
-          child: const Text(
-            'CONTINUAR',
-            style: TextStyle(
+          child: Text(
+            s.permissionsCta,
+            style: const TextStyle(
               fontWeight: FontWeight.bold,
               letterSpacing: 2.0,
               fontSize: 15,

@@ -411,4 +411,220 @@ void main() {
       );
     });
   });
+
+  // ─── Onboarding — LANG-U1.3B ────────────────────────────────────────────────
+
+  group('AppStrings — Welcome screen strings', () {
+    test('welcomeCardBibTitle is non-empty for all languages', () {
+      expect(ptBr.welcomeCardBibTitle, isNotEmpty);
+      expect(en.welcomeCardBibTitle, isNotEmpty);
+      expect(es.welcomeCardBibTitle, isNotEmpty);
+    });
+
+    test('welcomeCardBibTitle differs ptBr vs en', () {
+      expect(ptBr.welcomeCardBibTitle, isNot(equals(en.welcomeCardBibTitle)));
+    });
+
+    test('welcomeCardBibSubtitle is non-empty for all languages', () {
+      expect(ptBr.welcomeCardBibSubtitle, isNotEmpty);
+      expect(en.welcomeCardBibSubtitle, isNotEmpty);
+      expect(es.welcomeCardBibSubtitle, isNotEmpty);
+    });
+
+    test('welcomeCardScanTitle is non-empty for all languages', () {
+      expect(ptBr.welcomeCardScanTitle, isNotEmpty);
+      expect(en.welcomeCardScanTitle, isNotEmpty);
+      expect(es.welcomeCardScanTitle, isNotEmpty);
+    });
+
+    test('welcomeCardScanTitle differs ptBr vs en', () {
+      expect(ptBr.welcomeCardScanTitle, isNot(equals(en.welcomeCardScanTitle)));
+    });
+
+    test('welcomeCardGoTitle is non-empty for all languages', () {
+      expect(ptBr.welcomeCardGoTitle, isNotEmpty);
+      expect(en.welcomeCardGoTitle, isNotEmpty);
+      expect(es.welcomeCardGoTitle, isNotEmpty);
+    });
+
+    test('welcomeCtaStart is non-empty for all languages', () {
+      expect(ptBr.welcomeCtaStart, isNotEmpty);
+      expect(en.welcomeCtaStart, isNotEmpty);
+      expect(es.welcomeCtaStart, isNotEmpty);
+    });
+
+    test('welcomeCtaStart differs ptBr vs en', () {
+      expect(ptBr.welcomeCtaStart, isNot(equals(en.welcomeCtaStart)));
+    });
+  });
+
+  group('AppStrings — HowItWorks screen strings', () {
+    test('howItWorksTitle is non-empty for all languages', () {
+      expect(ptBr.howItWorksTitle, isNotEmpty);
+      expect(en.howItWorksTitle, isNotEmpty);
+      expect(es.howItWorksTitle, isNotEmpty);
+    });
+
+    test('howItWorksTitle differs ptBr vs en', () {
+      expect(ptBr.howItWorksTitle, isNot(equals(en.howItWorksTitle)));
+    });
+
+    test('howItWorksCardBibSubtitle is non-empty for all languages', () {
+      expect(ptBr.howItWorksCardBibSubtitle, isNotEmpty);
+      expect(en.howItWorksCardBibSubtitle, isNotEmpty);
+      expect(es.howItWorksCardBibSubtitle, isNotEmpty);
+    });
+
+    test('howItWorksCardBibSubtitle differs ptBr vs en', () {
+      expect(
+        ptBr.howItWorksCardBibSubtitle,
+        isNot(equals(en.howItWorksCardBibSubtitle)),
+      );
+    });
+
+    test('howItWorksCardGfxSubtitle is non-empty for all languages', () {
+      expect(ptBr.howItWorksCardGfxSubtitle, isNotEmpty);
+      expect(en.howItWorksCardGfxSubtitle, isNotEmpty);
+      expect(es.howItWorksCardGfxSubtitle, isNotEmpty);
+    });
+
+    test('howItWorksCardScanSubtitle is non-empty for all languages', () {
+      expect(ptBr.howItWorksCardScanSubtitle, isNotEmpty);
+      expect(en.howItWorksCardScanSubtitle, isNotEmpty);
+      expect(es.howItWorksCardScanSubtitle, isNotEmpty);
+    });
+
+    test('howItWorksCardGoSubtitle is non-empty for all languages', () {
+      expect(ptBr.howItWorksCardGoSubtitle, isNotEmpty);
+      expect(en.howItWorksCardGoSubtitle, isNotEmpty);
+      expect(es.howItWorksCardGoSubtitle, isNotEmpty);
+    });
+
+    test('howItWorksCta is non-empty for all languages', () {
+      expect(ptBr.howItWorksCta, isNotEmpty);
+      expect(en.howItWorksCta, isNotEmpty);
+      expect(es.howItWorksCta, isNotEmpty);
+    });
+
+    test('howItWorksCta differs ptBr vs en', () {
+      expect(ptBr.howItWorksCta, isNot(equals(en.howItWorksCta)));
+    });
+  });
+
+  group('AppStrings — Permissions screen strings', () {
+    test('permissionsTitle is non-empty for all languages', () {
+      expect(ptBr.permissionsTitle, isNotEmpty);
+      expect(en.permissionsTitle, isNotEmpty);
+      expect(es.permissionsTitle, isNotEmpty);
+    });
+
+    test('permissionsTitle differs ptBr vs en', () {
+      expect(ptBr.permissionsTitle, isNot(equals(en.permissionsTitle)));
+    });
+
+    test('permissionsSubtitle is non-empty for all languages', () {
+      expect(ptBr.permissionsSubtitle, isNotEmpty);
+      expect(en.permissionsSubtitle, isNotEmpty);
+      expect(es.permissionsSubtitle, isNotEmpty);
+    });
+
+    test('permissionsCardNotifTitle is non-empty for all languages', () {
+      expect(ptBr.permissionsCardNotifTitle, isNotEmpty);
+      expect(en.permissionsCardNotifTitle, isNotEmpty);
+      expect(es.permissionsCardNotifTitle, isNotEmpty);
+    });
+
+    test('permissionsCardNotifTitle differs ptBr vs en', () {
+      expect(
+        ptBr.permissionsCardNotifTitle,
+        isNot(equals(en.permissionsCardNotifTitle)),
+      );
+    });
+
+    test('permissionsCardNotifSubtitle is non-empty for all languages', () {
+      expect(ptBr.permissionsCardNotifSubtitle, isNotEmpty);
+      expect(en.permissionsCardNotifSubtitle, isNotEmpty);
+      expect(es.permissionsCardNotifSubtitle, isNotEmpty);
+    });
+
+    test('permissionsCardAppsTitle is non-empty for all languages', () {
+      expect(ptBr.permissionsCardAppsTitle, isNotEmpty);
+      expect(en.permissionsCardAppsTitle, isNotEmpty);
+      expect(es.permissionsCardAppsTitle, isNotEmpty);
+    });
+
+    test('permissionsCardAppsSubtitle is non-empty for all languages', () {
+      expect(ptBr.permissionsCardAppsSubtitle, isNotEmpty);
+      expect(en.permissionsCardAppsSubtitle, isNotEmpty);
+      expect(es.permissionsCardAppsSubtitle, isNotEmpty);
+    });
+
+    test('permissionsCardNetBadge differs ptBr vs en', () {
+      expect(
+        ptBr.permissionsCardNetBadge,
+        isNot(equals(en.permissionsCardNetBadge)),
+      );
+    });
+
+    test('permissionsCardNetTitle is non-empty for all languages', () {
+      expect(ptBr.permissionsCardNetTitle, isNotEmpty);
+      expect(en.permissionsCardNetTitle, isNotEmpty);
+      expect(es.permissionsCardNetTitle, isNotEmpty);
+    });
+
+    test('permissionsCardNetTitle differs ptBr vs en', () {
+      expect(
+        ptBr.permissionsCardNetTitle,
+        isNot(equals(en.permissionsCardNetTitle)),
+      );
+    });
+
+    test('permissionsCardNetSubtitle is non-empty for all languages', () {
+      expect(ptBr.permissionsCardNetSubtitle, isNotEmpty);
+      expect(en.permissionsCardNetSubtitle, isNotEmpty);
+      expect(es.permissionsCardNetSubtitle, isNotEmpty);
+    });
+
+    test('permissionsCardFocusTitle is non-empty for all languages', () {
+      expect(ptBr.permissionsCardFocusTitle, isNotEmpty);
+      expect(en.permissionsCardFocusTitle, isNotEmpty);
+      expect(es.permissionsCardFocusTitle, isNotEmpty);
+    });
+
+    test('permissionsCardFocusSubtitle is non-empty for all languages', () {
+      expect(ptBr.permissionsCardFocusSubtitle, isNotEmpty);
+      expect(en.permissionsCardFocusSubtitle, isNotEmpty);
+      expect(es.permissionsCardFocusSubtitle, isNotEmpty);
+    });
+
+    test('permissionsCardFocusSubtitle differs ptBr vs en', () {
+      expect(
+        ptBr.permissionsCardFocusSubtitle,
+        isNot(equals(en.permissionsCardFocusSubtitle)),
+      );
+    });
+
+    test('permissionsTrustMessage is non-empty for all languages', () {
+      expect(ptBr.permissionsTrustMessage, isNotEmpty);
+      expect(en.permissionsTrustMessage, isNotEmpty);
+      expect(es.permissionsTrustMessage, isNotEmpty);
+    });
+
+    test('permissionsTrustMessage differs ptBr vs en', () {
+      expect(
+        ptBr.permissionsTrustMessage,
+        isNot(equals(en.permissionsTrustMessage)),
+      );
+    });
+
+    test('permissionsCta is non-empty for all languages', () {
+      expect(ptBr.permissionsCta, isNotEmpty);
+      expect(en.permissionsCta, isNotEmpty);
+      expect(es.permissionsCta, isNotEmpty);
+    });
+
+    test('permissionsCta differs ptBr vs en', () {
+      expect(ptBr.permissionsCta, isNot(equals(en.permissionsCta)));
+    });
+  });
 }

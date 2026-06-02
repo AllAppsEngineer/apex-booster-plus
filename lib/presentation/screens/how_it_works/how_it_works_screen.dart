@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/i18n/app_language.dart';
+import '../../../core/i18n/app_strings.dart';
 import '../../widgets/apex_background.dart';
 import '../../widgets/apex_feature_card.dart';
 
@@ -10,29 +12,35 @@ class HowItWorksScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: ApexBackground(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-                _buildBackNav(context),
-                const Spacer(flex: 2),
-                _buildHeader(context),
-                const SizedBox(height: 20),
-                _buildCards(),
-                const Spacer(flex: 2),
-                _buildCta(context),
-                const SizedBox(height: 36),
-              ],
+    return ListenableBuilder(
+      listenable: languageNotifier,
+      builder: (context, _) {
+        final s = AppStrings(languageNotifier.value);
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: ApexBackground(
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 8),
+                    _buildBackNav(context),
+                    const Spacer(flex: 2),
+                    _buildHeader(context, s),
+                    const SizedBox(height: 20),
+                    _buildCards(s),
+                    const Spacer(flex: 2),
+                    _buildCta(context, s),
+                    const SizedBox(height: 36),
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -47,9 +55,9 @@ class HowItWorksScreen extends StatelessWidget {
     ).animate().fadeIn(duration: 300.ms);
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, AppStrings s) {
     return Text(
-      'Como o Apex funciona',
+      s.howItWorksTitle,
       style: Theme.of(context).textTheme.headlineMedium?.copyWith(
         color: AppColors.white,
         fontWeight: FontWeight.bold,
@@ -58,13 +66,13 @@ class HowItWorksScreen extends StatelessWidget {
     ).animate().fadeIn(delay: 120.ms, duration: 500.ms);
   }
 
-  Widget _buildCards() {
+  Widget _buildCards(AppStrings s) {
     return Column(
       children: [
         ApexFeatureCard(
-          badge: 'BIB',
-          title: 'Biblioteca',
-          subtitle: 'Organize seus jogos em um só lugar.',
+          badge: s.homeLibraryBadge,
+          title: s.libraryTitle,
+          subtitle: s.howItWorksCardBibSubtitle,
           accentColor: AppColors.apexGreen,
           delay: 200.ms,
         ),
@@ -72,7 +80,7 @@ class HowItWorksScreen extends StatelessWidget {
         ApexFeatureCard(
           badge: 'GFX',
           title: 'GFX Local',
-          subtitle: 'Salve preferências visuais sem alterar jogos de terceiros.',
+          subtitle: s.howItWorksCardGfxSubtitle,
           accentColor: AppColors.cyberBlue,
           delay: 320.ms,
         ),
@@ -80,7 +88,7 @@ class HowItWorksScreen extends StatelessWidget {
         ApexFeatureCard(
           badge: 'SCAN',
           title: 'Apex Scan',
-          subtitle: 'Leia rede, bateria, temperatura e foco.',
+          subtitle: s.howItWorksCardScanSubtitle,
           accentColor: AppColors.cyberBlue,
           delay: 440.ms,
         ),
@@ -88,7 +96,7 @@ class HowItWorksScreen extends StatelessWidget {
         ApexFeatureCard(
           badge: 'GO',
           title: 'Launcher',
-          subtitle: 'Prepare a sessão e abra o jogo.',
+          subtitle: s.howItWorksCardGoSubtitle,
           accentColor: AppColors.apexGreen,
           delay: 560.ms,
         ),
@@ -96,7 +104,7 @@ class HowItWorksScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCta(BuildContext context) {
+  Widget _buildCta(BuildContext context, AppStrings s) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(6),
@@ -121,9 +129,9 @@ class HowItWorksScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
             ),
           ),
-          child: const Text(
-            'ENTENDI',
-            style: TextStyle(
+          child: Text(
+            s.howItWorksCta,
+            style: const TextStyle(
               fontWeight: FontWeight.bold,
               letterSpacing: 2.0,
               fontSize: 15,

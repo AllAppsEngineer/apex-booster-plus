@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/i18n/app_language.dart';
+import '../../../core/i18n/app_strings.dart';
 import '../../widgets/apex_background.dart';
 import '../../widgets/apex_feature_card.dart';
 
@@ -10,36 +12,42 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: ApexBackground(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Spacer(flex: 2),
-                _buildHero(context),
-                const Spacer(flex: 2),
-                _buildFeatures(),
-                const Spacer(flex: 1),
-                _buildCta(context),
-                const SizedBox(height: 36),
-              ],
+    return ListenableBuilder(
+      listenable: languageNotifier,
+      builder: (context, _) {
+        final s = AppStrings(languageNotifier.value);
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: ApexBackground(
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Spacer(flex: 2),
+                    _buildHero(context, s),
+                    const Spacer(flex: 2),
+                    _buildFeatures(s),
+                    const Spacer(flex: 1),
+                    _buildCta(context, s),
+                    const SizedBox(height: 36),
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildHero(BuildContext context) {
+  Widget _buildHero(BuildContext context, AppStrings s) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'APEX BOOSTER+',
+          s.appName,
           style: Theme.of(context).textTheme.displayMedium?.copyWith(
             color: AppColors.apexGreen,
             shadows: [
@@ -55,7 +63,7 @@ class WelcomeScreen extends StatelessWidget {
             .scale(begin: const Offset(0.92, 0.92), duration: 700.ms),
         const SizedBox(height: 10),
         Text(
-          'Prepare. Analise. Jogue.',
+          s.appTagline,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             letterSpacing: 1.2,
           ),
@@ -64,29 +72,29 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFeatures() {
+  Widget _buildFeatures(AppStrings s) {
     return Column(
       children: [
         ApexFeatureCard(
-          badge: 'BIB',
-          title: 'Organize seus jogos',
-          subtitle: 'Sua biblioteca pessoal de jogos.',
+          badge: s.homeLibraryBadge,
+          title: s.welcomeCardBibTitle,
+          subtitle: s.welcomeCardBibSubtitle,
           accentColor: AppColors.apexGreen,
           delay: 440.ms,
         ),
         const SizedBox(height: 12),
         ApexFeatureCard(
           badge: 'SCAN',
-          title: 'Analise antes de jogar',
-          subtitle: 'Diagnóstico rápido da sessão.',
+          title: s.welcomeCardScanTitle,
+          subtitle: s.welcomeCardScanSubtitle,
           accentColor: AppColors.cyberBlue,
           delay: 560.ms,
         ),
         const SizedBox(height: 12),
         ApexFeatureCard(
           badge: 'GO',
-          title: 'Prepare e abra com estilo',
-          subtitle: 'Lançamento com preparação completa.',
+          title: s.welcomeCardGoTitle,
+          subtitle: s.welcomeCardGoSubtitle,
           accentColor: AppColors.apexGreen,
           delay: 680.ms,
         ),
@@ -94,7 +102,7 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCta(BuildContext context) {
+  Widget _buildCta(BuildContext context, AppStrings s) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(6),
@@ -119,19 +127,19 @@ class WelcomeScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
             ),
           ),
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'COMEÇAR',
-                style: TextStyle(
+                s.welcomeCtaStart,
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2.0,
                   fontSize: 15,
                 ),
               ),
-              SizedBox(width: 10),
-              Icon(Icons.arrow_forward_ios, size: 13),
+              const SizedBox(width: 10),
+              const Icon(Icons.arrow_forward_ios, size: 13),
             ],
           ),
         ),

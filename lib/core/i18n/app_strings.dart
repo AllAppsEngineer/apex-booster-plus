@@ -1004,6 +1004,183 @@ class AppStrings {
     },
   };
 
+  // ─── Onboarding / Welcome — LANG-U1.3B ──────────────────────────────────────
+
+  String get welcomeCardBibTitle => switch (lang) {
+    AppLanguage.ptBr => 'Organize seus jogos',
+    AppLanguage.en   => 'Organize your games',
+    AppLanguage.es   => 'Organiza tus juegos',
+  };
+
+  String get welcomeCardBibSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Sua biblioteca pessoal de jogos.',
+    AppLanguage.en   => 'Your personal game library.',
+    AppLanguage.es   => 'Tu biblioteca personal de juegos.',
+  };
+
+  String get welcomeCardScanTitle => switch (lang) {
+    AppLanguage.ptBr => 'Analise antes de jogar',
+    AppLanguage.en   => 'Analyze before playing',
+    AppLanguage.es   => 'Analiza antes de jugar',
+  };
+
+  String get welcomeCardScanSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Diagnóstico rápido da sessão.',
+    AppLanguage.en   => 'Quick session diagnostic.',
+    AppLanguage.es   => 'Diagnóstico rápido de la sesión.',
+  };
+
+  String get welcomeCardGoTitle => switch (lang) {
+    AppLanguage.ptBr => 'Prepare e abra com estilo',
+    AppLanguage.en   => 'Prepare and launch in style',
+    AppLanguage.es   => 'Prepara y abre con estilo',
+  };
+
+  String get welcomeCardGoSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Lançamento com preparação completa.',
+    AppLanguage.en   => 'Launch with full preparation.',
+    AppLanguage.es   => 'Lanzamiento con preparación completa.',
+  };
+
+  String get welcomeCtaStart => switch (lang) {
+    AppLanguage.ptBr => 'COMEÇAR',
+    AppLanguage.en   => 'GET STARTED',
+    AppLanguage.es   => 'EMPEZAR',
+  };
+
+  // ─── Onboarding / HowItWorks — LANG-U1.3B ────────────────────────────────────
+
+  String get howItWorksTitle => switch (lang) {
+    AppLanguage.ptBr => 'Como o Apex funciona',
+    AppLanguage.en   => 'How Apex works',
+    AppLanguage.es   => 'Cómo funciona Apex',
+  };
+
+  String get howItWorksCardBibSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Organize seus jogos em um só lugar.',
+    AppLanguage.en   => 'Organize your games in one place.',
+    AppLanguage.es   => 'Organiza tus juegos en un solo lugar.',
+  };
+
+  String get howItWorksCardGfxSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Salve preferências visuais sem alterar jogos de terceiros.',
+    AppLanguage.en   => 'Save visual preferences without changing third-party games.',
+    AppLanguage.es   => 'Guarda preferencias visuales sin alterar juegos de terceros.',
+  };
+
+  String get howItWorksCardScanSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Leia rede, bateria, temperatura e foco.',
+    AppLanguage.en   => 'Read network, battery, temperature and focus.',
+    AppLanguage.es   => 'Lee red, batería, temperatura y foco.',
+  };
+
+  String get howItWorksCardGoSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Prepare a sessão e abra o jogo.',
+    AppLanguage.en   => 'Prepare the session and open the game.',
+    AppLanguage.es   => 'Prepara la sesión y abre el juego.',
+  };
+
+  String get howItWorksCta => switch (lang) {
+    AppLanguage.ptBr => 'ENTENDI',
+    AppLanguage.en   => 'GOT IT',
+    AppLanguage.es   => 'ENTENDIDO',
+  };
+
+  // ─── Onboarding / Permissions — LANG-U1.3B ───────────────────────────────────
+
+  String get permissionsTitle => switch (lang) {
+    AppLanguage.ptBr => 'Permissões com transparência',
+    AppLanguage.en   => 'Transparent permissions',
+    AppLanguage.es   => 'Permisos con transparencia',
+  };
+
+  String get permissionsSubtitle => switch (lang) {
+    AppLanguage.ptBr =>
+      'O Apex Booster+ só pede o necessário para preparar melhor sua sessão.',
+    AppLanguage.en   =>
+      "Apex Booster+ only asks for what's needed to better prepare your session.",
+    AppLanguage.es   =>
+      'Apex Booster+ solo pide lo necesario para preparar mejor tu sesión.',
+  };
+
+  String get permissionsCardNotifTitle => switch (lang) {
+    AppLanguage.ptBr => 'Notificações',
+    AppLanguage.en   => 'Notifications',
+    AppLanguage.es   => 'Notificaciones',
+  };
+
+  String get permissionsCardNotifSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Alertas opcionais de sessão e lembretes de preparação.',
+    AppLanguage.en   => 'Optional session alerts and preparation reminders.',
+    AppLanguage.es   => 'Alertas opcionales de sesión y recordatorios de preparación.',
+  };
+
+  String get permissionsCardAppsTitle => switch (lang) {
+    AppLanguage.ptBr => 'Apps instalados',
+    AppLanguage.en   => 'Installed apps',
+    AppLanguage.es   => 'Apps instaladas',
+  };
+
+  String get permissionsCardAppsSubtitle => switch (lang) {
+    AppLanguage.ptBr =>
+      'Usado futuramente para detectar jogos no aparelho. '
+      'Você também poderá adicionar jogos manualmente.',
+    AppLanguage.en   =>
+      'Used in the future to detect games on the device. '
+      'You can also add games manually.',
+    AppLanguage.es   =>
+      'Se usará en el futuro para detectar juegos en el dispositivo. '
+      'También puedes agregar juegos manualmente.',
+  };
+
+  String get permissionsCardNetBadge => switch (lang) {
+    AppLanguage.ptBr => 'REDE',
+    AppLanguage.en   => 'NET',
+    AppLanguage.es   => 'RED',
+  };
+
+  String get permissionsCardNetTitle => switch (lang) {
+    AppLanguage.ptBr => 'Rede',
+    AppLanguage.en   => 'Network',
+    AppLanguage.es   => 'Red',
+  };
+
+  String get permissionsCardNetSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Usado para leitura de conexão e diagnóstico do Apex Scan.',
+    AppLanguage.en   => 'Used for connection reading and Apex Scan diagnostic.',
+    AppLanguage.es   => 'Usado para lectura de conexión y diagnóstico del Apex Scan.',
+  };
+
+  String get permissionsCardFocusTitle => switch (lang) {
+    AppLanguage.ptBr => 'Foco',
+    AppLanguage.en   => 'Focus',
+    AppLanguage.es   => 'Foco',
+  };
+
+  String get permissionsCardFocusSubtitle => switch (lang) {
+    AppLanguage.ptBr =>
+      'O app pode orientar você a ativar modos de foco, '
+      'mas não altera configurações sensíveis automaticamente.',
+    AppLanguage.en   =>
+      'The app can guide you to activate focus modes, '
+      'but does not change sensitive settings automatically.',
+    AppLanguage.es   =>
+      'La app puede orientarte a activar modos de foco, '
+      'pero no cambia ajustes sensibles automáticamente.',
+  };
+
+  String get permissionsTrustMessage => switch (lang) {
+    AppLanguage.ptBr => 'Sem anúncios. Sem tracking. Sem promessa falsa de boost real.',
+    AppLanguage.en   => 'No ads. No tracking. No false promises of real boost.',
+    AppLanguage.es   => 'Sin anuncios. Sin seguimiento. Sin promesas falsas de boost real.',
+  };
+
+  String get permissionsCta => switch (lang) {
+    AppLanguage.ptBr => 'CONTINUAR',
+    AppLanguage.en   => 'CONTINUE',
+    AppLanguage.es   => 'CONTINUAR',
+  };
+
   // ─── Library / Biblioteca — LANG-U1.5 ────────────────────────────────────────
 
   String get libraryTitle => switch (lang) {
