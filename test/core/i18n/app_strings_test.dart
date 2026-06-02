@@ -219,4 +219,196 @@ void main() {
       expect(ptBr.prepGfxMsgPerformance, isNot(equals(en.prepGfxMsgPerformance)));
     });
   });
+
+  // ─── InicioTab loading subtitles — LANG-U1.3A ────────────────────────────────
+
+  group('AppStrings — InicioTab loading subtitles', () {
+    test('homeLibraryLoadingSubtitle is non-empty for all languages', () {
+      expect(ptBr.homeLibraryLoadingSubtitle, isNotEmpty);
+      expect(en.homeLibraryLoadingSubtitle, isNotEmpty);
+      expect(es.homeLibraryLoadingSubtitle, isNotEmpty);
+    });
+
+    test('homeLibraryLoadingSubtitle differs ptBr vs en', () {
+      expect(
+        ptBr.homeLibraryLoadingSubtitle,
+        isNot(equals(en.homeLibraryLoadingSubtitle)),
+      );
+    });
+
+    test('homeHistoryLoadingSubtitle is non-empty for all languages', () {
+      expect(ptBr.homeHistoryLoadingSubtitle, isNotEmpty);
+      expect(en.homeHistoryLoadingSubtitle, isNotEmpty);
+      expect(es.homeHistoryLoadingSubtitle, isNotEmpty);
+    });
+
+    test('homeHistoryLoadingSubtitle differs ptBr vs en', () {
+      expect(
+        ptBr.homeHistoryLoadingSubtitle,
+        isNot(equals(en.homeHistoryLoadingSubtitle)),
+      );
+    });
+  });
+
+  // ─── memoryStateLabel — LANG-U1.3A fix ──────────────────────────────────────
+
+  group('AppStrings — memoryStateLabel', () {
+    test('"normal" → ptBr: "normal"', () {
+      expect(ptBr.memoryStateLabel('normal'), equals('normal'));
+    });
+
+    test('"normal" → en: "stable"', () {
+      expect(en.memoryStateLabel('normal'), equals('stable'));
+    });
+
+    test('"normal" → es: "estable"', () {
+      expect(es.memoryStateLabel('normal'), equals('estable'));
+    });
+
+    test('"low" → ptBr: "baixa"', () {
+      expect(ptBr.memoryStateLabel('low'), equals('baixa'));
+    });
+
+    test('"low" → en: "low"', () {
+      expect(en.memoryStateLabel('low'), equals('low'));
+    });
+
+    test('"low" → es: "baja"', () {
+      expect(es.memoryStateLabel('low'), equals('baja'));
+    });
+
+    test('unknown state falls back to original value', () {
+      expect(ptBr.memoryStateLabel('unknown_state'), equals('unknown_state'));
+      expect(en.memoryStateLabel('unknown_state'), equals('unknown_state'));
+      expect(es.memoryStateLabel('unknown_state'), equals('unknown_state'));
+    });
+  });
+
+  // ─── historyRamChip — LANG-U1.3A fix ────────────────────────────────────────
+
+  group('AppStrings — historyRamChip', () {
+    test('ptBr contains "livre"', () {
+      expect(ptBr.historyRamChip('3.2', 'normal'), contains('livre'));
+    });
+
+    test('en contains "free"', () {
+      expect(en.historyRamChip('3.2', 'normal'), contains('free'));
+    });
+
+    test('es contains "libres"', () {
+      expect(es.historyRamChip('3.2', 'normal'), contains('libres'));
+    });
+
+    test('ptBr "normal" state stays "normal"', () {
+      expect(ptBr.historyRamChip('3.2', 'normal'), contains('normal'));
+    });
+
+    test('en "normal" state becomes "stable"', () {
+      expect(en.historyRamChip('3.0', 'normal'), contains('stable'));
+      expect(en.historyRamChip('3.0', 'normal'), isNot(contains('normal')));
+    });
+
+    test('es "normal" state becomes "estable"', () {
+      expect(es.historyRamChip('2.8', 'normal'), contains('estable'));
+      expect(es.historyRamChip('2.8', 'normal'), isNot(contains('normal')));
+    });
+
+    test('includes value for all languages', () {
+      expect(ptBr.historyRamChip('3.2', 'normal'), contains('3.2'));
+      expect(en.historyRamChip('3.0', 'normal'), contains('3.0'));
+      expect(es.historyRamChip('2.8', 'normal'), contains('2.8'));
+    });
+
+    test('ptBr ≠ en', () {
+      expect(
+        ptBr.historyRamChip('3.2', 'normal'),
+        isNot(equals(en.historyRamChip('3.2', 'normal'))),
+      );
+    });
+
+    test('en ≠ es', () {
+      expect(
+        en.historyRamChip('3.2', 'normal'),
+        isNot(equals(es.historyRamChip('3.2', 'normal'))),
+      );
+    });
+  });
+
+  // ─── relativeTime — LANG-U1.3A ───────────────────────────────────────────────
+
+  group('AppStrings — relativeTime', () {
+    final anchor = DateTime(2024, 6, 15, 12, 0, 0);
+
+    test('returns timeJustNow when diff < 1 minute', () {
+      final dt = anchor.subtract(const Duration(seconds: 30));
+      expect(ptBr.relativeTime(dt, now: anchor), equals(ptBr.timeJustNow));
+      expect(en.relativeTime(dt, now: anchor), equals(en.timeJustNow));
+      expect(es.relativeTime(dt, now: anchor), equals(es.timeJustNow));
+    });
+
+    test('returns timeMinutesAgo when diff is 1-59 min', () {
+      final dt = anchor.subtract(const Duration(minutes: 30));
+      expect(
+        ptBr.relativeTime(dt, now: anchor),
+        equals(ptBr.timeMinutesAgo(30)),
+      );
+      expect(
+        en.relativeTime(dt, now: anchor),
+        equals(en.timeMinutesAgo(30)),
+      );
+    });
+
+    test('returns timeHoursAgo when diff is 1-23 h', () {
+      final dt = anchor.subtract(const Duration(hours: 3));
+      expect(
+        ptBr.relativeTime(dt, now: anchor),
+        equals(ptBr.timeHoursAgo(3)),
+      );
+      expect(
+        en.relativeTime(dt, now: anchor),
+        equals(en.timeHoursAgo(3)),
+      );
+    });
+
+    test('returns timeYesterday when diff is 24-47 h', () {
+      final dt = anchor.subtract(const Duration(hours: 25));
+      expect(ptBr.relativeTime(dt, now: anchor), equals(ptBr.timeYesterday));
+      expect(en.relativeTime(dt, now: anchor), equals(en.timeYesterday));
+      expect(es.relativeTime(dt, now: anchor), equals(es.timeYesterday));
+    });
+
+    test('returns timeDaysAgo when diff is 2-6 days', () {
+      final dt = anchor.subtract(const Duration(days: 3));
+      expect(
+        ptBr.relativeTime(dt, now: anchor),
+        equals(ptBr.timeDaysAgo(3)),
+      );
+      expect(
+        en.relativeTime(dt, now: anchor),
+        equals(en.timeDaysAgo(3)),
+      );
+    });
+
+    test('returns formatted date DD/MM/YYYY when diff >= 7 days', () {
+      final dt = DateTime(2024, 6, 1, 8, 0, 0);
+      expect(ptBr.relativeTime(dt, now: anchor), equals('01/06/2024'));
+      expect(en.relativeTime(dt, now: anchor), equals('01/06/2024'));
+    });
+
+    test('relativeTime output differs between ptBr and en for 30 min ago', () {
+      final dt = anchor.subtract(const Duration(minutes: 30));
+      expect(
+        ptBr.relativeTime(dt, now: anchor),
+        isNot(equals(en.relativeTime(dt, now: anchor))),
+      );
+    });
+
+    test('relativeTime output differs between ptBr and en for yesterday', () {
+      final dt = anchor.subtract(const Duration(hours: 25));
+      expect(
+        ptBr.relativeTime(dt, now: anchor),
+        isNot(equals(en.relativeTime(dt, now: anchor))),
+      );
+    });
+  });
 }

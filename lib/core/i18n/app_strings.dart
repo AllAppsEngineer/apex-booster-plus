@@ -438,6 +438,20 @@ class AppStrings {
     AppLanguage.es   => 'Agrega juegos en la pestaña Biblioteca para comenzar.',
   };
 
+  /// Loading-state subtitle for the Library feature card (while data loads).
+  String get homeLibraryLoadingSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Biblioteca organizada',
+    AppLanguage.en   => 'Library organized',
+    AppLanguage.es   => 'Biblioteca organizada',
+  };
+
+  /// Loading-state subtitle for the History feature card (while data loads).
+  String get homeHistoryLoadingSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Histórico registrado localmente',
+    AppLanguage.en   => 'History recorded locally',
+    AppLanguage.es   => 'Historial registrado localmente',
+  };
+
   // Dynamic — relative time
   String get timeJustNow => switch (lang) {
     AppLanguage.ptBr => 'agora mesmo',
@@ -468,6 +482,21 @@ class AppStrings {
     AppLanguage.en   => '$n days ago',
     AppLanguage.es   => 'hace $n días',
   };
+
+  /// Returns a locale-aware relative time string for [dt].
+  ///
+  /// Pass [now] in tests to avoid depending on the real clock.
+  String relativeTime(DateTime dt, {DateTime? now}) {
+    final ref = now ?? DateTime.now();
+    final diff = ref.difference(dt);
+    if (diff.inMinutes < 1) return timeJustNow;
+    if (diff.inMinutes < 60) return timeMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return timeHoursAgo(diff.inHours);
+    if (diff.inDays == 1) return timeYesterday;
+    if (diff.inDays < 7) return timeDaysAgo(diff.inDays);
+    return '${dt.day.toString().padLeft(2, '0')}/'
+        '${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+  }
 
   // Dynamic — counts
   String gameCountStat(int n) => switch (lang) {
@@ -564,6 +593,33 @@ class AppStrings {
     AppLanguage.en   => 'Focus error',
     AppLanguage.es   => 'Error de foco',
   };
+
+  /// Translates a raw memory state key (e.g. "normal", "low") to the active language.
+  /// Unknown keys fall back to the original value so old sessions don't break.
+  String memoryStateLabel(String state) => switch (state) {
+    'normal' => switch (lang) {
+      AppLanguage.ptBr => 'normal',
+      AppLanguage.en   => 'stable',
+      AppLanguage.es   => 'estable',
+    },
+    'low' => switch (lang) {
+      AppLanguage.ptBr => 'baixa',
+      AppLanguage.en   => 'low',
+      AppLanguage.es   => 'baja',
+    },
+    _ => state,
+  };
+
+  /// RAM chip text shown in session history cards.
+  /// [availGb] is already formatted (e.g. "3.2"), [state] is the raw device key (e.g. "normal").
+  String historyRamChip(String availGb, String state) {
+    final localizedState = memoryStateLabel(state);
+    return switch (lang) {
+      AppLanguage.ptBr => '$availGb GB livre • $localizedState',
+      AppLanguage.en   => '$availGb GB free • $localizedState',
+      AppLanguage.es   => '$availGb GB libres • $localizedState',
+    };
+  }
 
   // ─── Prepare / Preparar — LANG-U1.4 ──────────────────────────────────────────
 

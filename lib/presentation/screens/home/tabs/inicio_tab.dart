@@ -4,6 +4,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
+import 'package:apex_booster_plus/core/i18n/app_language.dart';
+import 'package:apex_booster_plus/core/i18n/app_strings.dart';
 import 'package:apex_booster_plus/data/datasources/installed_apps_datasource.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_game_library_repository.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_session_repository.dart';
@@ -91,80 +93,86 @@ class _InicioTabState extends State<InicioTab> {
 
   @override
   Widget build(BuildContext context) {
-    return ApexBackground(
-      child: SafeArea(
-        child: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const _InicioHeader(),
-              const SizedBox(height: 28),
-              if (_lastSession != null) ...[
-                _LastSessionCard(
-                  session: _lastSession!,
-                  iconBytes: _lastIconBytes,
-                ),
-                const SizedBox(height: 16),
-              ],
-              _QuickStatsRow(
-                gameCount: _gameCount,
-                sessionCount: _sessionCount,
-                loading: _loading,
+    return ListenableBuilder(
+      listenable: languageNotifier,
+      builder: (context, _) {
+        final s = AppStrings(languageNotifier.value);
+        return ApexBackground(
+          child: SafeArea(
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _InicioHeader(),
+                  const SizedBox(height: 28),
+                  if (_lastSession != null) ...[
+                    _LastSessionCard(
+                      session: _lastSession!,
+                      iconBytes: _lastIconBytes,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  _QuickStatsRow(
+                    gameCount: _gameCount,
+                    sessionCount: _sessionCount,
+                    loading: _loading,
+                  ),
+                  const SizedBox(height: 16),
+                  ApexFeatureCard(
+                    badge: s.homeLibraryBadge,
+                    title: s.homeLibraryTitle,
+                    subtitle: _loading
+                        ? s.homeLibraryLoadingSubtitle
+                        : s.gameCountStat(_gameCount),
+                    accentColor: AppColors.cyberBlue,
+                    delay: 100.ms,
+                  ),
+                  const SizedBox(height: 12),
+                  ApexFeatureCard(
+                    badge: s.homeHistoryBadge,
+                    title: s.homeHistoryFeatureTitle,
+                    subtitle: _loading
+                        ? s.homeHistoryLoadingSubtitle
+                        : s.sessionCountStat(_sessionCount),
+                    accentColor: AppColors.apexGreen,
+                    delay: 150.ms,
+                  ),
+                  const SizedBox(height: 12),
+                  ApexFeatureCard(
+                    badge: s.focusBadge,
+                    title: s.focusTitle,
+                    subtitle: s.homeFocusSubtitle,
+                    accentColor: AppColors.apexGreen,
+                    delay: const Duration(milliseconds: 200),
+                  ),
+                  const SizedBox(height: 12),
+                  ApexFeatureCard(
+                    badge: s.prepScanBadge,
+                    title: s.homeScanTitle,
+                    subtitle: s.homeScanSubtitle,
+                    accentColor: AppColors.cyberBlue,
+                    delay: const Duration(milliseconds: 250),
+                  ),
+                  const SizedBox(height: 12),
+                  ApexFeatureCard(
+                    badge: s.homeGameBadge,
+                    title: s.homeClassTitle,
+                    subtitle: s.homeClassSubtitle,
+                    accentColor: AppColors.apexGreen,
+                    delay: const Duration(milliseconds: 300),
+                  ),
+                  if (!_loading && _lastSession == null) ...[
+                    const SizedBox(height: 24),
+                    _EmptyHint(),
+                  ],
+                ],
               ),
-              const SizedBox(height: 16),
-              ApexFeatureCard(
-                badge: 'BIB',
-                title: 'Biblioteca gamer',
-                subtitle: _loading
-                    ? 'Biblioteca organizada'
-                    : '$_gameCount ${_gameCount == 1 ? 'jogo adicionado' : 'jogos adicionados'}',
-                accentColor: AppColors.cyberBlue,
-                delay: 100.ms,
-              ),
-              const SizedBox(height: 12),
-              ApexFeatureCard(
-                badge: 'HIST',
-                title: 'Histórico de sessões',
-                subtitle: _loading
-                    ? 'Histórico registrado localmente'
-                    : '$_sessionCount ${_sessionCount == 1 ? 'sessão registrada' : 'sessões registradas'}',
-                accentColor: AppColors.apexGreen,
-                delay: 150.ms,
-              ),
-              const SizedBox(height: 12),
-              const ApexFeatureCard(
-                badge: 'FOCO',
-                title: 'Modo Foco Gamer',
-                subtitle: 'Ativo antes de abrir o jogo, se permitido.',
-                accentColor: AppColors.apexGreen,
-                delay: Duration(milliseconds: 200),
-              ),
-              const SizedBox(height: 12),
-              const ApexFeatureCard(
-                badge: 'SCAN',
-                title: 'Apex Scan',
-                subtitle: 'Diagnóstico no detalhe de cada jogo.',
-                accentColor: AppColors.cyberBlue,
-                delay: Duration(milliseconds: 250),
-              ),
-              const SizedBox(height: 12),
-              const ApexFeatureCard(
-                badge: 'GAME',
-                title: 'Classificação gamer',
-                subtitle: 'Apps verificados identificados na biblioteca.',
-                accentColor: AppColors.apexGreen,
-                delay: Duration(milliseconds: 300),
-              ),
-              if (!_loading && _lastSession == null) ...[
-                const SizedBox(height: 24),
-                const _EmptyHint(),
-              ],
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -176,11 +184,12 @@ class _InicioHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Pronto para jogar?',
+          s.homeTitle,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 color: AppColors.white,
                 fontWeight: FontWeight.bold,
@@ -192,7 +201,7 @@ class _InicioHeader extends StatelessWidget {
             .slideY(begin: -0.08, end: 0, duration: 400.ms),
         const SizedBox(height: 8),
         Text(
-          'Configure sua sessão antes de abrir o jogo.',
+          s.homeSubtitle,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.textGray,
               ),
@@ -224,6 +233,7 @@ class _LastSessionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     final chips = _collectChips();
     final gfxProfile = GfxProfile.fromLabel(session.gfxProfile);
     final hasChips = chips.isNotEmpty || gfxProfile != null;
@@ -252,7 +262,7 @@ class _LastSessionCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _InlineBadge(
-                label: 'ÚLTIMO JOGO',
+                label: s.homeLastGameBadge,
                 color: AppColors.apexGreen,
               ),
               _StatusChip(status: session.launchStatus),
@@ -279,7 +289,7 @@ class _LastSessionCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _relativeTime(session.launchedAt),
+                      s.relativeTime(session.launchedAt),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.textGray,
                           ),
@@ -297,7 +307,7 @@ class _LastSessionCard extends StatelessWidget {
               children: [
                 if (gfxProfile != null)
                   _MetricChip(
-                    label: 'GFX: ${gfxProfile.label}',
+                    label: 'GFX: ${s.gfxProfileLabel(gfxProfile)}',
                     accentColor: gfxProfile.accentColor,
                     icon: gfxProfile.icon,
                   ),
@@ -320,9 +330,9 @@ class _LastSessionCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text(
-                'VER DETALHES',
-                style: TextStyle(
+              child: Text(
+                s.homeViewDetails,
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                   letterSpacing: 1.2,
@@ -336,16 +346,6 @@ class _LastSessionCard extends StatelessWidget {
         .animate()
         .fadeIn(duration: 600.ms)
         .slideY(begin: 0.04, end: 0, duration: 400.ms);
-  }
-
-  static String _relativeTime(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'agora mesmo';
-    if (diff.inMinutes < 60) return 'há ${diff.inMinutes} min';
-    if (diff.inHours < 24) return 'há ${diff.inHours}h';
-    if (diff.inDays == 1) return 'ontem';
-    if (diff.inDays < 7) return 'há ${diff.inDays} dias';
-    return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
   }
 }
 
@@ -435,18 +435,19 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     final Color color;
     final String label;
 
     if (status == 'success') {
       color = AppColors.apexGreen;
-      label = 'aberto';
+      label = s.statusOpened;
     } else if (status == 'failed') {
       color = AppColors.energyOrange;
-      label = 'falhou';
+      label = s.statusFailed;
     } else {
       color = AppColors.cyberBlue;
-      label = 'tentado';
+      label = s.statusAttempted;
     }
 
     return Container(
@@ -541,19 +542,20 @@ class _QuickStatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Row(
       children: [
         Expanded(
           child: _StatChip(
             value: loading ? '—' : '$gameCount',
-            label: 'JOGOS',
+            label: s.homeGamesLabel,
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: _StatChip(
             value: loading ? '—' : '$sessionCount',
-            label: 'SESSÕES',
+            label: s.homeSessionsLabel,
           ),
         ),
       ],
@@ -608,8 +610,9 @@ class _EmptyHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Text(
-      'Adicione jogos na aba Biblioteca para começar.',
+      s.homeEmptyHint,
       style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: AppColors.textGray.withValues(alpha: 0.6),
           ),

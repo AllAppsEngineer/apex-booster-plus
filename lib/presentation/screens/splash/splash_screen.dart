@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/i18n/app_language.dart';
+import '../../../core/i18n/app_strings.dart';
 import '../../widgets/apex_background.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -138,7 +140,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   Widget _buildTagline(BuildContext context) {
     return Text(
-      'Prepare. Analise. Jogue.',
+      AppStrings(languageNotifier.value).appTagline,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
         letterSpacing: 1.2,
       ),

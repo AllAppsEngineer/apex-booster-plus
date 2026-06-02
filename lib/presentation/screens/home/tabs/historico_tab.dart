@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
+import 'package:apex_booster_plus/core/i18n/app_language.dart';
+import 'package:apex_booster_plus/core/i18n/app_strings.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_session_repository.dart';
 import 'package:apex_booster_plus/domain/entities/session_record.dart';
 import 'package:apex_booster_plus/domain/entities/gfx_profile.dart';
@@ -63,22 +65,27 @@ class _HistoricoTabState extends State<HistoricoTab>
 
   @override
   Widget build(BuildContext context) {
-    return ApexBackground(
-      child: SafeArea(
-        child: _isLoading
-            ? const _LoadingState()
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _HistoricoHeader(sessionCount: _sessions.length),
-                  Expanded(
-                    child: _sessions.isEmpty
-                        ? const _EmptyState()
-                        : _SessionList(sessions: _sessions),
+    return ListenableBuilder(
+      listenable: languageNotifier,
+      builder: (context, _) {
+        return ApexBackground(
+          child: SafeArea(
+            child: _isLoading
+                ? _LoadingState()
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _HistoricoHeader(sessionCount: _sessions.length),
+                      Expanded(
+                        child: _sessions.isEmpty
+                            ? _EmptyState()
+                            : _SessionList(sessions: _sessions),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -90,6 +97,7 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -99,9 +107,9 @@ class _LoadingState extends StatelessWidget {
             strokeWidth: 2,
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Carregando sessões...',
-            style: TextStyle(
+          Text(
+            s.historyLoading,
+            style: const TextStyle(
               color: AppColors.textGray,
               fontSize: 13,
             ),
@@ -121,14 +129,15 @@ class _HistoricoHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'HISTÓRICO',
-            style: TextStyle(
+          Text(
+            s.historyHeaderLabel,
+            style: const TextStyle(
               color: AppColors.textGray,
               fontSize: 10,
               fontWeight: FontWeight.bold,
@@ -141,7 +150,7 @@ class _HistoricoHeader extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Sessões registradas',
+                  s.historyTitle,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         color: AppColors.white,
                         fontWeight: FontWeight.bold,
@@ -177,7 +186,7 @@ class _HistoricoHeader extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Registro local das suas sessões.',
+            s.historySubtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.textGray,
                 ),
@@ -195,6 +204,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -215,7 +225,7 @@ class _EmptyState extends StatelessWidget {
                 ),
             const SizedBox(height: 20),
             Text(
-              'Nenhuma sessão ainda.',
+              s.historyEmptyTitle,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.white,
@@ -224,7 +234,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Abra um jogo pela Biblioteca para começar seu histórico.',
+              s.historyEmptyDesc,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textGray,
@@ -275,20 +285,20 @@ class _SessionCard extends StatelessWidget {
     required this.delay,
   });
 
-  ({String label, Color color, IconData icon}) _statusInfo() {
+  ({String label, Color color, IconData icon}) _statusInfo(AppStrings s) {
     return switch (session.launchStatus) {
       'success' => (
-          label: 'Abertura registrada',
+          label: s.historyStatusSuccess,
           color: AppColors.apexGreen,
           icon: Icons.check_circle_outline,
         ),
       'attempted' => (
-          label: 'Tentativa registrada',
+          label: s.historyStatusAttempted,
           color: AppColors.energyOrange,
           icon: Icons.warning_amber,
         ),
       'failed' => (
-          label: 'Falha ao abrir',
+          label: s.historyStatusFailed,
           color: Colors.redAccent,
           icon: Icons.cancel_outlined,
         ),
@@ -300,13 +310,13 @@ class _SessionCard extends StatelessWidget {
     };
   }
 
-  String? _focusModeLabel() {
+  String? _focusModeLabel(AppStrings s) {
     if (!session.focusModeAttempted) return null;
     return switch (session.focusModeResult) {
-      'enabled' => 'Foco ativo',
-      'noPermission' => 'Sem permissão de foco',
-      'error' => 'Erro no foco',
-      _ => null,
+      'enabled'      => s.historyFocusEnabled,
+      'noPermission' => s.historyFocusNoPermission,
+      'error'        => s.historyFocusError,
+      _              => null,
     };
   }
 
@@ -316,22 +326,23 @@ class _SessionCard extends StatelessWidget {
     return '${pad(d.day)}/${pad(d.month)}/${d.year}  ${pad(d.hour)}:${pad(d.minute)}';
   }
 
-  String _formatRam() {
+  String _formatRam(AppStrings s) {
     final avail = session.memoryAvailableMb!;
     final total = session.memoryTotalMb!;
     final availGb = (avail / 1024).toStringAsFixed(1);
     final totalGb = (total / 1024).toStringAsFixed(1);
     final state = session.memoryState;
     if (state != null && state.isNotEmpty) {
-      return '$availGb GB livre • $state';
+      return s.historyRamChip(availGb, state);
     }
     return '$availGb GB / $totalGb GB';
   }
 
   @override
   Widget build(BuildContext context) {
-    final status = _statusInfo();
-    final focusLabel = _focusModeLabel();
+    final s = AppStrings(languageNotifier.value);
+    final status = _statusInfo(s);
+    final focusLabel = _focusModeLabel(s);
     final hasRam =
         session.memoryAvailableMb != null && session.memoryTotalMb != null;
     final hasLatency = session.apexLatencyMs != null;
@@ -418,7 +429,7 @@ class _SessionCard extends StatelessWidget {
                 if (hasRam)
                   _MetricChip(
                     icon: Icons.memory,
-                    label: _formatRam(),
+                    label: _formatRam(s),
                   ),
                 if (hasLatency)
                   _MetricChip(
@@ -433,7 +444,7 @@ class _SessionCard extends StatelessWidget {
                 if (resolvedGfxProfile != null)
                   _MetricChip(
                     icon: resolvedGfxProfile.icon,
-                    label: 'GFX: ${resolvedGfxProfile.label}',
+                    label: 'GFX: ${s.gfxProfileLabel(resolvedGfxProfile)}',
                     accentColor: resolvedGfxProfile.accentColor,
                   ),
               ],
