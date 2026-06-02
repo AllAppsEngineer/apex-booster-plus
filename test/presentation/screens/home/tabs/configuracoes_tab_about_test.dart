@@ -86,9 +86,10 @@ void main() {
     expect(find.text('Preferências em preparação'), findsNothing);
   });
 
-  testWidgets('card LANG nao aparece na aba Configuracoes', (tester) async {
+  testWidgets('card Idioma aparece na aba Configuracoes como funcionalidade real',
+      (tester) async {
     await tester.pumpWidget(_wrapConfig());
     await tester.pumpAndSettle();
-    expect(find.text('Idioma do app'), findsNothing);
+    expect(find.text('Idioma do app'), findsOneWidget);
   });
 }

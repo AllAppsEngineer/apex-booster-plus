@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
+import 'package:apex_booster_plus/core/i18n/app_language.dart';
+import 'package:apex_booster_plus/core/i18n/app_strings.dart';
+import 'package:apex_booster_plus/core/i18n/language_service.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_session_repository.dart';
 import 'package:apex_booster_plus/data/services/focus_mode_service_impl.dart';
 import 'package:apex_booster_plus/domain/services/focus_mode_service.dart';
@@ -13,39 +16,49 @@ class ConfiguracoesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ApexBackground(
-      child: SafeArea(
-        child: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const _ConfiguracoesHeader(),
-              const SizedBox(height: 28),
-              const _FocusModeCard(),
-              const SizedBox(height: 12),
-              const _ClearHistoryCard(),
-              const SizedBox(height: 12),
-              const _AboutCard(),
-            ],
+    return ListenableBuilder(
+      listenable: languageNotifier,
+      builder: (context, _) {
+        return ApexBackground(
+          child: SafeArea(
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _ConfiguracoesHeader(),
+                  const SizedBox(height: 28),
+                  _FocusModeCard(),
+                  const SizedBox(height: 12),
+                  _ClearHistoryCard(),
+                  const SizedBox(height: 12),
+                  _LanguageCard(),
+                  const SizedBox(height: 12),
+                  _AboutCard(),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
+
+// ─── Header ──────────────────────────────────────────────────────────────────
 
 class _ConfiguracoesHeader extends StatelessWidget {
   const _ConfiguracoesHeader();
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Configurações',
+          s.settingsTitle,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 color: AppColors.white,
                 fontWeight: FontWeight.bold,
@@ -57,7 +70,7 @@ class _ConfiguracoesHeader extends StatelessWidget {
             .slideY(begin: -0.08, end: 0, duration: 400.ms),
         const SizedBox(height: 8),
         Text(
-          'Organize preferências do app em um só lugar.',
+          s.settingsSubtitle,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.textGray,
               ),
@@ -122,6 +135,7 @@ class _FocusModeCardState extends State<_FocusModeCard>
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -146,13 +160,13 @@ class _FocusModeCardState extends State<_FocusModeCard>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const ApexBadge(label: 'FOCO', color: AppColors.cyberBlue),
-              _buildStatusChip(),
+              ApexBadge(label: s.focusBadge, color: AppColors.cyberBlue),
+              _buildStatusChip(s),
             ],
           ),
           const SizedBox(height: 14),
           Text(
-            'Modo Foco Gamer',
+            s.focusTitle,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppColors.white,
                   fontWeight: FontWeight.bold,
@@ -160,17 +174,17 @@ class _FocusModeCardState extends State<_FocusModeCard>
           ),
           const SizedBox(height: 6),
           Text(
-            'Reduz interrupções durante sua sessão usando o Não Perturbe do Android. Requer permissão manual. Não melhora FPS, RAM, GPU ou Ping.',
+            s.focusDescription,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.textGray,
                   fontSize: 13,
                 ),
           ),
           const SizedBox(height: 16),
-          _buildStatusRow(context),
+          _buildStatusRow(context, s),
           if (_permState == _FocusPermissionState.required) ...[
             const SizedBox(height: 16),
-            _buildPermissionButton(context),
+            _buildPermissionButton(context, s),
           ],
         ],
       ),
@@ -180,7 +194,7 @@ class _FocusModeCardState extends State<_FocusModeCard>
         .slideY(begin: 0.04, end: 0, duration: 400.ms);
   }
 
-  Widget _buildStatusChip() {
+  Widget _buildStatusChip(AppStrings s) {
     if (_permState == _FocusPermissionState.loading) {
       return SizedBox(
         width: 14,
@@ -205,7 +219,7 @@ class _FocusModeCardState extends State<_FocusModeCard>
         ),
       ),
       child: Text(
-        granted ? 'Ativo' : 'Necessário',
+        granted ? s.focusStatusActive : s.focusStatusRequired,
         style: TextStyle(
           color: granted ? AppColors.apexGreen : AppColors.energyOrange,
           fontSize: 11,
@@ -216,7 +230,7 @@ class _FocusModeCardState extends State<_FocusModeCard>
     );
   }
 
-  Widget _buildStatusRow(BuildContext context) {
+  Widget _buildStatusRow(BuildContext context, AppStrings s) {
     if (_permState == _FocusPermissionState.loading) {
       return Row(
         children: [
@@ -230,7 +244,7 @@ class _FocusModeCardState extends State<_FocusModeCard>
           ),
           const SizedBox(width: 8),
           Text(
-            'Verificando permissão...',
+            s.focusChecking,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textGray,
                   fontSize: 12,
@@ -257,7 +271,7 @@ class _FocusModeCardState extends State<_FocusModeCard>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                granted ? 'Permissão concedida' : 'Permissão necessária',
+                granted ? s.focusGrantedLabel : s.focusRequiredLabel,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: granted
                           ? AppColors.apexGreen
@@ -268,9 +282,7 @@ class _FocusModeCardState extends State<_FocusModeCard>
               ),
               const SizedBox(height: 2),
               Text(
-                granted
-                    ? 'Modo Foco disponível. Será ativado ao iniciar uma sessão.'
-                    : 'Conceda acesso para ativar o Modo Foco.',
+                granted ? s.focusGrantedDesc : s.focusRequiredDesc,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textGray,
                       fontSize: 12,
@@ -283,7 +295,7 @@ class _FocusModeCardState extends State<_FocusModeCard>
     );
   }
 
-  Widget _buildPermissionButton(BuildContext context) {
+  Widget _buildPermissionButton(BuildContext context, AppStrings s) {
     return SizedBox(
       width: double.infinity,
       height: 44,
@@ -295,9 +307,9 @@ class _FocusModeCardState extends State<_FocusModeCard>
           } catch (_) {
             if (!mounted) return;
             messenger.showSnackBar(
-              const SnackBar(
-                content: Text('Não foi possível abrir as configurações do Android.'),
-                duration: Duration(seconds: 2),
+              SnackBar(
+                content: Text(s.focusOpenSettingsError),
+                duration: const Duration(seconds: 2),
                 behavior: SnackBarBehavior.floating,
               ),
             );
@@ -316,9 +328,9 @@ class _FocusModeCardState extends State<_FocusModeCard>
           elevation: 0,
         ),
         icon: const Icon(Icons.open_in_new_rounded, size: 16),
-        label: const Text(
-          'PERMITIR MODO FOCO',
-          style: TextStyle(
+        label: Text(
+          s.focusAllowButton,
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 13,
             letterSpacing: 1.2,
@@ -335,23 +347,25 @@ class _ClearHistoryCard extends StatelessWidget {
   const _ClearHistoryCard();
 
   Future<void> _onTap(BuildContext context) async {
+    final s = AppStrings(languageNotifier.value);
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A1A),
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          'Limpar histórico?',
-          style: TextStyle(
+        title: Text(
+          s.clearHistoryDialogTitle,
+          style: const TextStyle(
             color: AppColors.white,
             fontWeight: FontWeight.bold,
             fontSize: 17,
           ),
         ),
-        content: const Text(
-          'Todas as sessões serão apagadas. Esta ação não pode ser desfeita.',
-          style: TextStyle(
+        content: Text(
+          s.clearHistoryDialogContent,
+          style: const TextStyle(
             color: AppColors.textGray,
             fontSize: 13,
             height: 1.5,
@@ -360,9 +374,9 @@ class _ClearHistoryCard extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text(
-              'CANCELAR',
-              style: TextStyle(
+            child: Text(
+              s.actionCancel,
+              style: const TextStyle(
                 color: AppColors.textGray,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.8,
@@ -374,9 +388,9 @@ class _ClearHistoryCard extends StatelessWidget {
             style: TextButton.styleFrom(
               foregroundColor: const Color(0xFFEF4444),
             ),
-            child: const Text(
-              'LIMPAR',
-              style: TextStyle(
+            child: Text(
+              s.clearHistoryActionClear,
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.8,
               ),
@@ -395,9 +409,9 @@ class _ClearHistoryCard extends StatelessWidget {
 
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Histórico apagado com sucesso.'),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Text(s.clearHistorySuccess),
+        duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -405,6 +419,7 @@ class _ClearHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(12),
@@ -451,9 +466,9 @@ class _ClearHistoryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Limpar histórico de sessões',
-                      style: TextStyle(
+                    Text(
+                      s.clearHistoryTitle,
+                      style: const TextStyle(
                         color: AppColors.white,
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
@@ -461,7 +476,7 @@ class _ClearHistoryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Apaga todas as sessões salvas localmente.',
+                      s.clearHistorySubtitle,
                       style: TextStyle(
                         color: AppColors.textGray.withValues(alpha: 0.8),
                         fontSize: 12,
@@ -486,6 +501,199 @@ class _ClearHistoryCard extends StatelessWidget {
   }
 }
 
+// ─── Idioma ──────────────────────────────────────────────────────────────────
+
+class _LanguageCard extends StatelessWidget {
+  const _LanguageCard();
+
+  Future<void> _onTap(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    final service = LanguageService(prefs);
+
+    if (!context.mounted) return;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF1A1A1A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => _LanguageSheet(service: service),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
+    final current = languageNotifier.value;
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: () => _onTap(context),
+        borderRadius: BorderRadius.circular(12),
+        splashColor: AppColors.cyberBlue.withValues(alpha: 0.08),
+        highlightColor: AppColors.cyberBlue.withValues(alpha: 0.04),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.cyberBlue.withValues(alpha: 0.08),
+                AppColors.white.withValues(alpha: 0.03),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.cyberBlue.withValues(alpha: 0.22),
+              width: 1,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.cyberBlue.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.language_rounded,
+                  color: AppColors.cyberBlue,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.languageTitle,
+                      style: const TextStyle(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      current.label,
+                      style: TextStyle(
+                        color: AppColors.cyberBlue.withValues(alpha: 0.9),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.cyberBlue.withValues(alpha: 0.45),
+                size: 18,
+              ),
+            ],
+          ),
+        ),
+      ),
+    )
+        .animate()
+        .fadeIn(delay: 120.ms, duration: 500.ms)
+        .slideY(begin: 0.04, end: 0, duration: 380.ms);
+  }
+}
+
+class _LanguageSheet extends StatelessWidget {
+  final LanguageService service;
+
+  const _LanguageSheet({required this.service});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
+    final current = languageNotifier.value;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+          child: Text(
+            s.languageSheetTitle,
+            style: const TextStyle(
+              color: AppColors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ),
+        const Divider(color: Color(0xFF2A2A2A), height: 1),
+        for (final lang in AppLanguage.values)
+          _LanguageOption(lang: lang, current: current, service: service),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+}
+
+class _LanguageOption extends StatelessWidget {
+  final AppLanguage lang;
+  final AppLanguage current;
+  final LanguageService service;
+
+  const _LanguageOption({
+    required this.lang,
+    required this.current,
+    required this.service,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelected = lang == current;
+
+    return InkWell(
+      onTap: () async {
+        await service.save(lang);
+        languageNotifier.value = lang;
+        if (context.mounted) Navigator.of(context).pop();
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                lang.nativeLabel,
+                style: TextStyle(
+                  color:
+                      isSelected ? AppColors.cyberBlue : AppColors.white,
+                  fontWeight:
+                      isSelected ? FontWeight.w600 : FontWeight.normal,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+            if (isSelected)
+              const Icon(
+                Icons.check_rounded,
+                color: AppColors.cyberBlue,
+                size: 18,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ─── Sobre o app ─────────────────────────────────────────────────────────────
 
 class _AboutCard extends StatelessWidget {
@@ -493,6 +701,7 @@ class _AboutCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -517,7 +726,7 @@ class _AboutCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const ApexBadge(label: 'SOBRE', color: AppColors.apexGreen),
+              ApexBadge(label: s.aboutBadge, color: AppColors.apexGreen),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -529,9 +738,9 @@ class _AboutCard extends StatelessWidget {
                     width: 1,
                   ),
                 ),
-                child: const Text(
-                  'Versão 1.0.0',
-                  style: TextStyle(
+                child: Text(
+                  s.appVersion,
+                  style: const TextStyle(
                     color: AppColors.apexGreen,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -551,7 +760,7 @@ class _AboutCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Prepare. Analise. Jogue.',
+            s.appTagline,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.apexGreen,
                   fontWeight: FontWeight.w600,
@@ -568,7 +777,7 @@ class _AboutCard extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                'Instalação gratuita · Desbloqueio único',
+                s.appModel,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textGray,
                       fontSize: 12,
@@ -588,7 +797,7 @@ class _AboutCard extends StatelessWidget {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'Não altera jogos de terceiros automaticamente.',
+                  s.appDisclaimer,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textGray.withValues(alpha: 0.7),
                         fontSize: 12,

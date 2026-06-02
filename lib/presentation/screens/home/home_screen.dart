@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/i18n/app_language.dart';
+import '../../../core/i18n/app_strings.dart';
 import 'tabs/inicio_tab.dart';
 import 'tabs/biblioteca_tab.dart';
 import 'tabs/preparar_tab.dart';
@@ -38,9 +40,9 @@ class _HomeScreenState extends State<HomeScreen> {
       _lastBackPress = now;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Pressione voltar novamente para sair.'),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(AppStrings(languageNotifier.value).navExitSnackBar),
+            duration: const Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -71,74 +73,80 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF1C1C1C),
-            Color(0xFF0A0A0A),
-          ],
-        ),
-        border: Border(
-          top: BorderSide(
-            color: AppColors.apexGreen.withValues(alpha: 0.28),
-            width: 0.8,
+    return ListenableBuilder(
+      listenable: languageNotifier,
+      builder: (_, __) {
+        final s = AppStrings(languageNotifier.value);
+        return Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF1C1C1C),
+                Color(0xFF0A0A0A),
+              ],
+            ),
+            border: Border(
+              top: BorderSide(
+                color: AppColors.apexGreen.withValues(alpha: 0.28),
+                width: 0.8,
+              ),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.apexGreen.withValues(alpha: 0.07),
+                blurRadius: 24,
+                offset: const Offset(0, -8),
+                spreadRadius: 0,
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.55),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
+            ],
           ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.apexGreen.withValues(alpha: 0.07),
-            blurRadius: 24,
-            offset: const Offset(0, -8),
-            spreadRadius: 0,
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.transparent,
+            selectedItemColor: AppColors.apexGreen,
+            unselectedItemColor: AppColors.textGray,
+            currentIndex: _selectedIndex,
+            onTap: (i) => setState(() => _selectedIndex = i),
+            selectedFontSize: 11,
+            unselectedFontSize: 11,
+            elevation: 0,
+            items: [
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.home_outlined),
+                activeIcon: const Icon(Icons.home),
+                label: s.navHome,
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.sports_esports_outlined),
+                activeIcon: const Icon(Icons.sports_esports),
+                label: s.navLibrary,
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.flash_on_outlined),
+                activeIcon: const Icon(Icons.flash_on),
+                label: s.navPrepare,
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.history_outlined),
+                activeIcon: const Icon(Icons.history),
+                label: s.navHistory,
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.settings_outlined),
+                activeIcon: const Icon(Icons.settings),
+                label: s.navSettings,
+              ),
+            ],
           ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.55),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.transparent,
-        selectedItemColor: AppColors.apexGreen,
-        unselectedItemColor: AppColors.textGray,
-        currentIndex: _selectedIndex,
-        onTap: (i) => setState(() => _selectedIndex = i),
-        selectedFontSize: 11,
-        unselectedFontSize: 11,
-        elevation: 0,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Início',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.sports_esports_outlined),
-            activeIcon: Icon(Icons.sports_esports),
-            label: 'Biblioteca',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.flash_on_outlined),
-            activeIcon: Icon(Icons.flash_on),
-            label: 'Preparar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: 'Histórico',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
-            label: 'Config.',
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
