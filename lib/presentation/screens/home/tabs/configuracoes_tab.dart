@@ -619,27 +619,30 @@ class _LanguageSheet extends StatelessWidget {
     final s = AppStrings(languageNotifier.value);
     final current = languageNotifier.value;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-          child: Text(
-            s.languageSheetTitle,
-            style: const TextStyle(
-              color: AppColors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              letterSpacing: 0.2,
+    return SafeArea(
+      top: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+            child: Text(
+              s.languageSheetTitle,
+              style: const TextStyle(
+                color: AppColors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                letterSpacing: 0.2,
+              ),
             ),
           ),
-        ),
-        const Divider(color: Color(0xFF2A2A2A), height: 1),
-        for (final lang in AppLanguage.values)
-          _LanguageOption(lang: lang, current: current, service: service),
-        const SizedBox(height: 24),
-      ],
+          const Divider(color: Color(0xFF2A2A2A), height: 1),
+          for (final lang in AppLanguage.values)
+            _LanguageOption(lang: lang, current: current, service: service),
+          const SizedBox(height: 24),
+        ],
+      ),
     );
   }
 }
