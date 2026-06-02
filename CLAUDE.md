@@ -418,7 +418,7 @@ Estado funcional das abas da Home:
 - Aba Biblioteca: funcionalidade real implementada (lista de jogos, adicionar por nome via BottomSheet com autocomplete inteligente desde a primeira letra, sugestões por ranking de relevância, lista rolável sem limite artificial, seleção de sugestão preenche nome + packageName, packageName manual validado contra apps instalados, jogos fantasmas bloqueados, duplicados bloqueados com mensagem "Já instalado", favoritar/desfavoritar, remover, persistência local com shared_preferences, navegação para detalhe ao tocar em um jogo, edição de nome e packageName via diálogo inline no detalhe com validação: packageName inválido bloqueado, packageName duplicado em outro jogo bloqueado, packageName vazio permitido com fallback de ícone, packageName igual ao jogo atual permitido, edição apenas do nome preservada sem validação desnecessária, seleção de GFX Profile local via bottom sheet no detalhe, seleção restrita de apps Android instalados via AppPickerSheet com intent MAIN/LAUNCHER — entrada manual permanece como fallback, exibição de ícone real do app instalado via AppIconWidget quando packageName disponível — fallback genérico quando ausente, app desinstalado ou erro, microcopy final ajustado: contagem exibe "na biblioteca", empty state honesto "Nenhum jogo adicionado ainda.", subtítulo orienta ação real, copy do card Perfis locais reflete que GFX Profile já existe no detalhe de cada jogo, launcher real implementado na GameDetailScreen via botão ABRIR JOGO com Apex Boost Mode visual antes da abertura). Observação (descoberta Fase 2-Q.4 — tratada na Fase 2-R): o launcher abre qualquer packageName válido instalado, incluindo apps não-game como Waze. O Android não diferencia automaticamente neste fluxo. Não é bug técnico — é lacuna de classificação/curadoria gamer. Tratamento implementado na Fase 2-R: badge "JOGO" e toggle "Apenas jogos verificados" no AppPickerSheet, confirmação obrigatória ao adicionar app com isGame == false, e badge "Não verificado" nos cards da Biblioteca para packageName com isGame == false. Nenhum app é bloqueado permanentemente — decisão fica com o usuário. ABRIR JOGO continua funcionando para qualquer packageName válido, sem restrição por isGame.
 - Aba Preparar: funcionalidade real implementada (Fase 2-S.4): seletor de jogo com botão TROCAR (visível quando há mais de 1 jogo na biblioteca), pré-seleção automática por histórico (último jogo lançado → primeiro da biblioteca → null se vazia), Apex Scan local com 3 checks honestos (App vinculado, Perfil GFX, Prioridade — sem métricas falsas), snapshot real do dispositivo (RAM disponível, RAM total, estado de memória, latência Apex, Modo Foco), CTA "CONTINUAR PARA DETALHES" funcional com disable state quando não há jogo selecionado, navegação para GameDetailScreen via context.push, dois disclaimers honestos visíveis. Sem promessa de boost, FPS, GPU, ping ou otimização automática. Funções puras exportadas e cobertas por testes (selectGameForPreparation, buildIsLaunchableHint). Fase GFX-U2.A: Perfil GFX exibido na PrepararTab com cor e semântica por perfil selecionado (verde/Desempenho, azul/Qualidade, laranja/Economia, neutro/Equilibrado, cinza/Nenhum). Fase GFX-U2.B: Apex Scan local usa mensagem contextual por perfil GFX selecionado no check de Perfil GFX — sem alterar score nem status do scan. Fase GFX-U2.E.1: seção "Sugestões" exibida no _PrepScanCard quando há Perfil GFX selecionado — sugestões locais, leves e baseadas no perfil; Perfil "Nenhum" não exibe seção; sem promessa de FPS, GPU, resolução ou alteração real; refresh correto ao retornar da GfxProfileScreen.
 - Aba Histórico: histórico real implementado e visualmente refinado (Fases 2-Q.5 e 2-Q.7): exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository; estado vazio honesto; status success/attempted/failed exibidos com visual premium; sem duração real; sem "partida concluída"; revisão visual aprovada no Samsung S24 Ultra. Fase GFX-U2.C: chip de Perfil GFX exibido nos cards de sessão quando presente, usando GfxProfile.fromLabel(session.gfxProfile) com cor e label semânticos por perfil; fallback seguro para nulos e valores desconhecidos; sessões sem perfil não exibem chip. Fase SET-U1.1: refresh ao ganhar foco via isActive implementado — após limpeza de histórico nas Configurações, HistoricoTab exibe estado vazio imediatamente sem necessidade de reiniciar o app.
-- Aba Configurações: card "Modo Foco Gamer" implementado (Fase 2-P.4) com UI de permissão. Ação "Limpar histórico de sessões" implementada (Fase SET-U1.1) com diálogo de confirmação — CANCELAR preserva sessões, LIMPAR apaga apenas apex_sessions. Card "Sobre" implementado (Fase SET-U1.2): exibe nome do app (Apex Booster+), versão (1.0.0), tagline "Prepare. Analise. Jogue.", modelo comercial "Instalação gratuita · Desbloqueio único" e disclaimer "Não altera jogos de terceiros automaticamente." — placeholder APP removido, CTA morta "ABRIR AJUSTES" removida. Fase SET-U1.3: card "Preferências em preparação" removido, card "Idioma do app" placeholder removido, import órfão de apex_feature_card.dart removido — aba exibe apenas itens reais: Modo Foco Gamer, Limpar histórico, Sobre.
+- Aba Configurações: card "Modo Foco Gamer" implementado (Fase 2-P.4) com UI de permissão. Ação "Limpar histórico de sessões" implementada (Fase SET-U1.1) com diálogo de confirmação — CANCELAR preserva sessões, LIMPAR apaga apenas apex_sessions. Card "Sobre" implementado (Fase SET-U1.2): exibe nome do app (Apex Booster+), versão (1.0.0), tagline "Prepare. Analise. Jogue.", modelo comercial "Instalação gratuita · Desbloqueio único" e disclaimer "Não altera jogos de terceiros automaticamente." — placeholder APP removido, CTA morta "ABRIR AJUSTES" removida. Fase SET-U1.3: card "Preferências em preparação" removido, card "Idioma do app" placeholder removido, import órfão de apex_feature_card.dart removido — aba exibe apenas itens reais: Modo Foco Gamer, Limpar histórico, Sobre. Fase LANG-U1.2: card "Idioma do app" real adicionado — exibe idioma atual, abre seletor com Português (BR), English e Español, opção atual marcada, seleção salva via LanguageService (chave apex_app_language), languageNotifier atualiza a UI imediatamente, idioma persiste ao fechar e reabrir o app. BottomNav migrada para AppStrings. Configurações migrada para AppStrings. Configurações e BottomNav mudam de idioma sem reiniciar o app. Fase LANG-U1.2A: seletor de idioma ajustado visualmente — opção "Español" não fica cortada ou colada na borda inferior, bottom sheet com respiro inferior adequado; lógica de idioma não alterada.
 
 ---
 
@@ -1049,6 +1049,29 @@ Concluído:
   - Nenhum arquivo Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão.
   - flutter analyze passando. flutter test passando (316/316).
   - Commit: a5d9310 — feat: adicionar infraestrutura de idioma.
+- Fase LANG-U1.2 concluída: seletor de idioma real nas Configurações + migração de BottomNav e Configurações.
+  - Card "Idioma do app" real adicionado à ConfiguraçõesTab.
+  - Card exibe o idioma atual do app.
+  - Ao tocar, abre seletor com Português (BR), English e Español.
+  - A opção atual aparece marcada no seletor.
+  - Ao selecionar idioma, a escolha é salva via LanguageService (chave apex_app_language).
+  - languageNotifier atualiza a UI imediatamente — sem reinicialização do app.
+  - Idioma persiste ao fechar e reabrir o app.
+  - BottomNav migrada para AppStrings — labels mudam conforme idioma selecionado.
+  - ConfiguraçõesTab migrada para AppStrings — textos mudam conforme idioma selecionado.
+  - Sem flutter_localizations. Sem intl. Sem nova dependência.
+  - Nenhum arquivo Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão.
+  - flutter analyze passando. flutter test passando com baseline atual.
+  - Commits: 4ad1c0f — feat: adicionar seletor de idioma nas configuracoes.
+  - Aprovado no Samsung S24 Ultra.
+- Fase LANG-U1.2A concluída: ajuste visual do seletor de idioma.
+  - Opção "Español" deixou de ficar cortada ou colada na borda inferior do bottom sheet.
+  - Bottom sheet com respiro inferior adequado.
+  - Lógica de idioma, persistência e atualização imediata preservadas sem alteração.
+  - Nenhum arquivo Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão.
+  - flutter analyze passando. flutter test passando com baseline atual.
+  - Commit: 10f9559 — ux: ajustar seletor de idioma nas configuracoes.
+  - Aprovado no Samsung S24 Ultra.
 
 Observação sobre a Fase 1.6B:
 
@@ -1217,6 +1240,11 @@ Arquivos criados ou alterados na Fase LANG-U1.1:
 - test/core/i18n/app_strings_test.dart (criado — testes do AppStrings)
 - test/core/i18n/language_service_test.dart (criado — testes do LanguageService)
 
+Arquivos alterados nas Fases LANG-U1.2 e LANG-U1.2A:
+
+- lib/presentation/screens/home/tabs/configuracoes_tab.dart (alterado — card "Idioma do app" real adicionado com seletor bottom sheet; migração para AppStrings; ajuste visual de respiro inferior no seletor — LANG-U1.2A)
+- lib/presentation/screens/home/home_screen.dart (alterado — BottomNav migrada para AppStrings)
+
 Estado visual atual:
 
 Aprovado como checkpoint da Fase 2-O.5: seção "MÉTRICAS REAIS" validada no Samsung S24 Ultra com RAM disponível, RAM total, estado de memória e latência Apex lidos do dispositivo real.
@@ -1246,6 +1274,8 @@ Fase SET-U1.1 aprovada: ação "Limpar histórico de sessões" implementada na C
 Fase SET-U1.2 aprovada: card "Sobre" implementado na ConfiguraçõesTab e validado no Samsung S24 Ultra. Exibe nome do app, versão 1.0.0, tagline, modelo comercial e disclaimer. Placeholder APP removido. CTA morta removida. Sem package_info_plus. Sem nova permissão, dependência, Kotlin, AndroidManifest ou pubspec alterado. flutter analyze passando. flutter test passando (239/239). Commit 5a614b7.
 Fase SET-U1.3 aprovada: placeholders restantes removidos da ConfiguraçõesTab e validado no Samsung S24 Ultra. Card "Preferências em preparação" e card "Idioma do app" removidos. Import órfão de apex_feature_card.dart removido. Aba exibe apenas Modo Foco Gamer, Limpar histórico e Sobre — todos funcionais. Sem nova permissão, dependência, Kotlin, AndroidManifest ou pubspec alterado. flutter analyze passando. flutter test passando (241/241). Commit ad75f54.
 Fase LANG-U1.1 concluída: infraestrutura de idioma criada. Enum AppLanguage (ptBr, en, es) com code, label, nativeLabel e fromName/fallback seguro. languageNotifier global. LanguageService com persistência via shared_preferences (chave apex_app_language). AppStrings com getters e métodos iniciais. main.dart carrega idioma salvo antes do runApp. ApexBoosterApp usa ListenableBuilder. Nenhuma tela migrada. Sem impacto visual nesta fase. Sem nova dependência, Kotlin, AndroidManifest ou pubspec alterado. flutter analyze passando. flutter test passando (316/316). Commit a5d9310.
+Fase LANG-U1.2 concluída: card "Idioma do app" real na ConfiguraçõesTab. Exibe idioma atual. Seletor bottom sheet com PT-BR, English e Español. Opção atual marcada. Seleção salva via LanguageService. languageNotifier atualiza UI imediatamente. Idioma persiste ao fechar e reabrir o app. BottomNav e ConfiguraçõesTab migradas para AppStrings — mudam sem reiniciar o app. Sem flutter_localizations, intl ou nova dependência. Nenhum Kotlin, AndroidManifest ou pubspec alterado. flutter analyze passando. flutter test passando com baseline atual. Commit 4ad1c0f. Aprovado no Samsung S24 Ultra.
+Fase LANG-U1.2A concluída: ajuste visual do seletor de idioma. Opção "Español" não fica cortada na borda inferior. Respiro inferior adequado no bottom sheet. Lógica de idioma preservada. Nenhum Kotlin, AndroidManifest ou pubspec alterado. flutter analyze passando. flutter test passando. Commit 10f9559. Aprovado no Samsung S24 Ultra.
 Ainda não é o visual final absoluto do produto.
 
 Observação:
@@ -1255,13 +1285,13 @@ A Biblioteca funciona com adição via BottomSheet com autocomplete inteligente 
 Pendências conhecidas:
 
 - Logo/asset oficial interno ainda não foi aprovado para uso definitivo nas telas Flutter.
-- Localização multilíngue: infraestrutura criada (Fase LANG-U1.1 — AppLanguage, languageNotifier, LanguageService, AppStrings, integração no main.dart). Migração das telas e card de idioma nas Configurações: pendente (LANG-U1.2 e seguintes).
+- Localização multilíngue: infraestrutura criada (Fase LANG-U1.1). Card "Idioma do app" real + BottomNav + ConfiguraçõesTab migrados (Fase LANG-U1.2). Seletor visual ajustado (Fase LANG-U1.2A). Migração das telas restantes pendente: LANG-U1.3 (abertura/onboarding + Início + Histórico), LANG-U1.4 (Preparar + Perfil GFX), LANG-U1.5 (Biblioteca + Detalhe do Jogo), LANG-U1.6 (validação final PT-BR / EN / ES).
 - Tela Add Game separada não implementada (adição atual é diálogo inline na BibliotecaTab).
 - GFX Profile: tela dedicada GfxProfileScreen criada (Fase GFX-U1.1) com Equilibrado, Desempenho, Qualidade, Economia e Nenhum. Acesso no Detalhe do Jogo com visual premium (Fase GFX-U1.1A). Influência na jornada — PrepararTab e Apex Scan local: implementada (Fase GFX-U2.A+B). Influência no Histórico: implementada (Fase GFX-U2.C — chip GFX nos cards do Histórico). Influência na InicioTab: implementada (Fase GFX-U2.D — chip GFX semântico no card de última sessão). Recomendações locais baseadas em perfil: implementadas (Fase GFX-U2.E.1 — seção "Sugestões" no _PrepScanCard da PrepararTab). Perfis avançados não implementados (futuros: Fluidez, Competitivo, Ultra Visual, Personalizado). Recomendações mais granulares por perfil avançado: pendente (futuro).
 - Apex Scan: motor local criado (Fase 2M.2). Card visual implementado no Detalhe do Jogo (Fase 2M.4A). Métricas reais parciais implementadas (Fase 2-O.3): RAM disponível, RAM total, estado de memória e latência Apex. PrepararTab possui _PrepScanCard com checks locais honestos (app vinculado, GFX, prioridade) — não usa ApexScanService diretamente. Integração da aba Preparar com ApexScanService completo: pendente (Fase 2M.4B adiada). FPS real, GPU real, limpeza de RAM, boost real e otimização real não implementados.
 - Boost Engine não implementado.
 - Histórico real: captura, exibição local e revisão visual premium implementadas (Fases 2-Q.1 a 2-Q.7). HistoricoTab exibe sessões reais via SessionRecord e SharedPreferencesSessionRepository com visual premium aprovado. Sem duração real. Sem Usage Stats. Sem Firebase. Apps não-game podem aparecer no histórico se forem lançados — comportamento esperado, o histórico registra o que foi aberto sem filtro retroativo.
-- Configurações: Limpar histórico de sessões implementado (Fase SET-U1.1). Card Sobre implementado (Fase SET-U1.2 — nome, versão 1.0.0, tagline, modelo comercial, disclaimer). Placeholders removidos (Fase SET-U1.3 — card "Preferências em preparação" e card "Idioma do app"). Infraestrutura de idioma criada (Fase LANG-U1.1 — enum AppLanguage, languageNotifier, LanguageService, AppStrings, integração no main.dart). Card de idioma nas Configurações + migração das telas: pendente (LANG-U1.2 e seguintes). Demais configurações reais pendentes (outras a definir).
+- Configurações: Limpar histórico de sessões implementado (Fase SET-U1.1). Card Sobre implementado (Fase SET-U1.2 — nome, versão 1.0.0, tagline, modelo comercial, disclaimer). Placeholders removidos (Fase SET-U1.3). Infraestrutura de idioma criada (Fase LANG-U1.1). Card "Idioma do app" real + migração de BottomNav e ConfiguraçõesTab para AppStrings implementados (Fase LANG-U1.2 — seletor bottom sheet, persistência, troca sem reinicialização). Seletor ajustado visualmente (Fase LANG-U1.2A — respiro inferior). Migração das telas restantes: pendente (LANG-U1.3 e seguintes). Demais configurações reais pendentes (outras a definir).
 - Hive não implementado (shared_preferences cobre a necessidade atual).
 - Billing não implementado.
 - Firebase não implementado.
@@ -1273,7 +1303,7 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5, 2-S.4, 2-S.5, 2-T.1, 2-T.2A, GFX-U1.1, GFX-U1.1A, GFX-U2.A+B, GFX-U2.C, GFX-U2.D, GFX-U2.E.1, SET-U1.1, SET-U1.2, SET-U1.3 e LANG-U1.1 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5, 2-S.4, 2-S.5, 2-T.1, 2-T.2A, GFX-U1.1, GFX-U1.1A, GFX-U2.A+B, GFX-U2.C, GFX-U2.D, GFX-U2.E.1, SET-U1.1, SET-U1.2, SET-U1.3, LANG-U1.1, LANG-U1.2 e LANG-U1.2A concluídas.
 
 Fase 2-O — Apex Metrics Real v1 (concluída):
 - Fase 2-O.1: camada de dados de métricas reais criada.
@@ -1513,14 +1543,37 @@ Fase LANG-U — Idioma real:
   - Nenhum Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão.
   - flutter analyze passando. flutter test passando (316/316).
   - Commit: a5d9310 — feat: adicionar infraestrutura de idioma.
-- Fase LANG-U1.2 e seguintes: pendentes, aguardam aprovação de escopo.
+- Fase LANG-U1.2: seletor de idioma real nas Configurações + migração de BottomNav e ConfiguraçõesTab (concluída).
+  - Card "Idioma do app" real adicionado à ConfiguraçõesTab.
+  - Card exibe idioma atual. Ao tocar, abre seletor bottom sheet com Português (BR), English e Español.
+  - Opção atual marcada. Seleção salva via LanguageService. languageNotifier atualiza UI imediatamente.
+  - Idioma persiste ao fechar e reabrir o app.
+  - BottomNav migrada para AppStrings. ConfiguraçõesTab migrada para AppStrings.
+  - Troca de idioma sem reinicialização do app.
+  - Sem flutter_localizations, intl ou nova dependência.
+  - Nenhum Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão.
+  - flutter analyze passando. flutter test passando com baseline atual.
+  - Commit: 4ad1c0f — feat: adicionar seletor de idioma nas configuracoes.
+  - Aprovado no Samsung S24 Ultra.
+- Fase LANG-U1.2A: ajuste visual do seletor de idioma (concluída).
+  - Opção "Español" deixou de ficar cortada ou colada na borda inferior.
+  - Bottom sheet com respiro inferior adequado.
+  - Lógica de idioma, persistência e atualização imediata preservadas sem alteração.
+  - Nenhum Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão.
+  - flutter analyze passando. flutter test passando com baseline atual.
+  - Commit: 10f9559 — ux: ajustar seletor de idioma nas configuracoes.
+  - Aprovado no Samsung S24 Ultra.
+- Fases LANG-U1.3 a LANG-U1.6: pendentes, aguardam aprovação de escopo.
+  - LANG-U1.3: abertura/onboarding + Início + Histórico.
+  - LANG-U1.4: Preparar + Perfil GFX.
+  - LANG-U1.5: Biblioteca + Detalhe do Jogo.
+  - LANG-U1.6: validação final PT-BR / EN / ES.
 
 Próximo passo imediato:
-- SET-U1.1, SET-U1.2, SET-U1.3 e LANG-U1.1 concluídas.
-- LANG-U1.1 entregou a base técnica de internacionalização: enum, notifier, service e strings.
-- Próxima fase sugerida: LANG-U1.2 — Configurações + BottomNav com seletor de idioma real.
-  - LANG-U1.2: card "Idioma do app" real nas Configurações + migração das strings do BottomNav e telas de onboarding.
-  - Sem nova dependência imediata (shared_preferences já disponível).
+- LANG-U1.2 e LANG-U1.2A concluídas: seletor de idioma real funcionando nas Configurações, BottomNav e ConfiguraçõesTab respondem à troca, idioma persiste, visual ajustado.
+- Próxima fase sugerida: LANG-U1.3 — migrar telas de abertura/onboarding (Splash, Welcome, HowItWorks, Permissions) + InicioTab + HistoricoTab para AppStrings.
+  - Cobertura crescente: cada fase migra um bloco de telas sem quebrar as anteriores.
+  - Sem nova dependência (AppStrings e languageNotifier já disponíveis).
   - Candidatos alternativos: refinamento visual, Boost Engine (Fase 3), ou outro a definir.
 
 Nota estratégica:
