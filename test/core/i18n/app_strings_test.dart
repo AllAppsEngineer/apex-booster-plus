@@ -511,6 +511,108 @@ void main() {
     });
   });
 
+  // ─── GFX Profile screen — LANG-U1.4A ────────────────────────────────────────
+
+  group('AppStrings — GFX Profile screen strings', () {
+    test('gfxTitle is non-empty for all languages', () {
+      expect(ptBr.gfxTitle, isNotEmpty);
+      expect(en.gfxTitle, isNotEmpty);
+      expect(es.gfxTitle, isNotEmpty);
+    });
+
+    test('gfxTitle differs ptBr vs en', () {
+      expect(ptBr.gfxTitle, isNot(equals(en.gfxTitle)));
+    });
+
+    test('gfxBackTooltip is non-empty for all languages', () {
+      expect(ptBr.gfxBackTooltip, isNotEmpty);
+      expect(en.gfxBackTooltip, isNotEmpty);
+      expect(es.gfxBackTooltip, isNotEmpty);
+    });
+
+    test('gfxBackTooltip differs ptBr vs en', () {
+      expect(ptBr.gfxBackTooltip, isNot(equals(en.gfxBackTooltip)));
+    });
+
+    test('gfxCurrentPrefix is non-empty for all languages', () {
+      expect(ptBr.gfxCurrentPrefix, isNotEmpty);
+      expect(en.gfxCurrentPrefix, isNotEmpty);
+      expect(es.gfxCurrentPrefix, isNotEmpty);
+    });
+
+    test('gfxCurrentPrefix differs ptBr vs en', () {
+      expect(ptBr.gfxCurrentPrefix, isNot(equals(en.gfxCurrentPrefix)));
+    });
+
+    test('gfxInstruction is non-empty for all languages', () {
+      expect(ptBr.gfxInstruction, isNotEmpty);
+      expect(en.gfxInstruction, isNotEmpty);
+      expect(es.gfxInstruction, isNotEmpty);
+    });
+
+    test('gfxInstruction differs ptBr vs en', () {
+      expect(ptBr.gfxInstruction, isNot(equals(en.gfxInstruction)));
+    });
+
+    test('gfxFootnote is non-empty for all languages', () {
+      expect(ptBr.gfxFootnote, isNotEmpty);
+      expect(en.gfxFootnote, isNotEmpty);
+      expect(es.gfxFootnote, isNotEmpty);
+    });
+
+    test('gfxFootnote differs ptBr vs en', () {
+      expect(ptBr.gfxFootnote, isNot(equals(en.gfxFootnote)));
+    });
+
+    test('gfxNotFoundTitle is non-empty for all languages', () {
+      expect(ptBr.gfxNotFoundTitle, isNotEmpty);
+      expect(en.gfxNotFoundTitle, isNotEmpty);
+      expect(es.gfxNotFoundTitle, isNotEmpty);
+    });
+
+    test('gfxNotFoundTitle differs ptBr vs en', () {
+      expect(ptBr.gfxNotFoundTitle, isNot(equals(en.gfxNotFoundTitle)));
+    });
+
+    test('gfxNotFoundDesc is non-empty for all languages', () {
+      expect(ptBr.gfxNotFoundDesc, isNotEmpty);
+      expect(en.gfxNotFoundDesc, isNotEmpty);
+      expect(es.gfxNotFoundDesc, isNotEmpty);
+    });
+
+    test('gfxNoneLabel is non-empty for all languages', () {
+      expect(ptBr.gfxNoneLabel, isNotEmpty);
+      expect(en.gfxNoneLabel, isNotEmpty);
+      expect(es.gfxNoneLabel, isNotEmpty);
+    });
+
+    test('gfxNoneLabel differs ptBr vs en', () {
+      expect(ptBr.gfxNoneLabel, isNot(equals(en.gfxNoneLabel)));
+    });
+
+    test('gfxNoneDesc is non-empty for all languages', () {
+      expect(ptBr.gfxNoneDesc, isNotEmpty);
+      expect(en.gfxNoneDesc, isNotEmpty);
+      expect(es.gfxNoneDesc, isNotEmpty);
+    });
+
+    test('gfxNoneDesc differs ptBr vs en', () {
+      expect(ptBr.gfxNoneDesc, isNot(equals(en.gfxNoneDesc)));
+    });
+
+    test('gfxCurrentPrefix ptBr starts with "Atual"', () {
+      expect(ptBr.gfxCurrentPrefix, contains('Atual'));
+    });
+
+    test('gfxCurrentPrefix en starts with "Current"', () {
+      expect(en.gfxCurrentPrefix, contains('Current'));
+    });
+
+    test('gfxCurrentPrefix es starts with "Actual"', () {
+      expect(es.gfxCurrentPrefix, contains('Actual'));
+    });
+  });
+
   group('AppStrings — Permissions screen strings', () {
     test('permissionsTitle is non-empty for all languages', () {
       expect(ptBr.permissionsTitle, isNotEmpty);

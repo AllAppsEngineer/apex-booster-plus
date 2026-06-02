@@ -3,6 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
+import 'package:apex_booster_plus/core/i18n/app_language.dart';
+import 'package:apex_booster_plus/core/i18n/app_strings.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_game_library_repository.dart';
 import 'package:apex_booster_plus/domain/entities/apex_game.dart';
 import 'package:apex_booster_plus/domain/entities/gfx_profile.dart';
@@ -62,33 +64,40 @@ class _GfxProfileScreenState extends State<GfxProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF050505),
-      body: ApexBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              _GfxHeader(onBack: () => context.pop()),
-              Expanded(
-                child: _loading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.cyberBlue,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : _game == null
-                        ? _GameNotFound(onBack: () => context.pop())
-                        : _GfxContent(
-                            game: _game!,
-                            saving: _saving,
-                            onSelectProfile: _selectProfile,
-                          ),
+    return ListenableBuilder(
+      listenable: languageNotifier,
+      builder: (context, _) {
+        final s = AppStrings(languageNotifier.value);
+        return Scaffold(
+          backgroundColor: const Color(0xFF050505),
+          body: ApexBackground(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  _GfxHeader(s: s, onBack: () => context.pop()),
+                  Expanded(
+                    child: _loading
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.cyberBlue,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : _game == null
+                            ? _GameNotFound(s: s, onBack: () => context.pop())
+                            : _GfxContent(
+                                game: _game!,
+                                saving: _saving,
+                                s: s,
+                                onSelectProfile: _selectProfile,
+                              ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -96,9 +105,10 @@ class _GfxProfileScreenState extends State<GfxProfileScreen> {
 // ─── Header ───────────────────────────────────────────────────────────────────
 
 class _GfxHeader extends StatelessWidget {
+  final AppStrings s;
   final VoidCallback onBack;
 
-  const _GfxHeader({required this.onBack});
+  const _GfxHeader({required this.s, required this.onBack});
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +123,7 @@ class _GfxHeader extends StatelessWidget {
               color: AppColors.white,
               size: 20,
             ),
-            tooltip: 'Voltar',
+            tooltip: s.gfxBackTooltip,
           ),
           Row(
             children: [
@@ -124,7 +134,7 @@ class _GfxHeader extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Perfil GFX',
+                s.gfxTitle,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: AppColors.white,
                       fontWeight: FontWeight.bold,
@@ -141,9 +151,10 @@ class _GfxHeader extends StatelessWidget {
 // ─── Not found ────────────────────────────────────────────────────────────────
 
 class _GameNotFound extends StatelessWidget {
+  final AppStrings s;
   final VoidCallback onBack;
 
-  const _GameNotFound({required this.onBack});
+  const _GameNotFound({required this.s, required this.onBack});
 
   @override
   Widget build(BuildContext context) {
@@ -160,7 +171,7 @@ class _GameNotFound extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Jogo não encontrado',
+              s.gfxNotFoundTitle,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.white,
                     fontWeight: FontWeight.bold,
@@ -169,7 +180,7 @@ class _GameNotFound extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Este jogo pode ter sido removido da biblioteca.',
+              s.gfxNotFoundDesc,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textGray,
                     fontSize: 13,
@@ -190,9 +201,9 @@ class _GameNotFound extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 28),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'VOLTAR',
-                  style: TextStyle(
+                child: Text(
+                  s.actionBackButton,
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
                     letterSpacing: 1.2,
@@ -212,11 +223,13 @@ class _GameNotFound extends StatelessWidget {
 class _GfxContent extends StatelessWidget {
   final ApexGame game;
   final bool saving;
+  final AppStrings s;
   final Future<void> Function(String? label) onSelectProfile;
 
   const _GfxContent({
     required this.game,
     required this.saving,
+    required this.s,
     required this.onSelectProfile,
   });
 
@@ -230,13 +243,13 @@ class _GfxContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _GameBanner(game: game)
+          _GameBanner(game: game, s: s)
               .animate()
               .fadeIn(duration: 400.ms)
               .slideY(begin: 0.04, end: 0, duration: 350.ms),
           const SizedBox(height: 24),
           Text(
-            'Ajuste a preferência gráfica de preparação deste jogo.',
+            s.gfxInstruction,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.textGray,
                   fontSize: 13,
@@ -250,6 +263,7 @@ class _GfxContent extends StatelessWidget {
                 profile: entry.$2,
                 isSelected: currentProfile == entry.$2,
                 saving: saving,
+                s: s,
                 onTap: () => onSelectProfile(entry.$2.label),
               ).animate().fadeIn(
                     duration: 350.ms,
@@ -262,6 +276,7 @@ class _GfxContent extends StatelessWidget {
             child: _NoneCard(
               isSelected: currentProfile == null,
               saving: saving,
+              s: s,
               onTap: () => onSelectProfile(null),
             )
                 .animate()
@@ -282,7 +297,7 @@ class _GfxContent extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                'Perfil aplicado à preparação local do jogo.',
+                s.gfxFootnote,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textGray.withValues(alpha: 0.5),
                       fontSize: 11,
@@ -308,8 +323,9 @@ class _GfxContent extends StatelessWidget {
 
 class _GameBanner extends StatelessWidget {
   final ApexGame game;
+  final AppStrings s;
 
-  const _GameBanner({required this.game});
+  const _GameBanner({required this.game, required this.s});
 
   @override
   Widget build(BuildContext context) {
@@ -351,7 +367,7 @@ class _GameBanner extends StatelessWidget {
                 if (game.localProfileName != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    'Atual: ${game.localProfileName}',
+                    '${s.gfxCurrentPrefix}${game.localProfileName}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.energyOrange,
                           fontSize: 11,
@@ -374,27 +390,16 @@ class _ProfileCard extends StatelessWidget {
   final GfxProfile profile;
   final bool isSelected;
   final bool saving;
+  final AppStrings s;
   final VoidCallback onTap;
 
   const _ProfileCard({
     required this.profile,
     required this.isSelected,
     required this.saving,
+    required this.s,
     required this.onTap,
   });
-
-  String get _description {
-    switch (profile) {
-      case GfxProfile.balanced:
-        return 'Equilibra fluidez e qualidade para sessões longas.';
-      case GfxProfile.performance:
-        return 'Prioriza responsividade na preparação da sessão.';
-      case GfxProfile.quality:
-        return 'Orientado para uma experiência visual mais rica.';
-      case GfxProfile.economy:
-        return 'Reduz demanda e preserva bateria durante a sessão.';
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -468,7 +473,7 @@ class _ProfileCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        profile.label,
+                        s.gfxProfileLabel(profile),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: isSelected
                                   ? profile.accentColor
@@ -481,7 +486,7 @@ class _ProfileCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        _description,
+                        s.gfxProfileDescription(profile),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: AppColors.textGray,
                               fontSize: 12,
@@ -517,11 +522,13 @@ class _ProfileCard extends StatelessWidget {
 class _NoneCard extends StatelessWidget {
   final bool isSelected;
   final bool saving;
+  final AppStrings s;
   final VoidCallback onTap;
 
   const _NoneCard({
     required this.isSelected,
     required this.saving,
+    required this.s,
     required this.onTap,
   });
 
@@ -575,7 +582,7 @@ class _NoneCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Nenhum',
+                        s.gfxNoneLabel,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: isSelected
                                   ? AppColors.white
@@ -591,7 +598,7 @@ class _NoneCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        'Sem preferência definida para este jogo.',
+                        s.gfxNoneDesc,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: AppColors.textGray.withValues(alpha: 0.6),
                               fontSize: 12,
