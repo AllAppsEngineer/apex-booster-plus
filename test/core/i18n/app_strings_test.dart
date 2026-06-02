@@ -729,4 +729,151 @@ void main() {
       expect(ptBr.permissionsCta, isNot(equals(en.permissionsCta)));
     });
   });
+
+  // ─── PrepararTab new strings — LANG-U1.4B ────────────────────────────────────
+
+  group('AppStrings — PrepararTab new strings (LANG-U1.4B)', () {
+    test('snapshotLocalReading is non-empty for all languages', () {
+      expect(ptBr.snapshotLocalReading, isNotEmpty);
+      expect(en.snapshotLocalReading, isNotEmpty);
+      expect(es.snapshotLocalReading, isNotEmpty);
+    });
+
+    test('snapshotLocalReading differs ptBr vs en', () {
+      expect(ptBr.snapshotLocalReading, isNot(equals(en.snapshotLocalReading)));
+    });
+
+    test('snapshotMemoryCritical is non-empty for all languages', () {
+      expect(ptBr.snapshotMemoryCritical, isNotEmpty);
+      expect(en.snapshotMemoryCritical, isNotEmpty);
+      expect(es.snapshotMemoryCritical, isNotEmpty);
+    });
+
+    test('snapshotMemoryNormal is non-empty for all languages', () {
+      expect(ptBr.snapshotMemoryNormal, isNotEmpty);
+      expect(en.snapshotMemoryNormal, isNotEmpty);
+      expect(es.snapshotMemoryNormal, isNotEmpty);
+    });
+
+    test('snapshotLatencyTimeout is non-empty for all languages', () {
+      expect(ptBr.snapshotLatencyTimeout, isNotEmpty);
+      expect(en.snapshotLatencyTimeout, isNotEmpty);
+      expect(es.snapshotLatencyTimeout, isNotEmpty);
+    });
+
+    test('snapshotLatencyTimeout differs ptBr vs en', () {
+      expect(ptBr.snapshotLatencyTimeout, isNot(equals(en.snapshotLatencyTimeout)));
+    });
+
+    test('snapshotLatencyNoNetwork is non-empty for all languages', () {
+      expect(ptBr.snapshotLatencyNoNetwork, isNotEmpty);
+      expect(en.snapshotLatencyNoNetwork, isNotEmpty);
+      expect(es.snapshotLatencyNoNetwork, isNotEmpty);
+    });
+
+    test('snapshotLatencyNoNetwork differs ptBr vs en', () {
+      expect(ptBr.snapshotLatencyNoNetwork, isNot(equals(en.snapshotLatencyNoNetwork)));
+    });
+
+    test('snapshotFocusAvailable is non-empty for all languages', () {
+      expect(ptBr.snapshotFocusAvailable, isNotEmpty);
+      expect(en.snapshotFocusAvailable, isNotEmpty);
+      expect(es.snapshotFocusAvailable, isNotEmpty);
+    });
+
+    test('snapshotFocusAvailable differs ptBr vs en', () {
+      expect(ptBr.snapshotFocusAvailable, isNot(equals(en.snapshotFocusAvailable)));
+    });
+
+    test('snapshotFocusPermissionRequired is non-empty for all languages', () {
+      expect(ptBr.snapshotFocusPermissionRequired, isNotEmpty);
+      expect(en.snapshotFocusPermissionRequired, isNotEmpty);
+      expect(es.snapshotFocusPermissionRequired, isNotEmpty);
+    });
+
+    test('snapshotFocusPermissionRequired differs ptBr vs en', () {
+      expect(
+        ptBr.snapshotFocusPermissionRequired,
+        isNot(equals(en.snapshotFocusPermissionRequired)),
+      );
+    });
+
+    test('prepGameBadge is non-empty for all languages', () {
+      expect(ptBr.prepGameBadge, isNotEmpty);
+      expect(en.prepGameBadge, isNotEmpty);
+      expect(es.prepGameBadge, isNotEmpty);
+    });
+
+    test('prepGameBadge ptBr is JOGO', () {
+      expect(ptBr.prepGameBadge, 'JOGO');
+    });
+
+    test('prepGameBadge en is GAME', () {
+      expect(en.prepGameBadge, 'GAME');
+    });
+
+    test('prepGameBadge es is JUEGO', () {
+      expect(es.prepGameBadge, 'JUEGO');
+    });
+
+    test('prepGfxDefault is non-empty for all languages', () {
+      expect(ptBr.prepGfxDefault, isNotEmpty);
+      expect(en.prepGfxDefault, isNotEmpty);
+      expect(es.prepGfxDefault, isNotEmpty);
+    });
+
+    test('prepGfxDefault differs ptBr vs en', () {
+      expect(ptBr.prepGfxDefault, isNot(equals(en.prepGfxDefault)));
+    });
+
+    test('prepFavoriteLabel is non-empty for all languages', () {
+      expect(ptBr.prepFavoriteLabel, isNotEmpty);
+      expect(en.prepFavoriteLabel, isNotEmpty);
+      expect(es.prepFavoriteLabel, isNotEmpty);
+    });
+
+    test('prepFavoriteLabel differs ptBr vs en', () {
+      expect(ptBr.prepFavoriteLabel, isNot(equals(en.prepFavoriteLabel)));
+    });
+
+    test('prepScanStatusReady is non-empty for all languages', () {
+      expect(ptBr.prepScanStatusReady, isNotEmpty);
+      expect(en.prepScanStatusReady, isNotEmpty);
+      expect(es.prepScanStatusReady, isNotEmpty);
+    });
+
+    test('prepScanStatusReady differs ptBr vs en', () {
+      expect(ptBr.prepScanStatusReady, isNot(equals(en.prepScanStatusReady)));
+    });
+
+    test('prepScanStatusIncomplete is non-empty for all languages', () {
+      expect(ptBr.prepScanStatusIncomplete, isNotEmpty);
+      expect(en.prepScanStatusIncomplete, isNotEmpty);
+      expect(es.prepScanStatusIncomplete, isNotEmpty);
+    });
+
+    test('prepScanStatusIncomplete differs ptBr vs en', () {
+      expect(ptBr.prepScanStatusIncomplete, isNot(equals(en.prepScanStatusIncomplete)));
+    });
+
+    test('prepScanSubtitle is non-empty for all languages', () {
+      expect(ptBr.prepScanSubtitle, isNotEmpty);
+      expect(en.prepScanSubtitle, isNotEmpty);
+      expect(es.prepScanSubtitle, isNotEmpty);
+    });
+
+    test('prepScanSubtitle differs ptBr vs en', () {
+      expect(ptBr.prepScanSubtitle, isNot(equals(en.prepScanSubtitle)));
+    });
+
+    test('prepSelectGame is non-empty for all languages', () {
+      expect(ptBr.prepSelectGame, isNotEmpty);
+      expect(en.prepSelectGame, isNotEmpty);
+      expect(es.prepSelectGame, isNotEmpty);
+    });
+
+    test('prepSelectGame differs ptBr vs en', () {
+      expect(ptBr.prepSelectGame, isNot(equals(en.prepSelectGame)));
+    });
+  });
 }

@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:apex_booster_plus/core/i18n/app_language.dart';
+import 'package:apex_booster_plus/core/i18n/app_strings.dart';
 import 'package:apex_booster_plus/domain/entities/device_metrics.dart';
 import 'package:apex_booster_plus/domain/entities/gfx_profile.dart';
 import 'package:apex_booster_plus/presentation/screens/home/tabs/preparar_tab.dart';
@@ -17,14 +19,16 @@ DeviceMetrics makeMetrics({
     );
 
 void main() {
+  const s = AppStrings(AppLanguage.ptBr);
+
   group('buildGfxRecommendations — perfil nulo', () {
     test('retorna lista vazia quando profile é null', () {
-      final result = buildGfxRecommendations(null, null, null);
+      final result = buildGfxRecommendations(null, null, null, s);
       expect(result, isEmpty);
     });
 
     test('retorna lista vazia com metrics reais mas sem perfil', () {
-      final result = buildGfxRecommendations(null, makeMetrics(), false);
+      final result = buildGfxRecommendations(null, makeMetrics(), false, s);
       expect(result, isEmpty);
     });
   });
@@ -32,14 +36,14 @@ void main() {
   group('buildGfxRecommendations — sem crash com nulls', () {
     test('metrics null não causa exceção', () {
       expect(
-        () => buildGfxRecommendations(GfxProfile.performance, null, null),
+        () => buildGfxRecommendations(GfxProfile.performance, null, null, s),
         returnsNormally,
       );
     });
 
     test('focusGranted null não causa exceção', () {
       expect(
-        () => buildGfxRecommendations(GfxProfile.economy, makeMetrics(), null),
+        () => buildGfxRecommendations(GfxProfile.economy, makeMetrics(), null, s),
         returnsNormally,
       );
     });
@@ -47,7 +51,7 @@ void main() {
     test('todos os campos null com perfil válido não causam exceção', () {
       for (final profile in GfxProfile.values) {
         expect(
-          () => buildGfxRecommendations(profile, null, null),
+          () => buildGfxRecommendations(profile, null, null, s),
           returnsNormally,
         );
       }
@@ -60,6 +64,7 @@ void main() {
         GfxProfile.performance,
         makeMetrics(isLowMemory: true),
         false,
+        s,
       );
       expect(result.length, lessThanOrEqualTo(3));
     });
@@ -69,6 +74,7 @@ void main() {
         GfxProfile.quality,
         makeMetrics(latencyStatus: LatencyStatus.timeout),
         false,
+        s,
       );
       expect(result.length, lessThanOrEqualTo(3));
     });
@@ -78,6 +84,7 @@ void main() {
         GfxProfile.economy,
         makeMetrics(isLowMemory: true),
         false,
+        s,
       );
       expect(result.length, lessThanOrEqualTo(3));
     });
@@ -87,6 +94,7 @@ void main() {
         GfxProfile.balanced,
         makeMetrics(isLowMemory: true),
         false,
+        s,
       );
       expect(result.length, lessThanOrEqualTo(3));
     });
@@ -97,6 +105,7 @@ void main() {
           profile,
           makeMetrics(isLowMemory: true, latencyStatus: LatencyStatus.error),
           false,
+          s,
         );
         expect(result.length, lessThanOrEqualTo(3),
             reason: 'Perfil ${profile.label} retornou ${result.length} itens');
@@ -106,23 +115,23 @@ void main() {
 
   group('buildGfxRecommendations — Desempenho', () {
     test('inclui recomendação base mesmo com metrics e focus null', () {
-      final result = buildGfxRecommendations(GfxProfile.performance, null, null);
+      final result = buildGfxRecommendations(GfxProfile.performance, null, null, s);
       expect(result, isNotEmpty);
       expect(result.any((r) => r.contains('segundo plano')), isTrue);
     });
 
     test('inclui dica de Modo Foco quando focusGranted é false', () {
-      final result = buildGfxRecommendations(GfxProfile.performance, null, false);
+      final result = buildGfxRecommendations(GfxProfile.performance, null, false, s);
       expect(result.any((r) => r.contains('Modo Foco')), isTrue);
     });
 
     test('não inclui dica de Modo Foco quando focusGranted é true', () {
-      final result = buildGfxRecommendations(GfxProfile.performance, null, true);
+      final result = buildGfxRecommendations(GfxProfile.performance, null, true, s);
       expect(result.any((r) => r.contains('Modo Foco')), isFalse);
     });
 
     test('não inclui dica de Modo Foco quando focusGranted é null', () {
-      final result = buildGfxRecommendations(GfxProfile.performance, null, null);
+      final result = buildGfxRecommendations(GfxProfile.performance, null, null, s);
       expect(result.any((r) => r.contains('Modo Foco')), isFalse);
     });
 
@@ -131,6 +140,7 @@ void main() {
         GfxProfile.performance,
         makeMetrics(isLowMemory: true),
         null,
+        s,
       );
       expect(result.any((r) => r.contains('RAM') || r.contains('apps pesados')), isTrue);
     });
@@ -140,6 +150,7 @@ void main() {
         GfxProfile.performance,
         makeMetrics(isLowMemory: false),
         null,
+        s,
       );
       expect(result.any((r) => r.contains('Wi-Fi')), isTrue);
     });
@@ -149,6 +160,7 @@ void main() {
         GfxProfile.performance,
         makeMetrics(isLowMemory: true),
         false,
+        s,
       );
       expect(result.any((r) => r.contains('segundo plano')), isTrue);
       expect(result.any((r) => r.contains('Modo Foco')), isTrue);
@@ -158,7 +170,7 @@ void main() {
 
   group('buildGfxRecommendations — Qualidade', () {
     test('inclui recomendação de carga mesmo com metrics null', () {
-      final result = buildGfxRecommendations(GfxProfile.quality, null, null);
+      final result = buildGfxRecommendations(GfxProfile.quality, null, null, s);
       expect(result.any((r) => r.contains('carregado') || r.contains('carga')), isTrue);
     });
 
@@ -167,6 +179,7 @@ void main() {
         GfxProfile.quality,
         makeMetrics(latencyStatus: LatencyStatus.timeout),
         null,
+        s,
       );
       expect(result.any((r) => r.toLowerCase().contains('conexão')), isTrue);
     });
@@ -176,24 +189,25 @@ void main() {
         GfxProfile.quality,
         makeMetrics(latencyStatus: LatencyStatus.noNetwork),
         null,
+        s,
       );
       expect(result.any((r) => r.toLowerCase().contains('conexão')), isTrue);
     });
 
     test('inclui Modo Foco quando focusGranted é false', () {
-      final result = buildGfxRecommendations(GfxProfile.quality, null, false);
+      final result = buildGfxRecommendations(GfxProfile.quality, null, false, s);
       expect(result.any((r) => r.contains('Modo Foco')), isTrue);
     });
 
     test('não inclui Modo Foco quando focusGranted é true', () {
-      final result = buildGfxRecommendations(GfxProfile.quality, null, true);
+      final result = buildGfxRecommendations(GfxProfile.quality, null, true, s);
       expect(result.any((r) => r.contains('Modo Foco')), isFalse);
     });
   });
 
   group('buildGfxRecommendations — Economia', () {
     test('inclui recomendação de brilho sempre', () {
-      final result = buildGfxRecommendations(GfxProfile.economy, null, null);
+      final result = buildGfxRecommendations(GfxProfile.economy, null, null, s);
       expect(result.any((r) => r.contains('brilho')), isTrue);
     });
 
@@ -202,6 +216,7 @@ void main() {
         GfxProfile.economy,
         makeMetrics(isLowMemory: true),
         null,
+        s,
       );
       expect(result.any((r) => r.contains('segundo plano')), isTrue);
     });
@@ -211,17 +226,18 @@ void main() {
         GfxProfile.economy,
         makeMetrics(isLowMemory: false),
         null,
+        s,
       );
       expect(result.any((r) => r.contains('curtas') || r.contains('carga')), isTrue);
     });
 
     test('inclui Modo Foco quando focusGranted é false', () {
-      final result = buildGfxRecommendations(GfxProfile.economy, null, false);
+      final result = buildGfxRecommendations(GfxProfile.economy, null, false, s);
       expect(result.any((r) => r.contains('Modo Foco')), isTrue);
     });
 
     test('não inclui Modo Foco quando focusGranted é true', () {
-      final result = buildGfxRecommendations(GfxProfile.economy, null, true);
+      final result = buildGfxRecommendations(GfxProfile.economy, null, true, s);
       expect(result.any((r) => r.contains('Modo Foco')), isFalse);
     });
 
@@ -230,6 +246,7 @@ void main() {
         GfxProfile.economy,
         makeMetrics(isLowMemory: false),
         true,
+        s,
       );
       expect(result.any((r) => r.contains('segundo plano')), isFalse);
       expect(result.any((r) => r.contains('Modo Foco')), isFalse);
@@ -238,7 +255,7 @@ void main() {
 
   group('buildGfxRecommendations — Equilibrado', () {
     test('inclui recomendação de conexão sempre', () {
-      final result = buildGfxRecommendations(GfxProfile.balanced, null, null);
+      final result = buildGfxRecommendations(GfxProfile.balanced, null, null, s);
       expect(result.any((r) => r.contains('conexão')), isTrue);
     });
 
@@ -247,17 +264,18 @@ void main() {
         GfxProfile.balanced,
         makeMetrics(isLowMemory: true),
         null,
+        s,
       );
       expect(result.any((r) => r.contains('apps')), isTrue);
     });
 
     test('inclui Modo Foco quando focusGranted é false', () {
-      final result = buildGfxRecommendations(GfxProfile.balanced, null, false);
+      final result = buildGfxRecommendations(GfxProfile.balanced, null, false, s);
       expect(result.any((r) => r.contains('Modo Foco')), isTrue);
     });
 
     test('não inclui Modo Foco quando focusGranted é true', () {
-      final result = buildGfxRecommendations(GfxProfile.balanced, null, true);
+      final result = buildGfxRecommendations(GfxProfile.balanced, null, true, s);
       expect(result.any((r) => r.contains('Modo Foco')), isFalse);
     });
   });
@@ -280,6 +298,7 @@ void main() {
           profile,
           makeMetrics(isLowMemory: true, latencyStatus: LatencyStatus.error),
           false,
+          s,
         );
         for (final rec in result) {
           final lower = rec.toLowerCase();

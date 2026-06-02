@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:apex_booster_plus/core/i18n/app_language.dart';
+import 'package:apex_booster_plus/core/i18n/app_strings.dart';
 import 'package:apex_booster_plus/domain/entities/apex_game.dart';
 import 'package:apex_booster_plus/domain/entities/session_record.dart';
 import 'package:apex_booster_plus/presentation/screens/home/tabs/preparar_tab.dart';
@@ -107,50 +109,52 @@ void main() {
   });
 
   group('buildGfxScanMessage', () {
+    const s = AppStrings(AppLanguage.ptBr);
+
     test('Equilibrado retorna mensagem semantica', () {
       expect(
-        buildGfxScanMessage('Equilibrado'),
+        buildGfxScanMessage('Equilibrado', s),
         'Equilibrado — balanço entre visual e fluidez',
       );
     });
 
     test('Desempenho retorna mensagem semantica', () {
       expect(
-        buildGfxScanMessage('Desempenho'),
+        buildGfxScanMessage('Desempenho', s),
         'Desempenho — priorizando fluidez local',
       );
     });
 
     test('Qualidade retorna mensagem semantica', () {
       expect(
-        buildGfxScanMessage('Qualidade'),
+        buildGfxScanMessage('Qualidade', s),
         'Qualidade — priorizando visual local',
       );
     });
 
     test('Economia retorna mensagem semantica', () {
       expect(
-        buildGfxScanMessage('Economia'),
+        buildGfxScanMessage('Economia', s),
         'Economia — priorizando autonomia da bateria',
       );
     });
 
     test('null retorna fallback padrao', () {
-      expect(buildGfxScanMessage(null), 'Perfil padrão será usado');
+      expect(buildGfxScanMessage(null, s), 'Perfil padrão será usado');
     });
 
     test('nome invalido retorna fallback padrao', () {
-      expect(buildGfxScanMessage('XYZ'), 'Perfil padrão será usado');
+      expect(buildGfxScanMessage('XYZ', s), 'Perfil padrão será usado');
     });
 
     test('string vazia retorna fallback padrao', () {
-      expect(buildGfxScanMessage(''), 'Perfil padrão será usado');
+      expect(buildGfxScanMessage('', s), 'Perfil padrão será usado');
     });
 
     test('mensagens nao contem linguagem proibida', () {
       const perfis = ['Equilibrado', 'Desempenho', 'Qualidade', 'Economia'];
       for (final p in perfis) {
-        final msg = buildGfxScanMessage(p).toLowerCase();
+        final msg = buildGfxScanMessage(p, s).toLowerCase();
         expect(msg, isNot(contains('fps')));
         expect(msg, isNot(contains('gpu')));
         expect(msg, isNot(contains('ram')));

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
+import 'package:apex_booster_plus/core/i18n/app_language.dart';
+import 'package:apex_booster_plus/core/i18n/app_strings.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_game_library_repository.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_session_repository.dart';
 import 'package:apex_booster_plus/data/services/device_metrics_service_impl.dart';
@@ -42,15 +44,15 @@ bool buildIsLaunchableHint(ApexGame game) =>
     game.packageName != null && game.packageName!.isNotEmpty;
 
 /// Returns the semantic message for a GFX profile name in the local prep scan.
-/// Falls back to 'Perfil padrão será usado' for null or unrecognized values.
-String buildGfxScanMessage(String? localProfileName) {
+/// Falls back to [s.prepGfxMsgNone] for null or unrecognized values.
+String buildGfxScanMessage(String? localProfileName, AppStrings s) {
   final profile = GfxProfile.fromLabel(localProfileName);
-  if (profile == null) return 'Perfil padrão será usado';
+  if (profile == null) return s.prepGfxMsgNone;
   return switch (profile) {
-    GfxProfile.balanced => 'Equilibrado — balanço entre visual e fluidez',
-    GfxProfile.performance => 'Desempenho — priorizando fluidez local',
-    GfxProfile.quality => 'Qualidade — priorizando visual local',
-    GfxProfile.economy => 'Economia — priorizando autonomia da bateria',
+    GfxProfile.balanced     => s.prepGfxMsgBalanced,
+    GfxProfile.performance  => s.prepGfxMsgPerformance,
+    GfxProfile.quality      => s.prepGfxMsgQuality,
+    GfxProfile.economy      => s.prepGfxMsgEconomy,
   };
 }
 
@@ -61,6 +63,7 @@ List<String> buildGfxRecommendations(
   GfxProfile? profile,
   DeviceMetrics? metrics,
   bool? focusGranted,
+  AppStrings s,
 ) {
   if (profile == null) return const [];
 
@@ -68,43 +71,43 @@ List<String> buildGfxRecommendations(
 
   switch (profile) {
     case GfxProfile.performance:
-      recs.add('Feche apps em segundo plano antes de iniciar');
+      recs.add(s.recPerfCloseBackground);
       if (focusGranted == false) {
-        recs.add('Ative o Modo Foco para reduzir interrupções');
+        recs.add(s.recPerfFocus);
       }
       if (metrics?.isLowMemory == true) {
-        recs.add('RAM limitada — feche apps pesados antes de jogar');
+        recs.add(s.recPerfLowMemory);
       } else {
-        recs.add('Prefira conexão Wi-Fi estável');
+        recs.add(s.recPerfWifi);
       }
 
     case GfxProfile.quality:
-      recs.add('Mantenha o dispositivo carregado durante a sessão');
+      recs.add(s.recQualCharge);
       if (metrics != null && metrics.latencyStatus != LatencyStatus.success) {
-        recs.add('Conexão estável favorece uma sessão mais consistente');
+        recs.add(s.recQualLatency);
       }
       if (focusGranted == false) {
-        recs.add('Ative o Modo Foco para reduzir interrupções visuais');
+        recs.add(s.recQualFocus);
       }
 
     case GfxProfile.economy:
-      recs.add('Reduza o brilho da tela para preservar bateria');
+      recs.add(s.recEcoBrightness);
       if (metrics?.isLowMemory == true) {
-        recs.add('Feche apps em segundo plano antes de iniciar');
+        recs.add(s.recPerfCloseBackground);
       } else {
-        recs.add('Prefira sessões mais curtas ou jogue com carga suficiente');
+        recs.add(s.recEcoShortSessions);
       }
       if (focusGranted == false) {
-        recs.add('Modo Foco ajuda a reduzir interrupções na sessão');
+        recs.add(s.recEcoFocus);
       }
 
     case GfxProfile.balanced:
-      recs.add('Prepare a sessão com conexão estável');
+      recs.add(s.recBalStable);
       if (metrics?.isLowMemory == true) {
-        recs.add('Feche apps que não usa antes de iniciar');
+        recs.add(s.recBalCloseUnused);
       }
       if (focusGranted == false) {
-        recs.add('Ative o Modo Foco para reduzir interrupções');
+        recs.add(s.recPerfFocus);
       }
   }
 
@@ -127,27 +130,24 @@ class _PrepScanCheck {
   });
 }
 
-List<_PrepScanCheck> _buildScanChecks(ApexGame game) {
+List<_PrepScanCheck> _buildScanChecks(ApexGame game, AppStrings s) {
   final hasPackage = buildIsLaunchableHint(game);
   return [
     _PrepScanCheck(
-      label: 'App vinculado',
-      message: hasPackage
-          ? 'PackageName registrado no cadastro'
-          : 'Sem vínculo — packageName não cadastrado',
+      label: s.prepScanLabelApp,
+      message: hasPackage ? s.prepScanMsgAppOk : s.prepScanMsgAppWarn,
       status: hasPackage ? _PrepScanStatus.ok : _PrepScanStatus.warn,
     ),
     _PrepScanCheck(
-      label: 'Perfil GFX',
-      message: buildGfxScanMessage(game.localProfileName),
+      label: s.prepScanLabelGfx,
+      message: buildGfxScanMessage(game.localProfileName, s),
       status: GfxProfile.fromLabel(game.localProfileName) != null
           ? _PrepScanStatus.ok
           : _PrepScanStatus.info,
     ),
     _PrepScanCheck(
-      label: 'Prioridade',
-      message:
-          game.isFavorite ? 'Marcado como prioritário' : 'Jogo padrão na biblioteca',
+      label: s.prepScanLabelPriority,
+      message: game.isFavorite ? s.prepScanMsgPriorityOk : s.prepScanMsgPriorityInfo,
       status: game.isFavorite ? _PrepScanStatus.ok : _PrepScanStatus.info,
     ),
   ];
@@ -169,7 +169,7 @@ class _PrepararTabState extends State<PrepararTab> {
   bool _loading = true;
   List<ApexGame> _games = [];
   ApexGame? _selectedGame;
-  List<_PrepScanCheck> _scanChecks = [];
+  // Scan checks are computed in build() from _selectedGame + current language.
 
   // Device snapshot state — independent loading cycle
   bool _metricsLoading = true;
@@ -209,7 +209,6 @@ class _PrepararTabState extends State<PrepararTab> {
       setState(() {
         _games = games;
         _selectedGame = selected;
-        _scanChecks = selected != null ? _buildScanChecks(selected) : [];
         _loading = false;
       });
     }
@@ -233,7 +232,6 @@ class _PrepararTabState extends State<PrepararTab> {
       _games = games;
       if (updated != null) {
         _selectedGame = updated;
-        _scanChecks = _buildScanChecks(updated);
       }
     });
   }
@@ -283,11 +281,11 @@ class _PrepararTabState extends State<PrepararTab> {
   void _onGameSelected(ApexGame game) {
     setState(() {
       _selectedGame = game;
-      _scanChecks = _buildScanChecks(game);
     });
   }
 
   void _openGameSelector() {
+    final s = AppStrings(languageNotifier.value);
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFF111111),
@@ -301,60 +299,75 @@ class _PrepararTabState extends State<PrepararTab> {
           Navigator.of(sheetCtx).pop();
           _onGameSelected(game);
         },
+        s: s,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return ApexBackground(
-      child: SafeArea(
-        child: _loading
-            ? const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.apexGreen,
-                  strokeWidth: 2,
-                ),
-              )
-            : SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _PrepararHeader(),
-                    const SizedBox(height: 28),
-                    if (_selectedGame == null)
-                      const _EmptyLibraryState()
-                    else ...[
-                      _SelectedGameCard(
-                        game: _selectedGame!,
-                        showTrocar: _games.length > 1,
-                        onTrocar: _openGameSelector,
-                      ),
-                      const SizedBox(height: 16),
-                      _PrepScanCard(
-                        checks: _scanChecks,
-                        game: _selectedGame!,
-                        metrics: _metrics,
-                        focusGranted: _focusGranted,
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    _DeviceSnapshotCard(
-                      loading: _metricsLoading,
-                      metrics: _metrics,
-                      focusGranted: _focusGranted,
+    return ListenableBuilder(
+      listenable: languageNotifier,
+      builder: (context, _) {
+        final s = AppStrings(languageNotifier.value);
+        final scanChecks = _selectedGame != null
+            ? _buildScanChecks(_selectedGame!, s)
+            : <_PrepScanCheck>[];
+
+        return ApexBackground(
+          child: SafeArea(
+            child: _loading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.apexGreen,
+                      strokeWidth: 2,
                     ),
-                    const SizedBox(height: 32),
-                    _PrepararCTA(
-                      game: _selectedGame,
-                      onContinue: _navigateToDetails,
+                  )
+                : SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _PrepararHeader(s: s),
+                        const SizedBox(height: 28),
+                        if (_selectedGame == null)
+                          _EmptyLibraryState(s: s)
+                        else ...[
+                          _SelectedGameCard(
+                            game: _selectedGame!,
+                            showTrocar: _games.length > 1,
+                            onTrocar: _openGameSelector,
+                            s: s,
+                          ),
+                          const SizedBox(height: 16),
+                          _PrepScanCard(
+                            checks: scanChecks,
+                            game: _selectedGame!,
+                            metrics: _metrics,
+                            focusGranted: _focusGranted,
+                            s: s,
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        _DeviceSnapshotCard(
+                          loading: _metricsLoading,
+                          metrics: _metrics,
+                          focusGranted: _focusGranted,
+                          s: s,
+                        ),
+                        const SizedBox(height: 32),
+                        _PrepararCTA(
+                          game: _selectedGame,
+                          onContinue: _navigateToDetails,
+                          s: s,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-      ),
+                  ),
+          ),
+        );
+      },
     );
   }
 }
@@ -362,7 +375,9 @@ class _PrepararTabState extends State<PrepararTab> {
 // ── Header ────────────────────────────────────────────────────────────────────
 
 class _PrepararHeader extends StatelessWidget {
-  const _PrepararHeader();
+  final AppStrings s;
+
+  const _PrepararHeader({required this.s});
 
   @override
   Widget build(BuildContext context) {
@@ -370,7 +385,7 @@ class _PrepararHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Preparar sessão',
+          s.prepTitle,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 color: AppColors.white,
                 fontWeight: FontWeight.bold,
@@ -382,7 +397,7 @@ class _PrepararHeader extends StatelessWidget {
             .slideY(begin: -0.08, end: 0, duration: 400.ms),
         const SizedBox(height: 8),
         Text(
-          'Selecione um jogo e verifique os dados antes de jogar.',
+          s.prepSubtitle,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.textGray,
               ),
@@ -395,7 +410,9 @@ class _PrepararHeader extends StatelessWidget {
 // ── Empty state ───────────────────────────────────────────────────────────────
 
 class _EmptyLibraryState extends StatelessWidget {
-  const _EmptyLibraryState();
+  final AppStrings s;
+
+  const _EmptyLibraryState({required this.s});
 
   @override
   Widget build(BuildContext context) {
@@ -418,7 +435,7 @@ class _EmptyLibraryState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Nenhum jogo na biblioteca',
+            s.prepEmptyTitle,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppColors.white,
                   fontWeight: FontWeight.bold,
@@ -427,7 +444,7 @@ class _EmptyLibraryState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Adicione jogos na aba Biblioteca para começar a preparar sua sessão.',
+            s.prepEmptyDesc,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.textGray,
                   fontSize: 13,
@@ -446,11 +463,13 @@ class _SelectedGameCard extends StatelessWidget {
   final ApexGame game;
   final bool showTrocar;
   final VoidCallback onTrocar;
+  final AppStrings s;
 
   const _SelectedGameCard({
     required this.game,
     required this.showTrocar,
     required this.onTrocar,
+    required this.s,
   });
 
   @override
@@ -479,7 +498,7 @@ class _SelectedGameCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const ApexBadge(label: 'JOGO', color: AppColors.apexGreen),
+              ApexBadge(label: s.prepGameBadge, color: AppColors.apexGreen),
               if (showTrocar)
                 GestureDetector(
                   onTap: onTrocar,
@@ -506,7 +525,7 @@ class _SelectedGameCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'TROCAR',
+                          s.prepChangeGame,
                           style: TextStyle(
                             color: AppColors.apexGreen.withValues(alpha: 0.85),
                             fontSize: 11,
@@ -543,14 +562,14 @@ class _SelectedGameCard extends StatelessWidget {
                       spacing: 6,
                       children: [
                         _InfoChip(
-                          label: 'GFX: ${game.localProfileName ?? "Padrão"}',
+                          label: 'GFX: ${game.localProfileName ?? s.prepGfxDefault}',
                           color: GfxProfile.fromLabel(game.localProfileName)
                                   ?.accentColor ??
                               AppColors.energyOrange,
                         ),
                         if (game.isFavorite)
-                          const _InfoChip(
-                            label: '★ Favorito',
+                          _InfoChip(
+                            label: s.prepFavoriteLabel,
                             color: AppColors.cyberBlue,
                           ),
                       ],
@@ -603,12 +622,14 @@ class _PrepScanCard extends StatelessWidget {
   final ApexGame game;
   final DeviceMetrics? metrics;
   final bool? focusGranted;
+  final AppStrings s;
 
   const _PrepScanCard({
     required this.checks,
     required this.game,
     this.metrics,
     this.focusGranted,
+    required this.s,
   });
 
   bool get _isReady => buildIsLaunchableHint(game);
@@ -616,7 +637,8 @@ class _PrepScanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scoreColor = _isReady ? AppColors.apexGreen : AppColors.energyOrange;
-    final scoreLabel = _isReady ? '● PRONTO' : '● INCOMPLETO';
+    final scoreLabel =
+        _isReady ? s.prepScanStatusReady : s.prepScanStatusIncomplete;
 
     return Container(
       width: double.infinity,
@@ -665,7 +687,7 @@ class _PrepScanCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'APEX SCAN',
+                        s.prepScanTitle.toUpperCase(),
                         style: TextStyle(
                           color: AppColors.cyberBlue,
                           fontSize: 11,
@@ -674,7 +696,7 @@ class _PrepScanCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Verificação local do jogo',
+                        s.prepScanSubtitle,
                         style: TextStyle(
                           color: AppColors.textGray.withValues(alpha: 0.70),
                           fontSize: 10,
@@ -715,7 +737,7 @@ class _PrepScanCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Snapshot local. Sem alteração automática de desempenho.',
+            s.prepDisclaimer1,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textGray.withValues(alpha: 0.7),
                   fontSize: 11,
@@ -732,7 +754,7 @@ class _PrepScanCard extends StatelessWidget {
 
   List<Widget> _buildSuggestions(BuildContext context) {
     final profile = GfxProfile.fromLabel(game.localProfileName);
-    final recs = buildGfxRecommendations(profile, metrics, focusGranted);
+    final recs = buildGfxRecommendations(profile, metrics, focusGranted, s);
     if (recs.isEmpty) return const [];
 
     return [
@@ -744,7 +766,7 @@ class _PrepScanCard extends StatelessWidget {
       ),
       const SizedBox(height: 10),
       Text(
-        'SUGESTÕES',
+        s.prepSuggestionsTitle.toUpperCase(),
         style: TextStyle(
           color: AppColors.cyberBlue.withValues(alpha: 0.75),
           fontSize: 10,
@@ -797,19 +819,19 @@ class _ScanCheckRow extends StatelessWidget {
   const _ScanCheckRow({required this.check});
 
   Color get _color => switch (check.status) {
-        _PrepScanStatus.ok => AppColors.apexGreen,
+        _PrepScanStatus.ok   => AppColors.apexGreen,
         _PrepScanStatus.warn => AppColors.energyOrange,
         _PrepScanStatus.info => AppColors.cyberBlue,
       };
 
   IconData get _icon => switch (check.status) {
-        _PrepScanStatus.ok => Icons.check_circle_rounded,
+        _PrepScanStatus.ok   => Icons.check_circle_rounded,
         _PrepScanStatus.warn => Icons.warning_amber_rounded,
         _PrepScanStatus.info => Icons.info_outline_rounded,
       };
 
   String get _statusLabel => switch (check.status) {
-        _PrepScanStatus.ok => 'OK',
+        _PrepScanStatus.ok   => 'OK',
         _PrepScanStatus.warn => 'WARN',
         _PrepScanStatus.info => 'INFO',
       };
@@ -873,11 +895,13 @@ class _DeviceSnapshotCard extends StatelessWidget {
   final bool loading;
   final DeviceMetrics? metrics;
   final bool? focusGranted;
+  final AppStrings s;
 
   const _DeviceSnapshotCard({
     required this.loading,
     required this.metrics,
     required this.focusGranted,
+    required this.s,
   });
 
   @override
@@ -926,7 +950,7 @@ class _DeviceSnapshotCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'SNAPSHOT DO DISPOSITIVO',
+                    s.snapshotTitle.toUpperCase(),
                     style: TextStyle(
                       color: AppColors.energyOrange,
                       fontSize: 11,
@@ -935,7 +959,7 @@ class _DeviceSnapshotCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Leitura local do dispositivo',
+                    s.snapshotLocalReading,
                     style: TextStyle(
                       color: AppColors.textGray.withValues(alpha: 0.70),
                       fontSize: 10,
@@ -958,28 +982,28 @@ class _DeviceSnapshotCard extends StatelessWidget {
             )
           else ...[
             _SnapshotRow(
-              label: 'Memória disponível',
-              value: _formatMemoryMb(metrics?.availableMemoryMb),
+              label: s.snapshotRamAvail,
+              value: _formatMemoryMb(metrics?.availableMemoryMb, s),
               valueColor: _availableMemoryColor(metrics),
             ),
             _SnapshotRow(
-              label: 'Memória total',
-              value: _formatMemoryMb(metrics?.totalMemoryMb),
+              label: s.snapshotRamTotal,
+              value: _formatMemoryMb(metrics?.totalMemoryMb, s),
               valueColor: AppColors.white.withValues(alpha: 0.85),
             ),
             _SnapshotRow(
-              label: 'Estado da memória',
-              value: _memoryStateLabel(metrics),
+              label: s.snapshotRamState,
+              value: _memoryStateLabel(metrics, s),
               valueColor: _memoryStateColor(metrics),
             ),
             _SnapshotRow(
-              label: 'Latência Apex',
-              value: _latencyLabel(metrics),
+              label: s.snapshotLatency,
+              value: _latencyLabel(metrics, s),
               valueColor: _latencyColor(metrics),
             ),
             _SnapshotRow(
-              label: 'Modo Foco',
-              value: _focusLabel(focusGranted),
+              label: s.snapshotFocusMode,
+              value: _focusLabel(focusGranted, s),
               valueColor: _focusColor(focusGranted),
             ),
           ],
@@ -992,7 +1016,7 @@ class _DeviceSnapshotCard extends StatelessWidget {
           const SizedBox(height: 10),
           // Trava 2: disclaimer sempre visível, reforça caráter informativo/local.
           Text(
-            'Snapshot local. Não representa alteração automática no jogo.',
+            s.prepDisclaimer2,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textGray.withValues(alpha: 0.7),
                   fontSize: 11,
@@ -1007,10 +1031,10 @@ class _DeviceSnapshotCard extends StatelessWidget {
         .slideY(begin: 0.04, end: 0, duration: 400.ms);
   }
 
-  // Trava 1: null → "Indisponível". Zero MB from a real device is still shown
-  // as a legitimate reading; only null (failed/empty metric) becomes a label.
-  static String _formatMemoryMb(double? mb) {
-    if (mb == null) return 'Indisponível';
+  // Trava 1: null → s.snapshotUnavailable. Zero MB from a real device is still
+  // shown as a legitimate reading; only null (failed/empty metric) becomes a label.
+  static String _formatMemoryMb(double? mb, AppStrings s) {
+    if (mb == null) return s.snapshotUnavailable;
     return '${mb.round()} MB';
   }
 
@@ -1019,9 +1043,9 @@ class _DeviceSnapshotCard extends StatelessWidget {
     return m.isLowMemory ? AppColors.energyOrange : AppColors.apexGreen;
   }
 
-  static String _memoryStateLabel(DeviceMetrics? m) {
-    if (m == null) return 'Indisponível';
-    return m.isLowMemory ? 'Crítico' : 'Normal';
+  static String _memoryStateLabel(DeviceMetrics? m, AppStrings s) {
+    if (m == null) return s.snapshotUnavailable;
+    return m.isLowMemory ? s.snapshotMemoryCritical : s.snapshotMemoryNormal;
   }
 
   static Color _memoryStateColor(DeviceMetrics? m) {
@@ -1029,14 +1053,14 @@ class _DeviceSnapshotCard extends StatelessWidget {
     return m.isLowMemory ? AppColors.energyOrange : AppColors.apexGreen;
   }
 
-  static String _latencyLabel(DeviceMetrics? m) {
-    if (m == null) return 'Indisponível';
+  static String _latencyLabel(DeviceMetrics? m, AppStrings s) {
+    if (m == null) return s.snapshotUnavailable;
     return switch (m.latencyStatus) {
       LatencyStatus.success =>
-        m.latencyMs != null ? '${m.latencyMs} ms' : 'Indisponível',
-      LatencyStatus.timeout => 'Tempo esgotado',
-      LatencyStatus.noNetwork => 'Sem rede',
-      LatencyStatus.error => 'Indisponível',
+        m.latencyMs != null ? '${m.latencyMs} ms' : s.snapshotUnavailable,
+      LatencyStatus.timeout   => s.snapshotLatencyTimeout,
+      LatencyStatus.noNetwork => s.snapshotLatencyNoNetwork,
+      LatencyStatus.error     => s.snapshotUnavailable,
     };
   }
 
@@ -1047,15 +1071,15 @@ class _DeviceSnapshotCard extends StatelessWidget {
         (m.latencyMs != null && m.latencyMs! < 100)
             ? AppColors.apexGreen
             : AppColors.energyOrange,
-      LatencyStatus.timeout => AppColors.energyOrange,
+      LatencyStatus.timeout   => AppColors.energyOrange,
       LatencyStatus.noNetwork => AppColors.textGray,
-      LatencyStatus.error => AppColors.textGray,
+      LatencyStatus.error     => AppColors.textGray,
     };
   }
 
-  static String _focusLabel(bool? granted) {
-    if (granted == null) return 'Indisponível';
-    return granted ? 'Disponível' : 'Permissão necessária';
+  static String _focusLabel(bool? granted, AppStrings s) {
+    if (granted == null) return s.snapshotUnavailable;
+    return granted ? s.snapshotFocusAvailable : s.snapshotFocusPermissionRequired;
   }
 
   static Color _focusColor(bool? granted) {
@@ -1112,8 +1136,13 @@ class _SnapshotRow extends StatelessWidget {
 class _PrepararCTA extends StatelessWidget {
   final ApexGame? game;
   final VoidCallback? onContinue;
+  final AppStrings s;
 
-  const _PrepararCTA({required this.game, required this.onContinue});
+  const _PrepararCTA({
+    required this.game,
+    required this.onContinue,
+    required this.s,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1133,9 +1162,9 @@ class _PrepararCTA extends StatelessWidget {
           ),
           elevation: 0,
         ),
-        child: const Text(
-          'CONTINUAR PARA DETALHES',
-          style: TextStyle(
+        child: Text(
+          s.prepContinue,
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 14,
             letterSpacing: 1.5,
@@ -1152,11 +1181,13 @@ class _GameSelectorSheet extends StatelessWidget {
   final List<ApexGame> games;
   final String? selectedId;
   final void Function(ApexGame) onSelect;
+  final AppStrings s;
 
   const _GameSelectorSheet({
     required this.games,
     required this.selectedId,
     required this.onSelect,
+    required this.s,
   });
 
   @override
@@ -1179,7 +1210,7 @@ class _GameSelectorSheet extends StatelessWidget {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              'Selecionar jogo',
+              s.prepSelectGame,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: AppColors.white,
                     fontWeight: FontWeight.bold,

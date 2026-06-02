@@ -903,6 +903,93 @@ class AppStrings {
       'Snapshot del dispositivo. No representa cambios en juegos.',
   };
 
+  String get snapshotLocalReading => switch (lang) {
+    AppLanguage.ptBr => 'Leitura local do dispositivo',
+    AppLanguage.en   => 'Local device reading',
+    AppLanguage.es   => 'Lectura local del dispositivo',
+  };
+
+  String get snapshotMemoryCritical => switch (lang) {
+    AppLanguage.ptBr => 'Crítico',
+    AppLanguage.en   => 'Critical',
+    AppLanguage.es   => 'Crítico',
+  };
+
+  String get snapshotMemoryNormal => switch (lang) {
+    AppLanguage.ptBr => 'Normal',
+    AppLanguage.en   => 'Normal',
+    AppLanguage.es   => 'Normal',
+  };
+
+  String get snapshotLatencyTimeout => switch (lang) {
+    AppLanguage.ptBr => 'Tempo esgotado',
+    AppLanguage.en   => 'Timeout',
+    AppLanguage.es   => 'Tiempo agotado',
+  };
+
+  String get snapshotLatencyNoNetwork => switch (lang) {
+    AppLanguage.ptBr => 'Sem rede',
+    AppLanguage.en   => 'No network',
+    AppLanguage.es   => 'Sin red',
+  };
+
+  /// Focus Mode permission is granted — feature is available in snapshot context.
+  String get snapshotFocusAvailable => switch (lang) {
+    AppLanguage.ptBr => 'Disponível',
+    AppLanguage.en   => 'Available',
+    AppLanguage.es   => 'Disponible',
+  };
+
+  /// Focus Mode permission not granted — shown in snapshot card.
+  String get snapshotFocusPermissionRequired => switch (lang) {
+    AppLanguage.ptBr => 'Permissão necessária',
+    AppLanguage.en   => 'Permission required',
+    AppLanguage.es   => 'Permiso requerido',
+  };
+
+  // Prepare card — additional strings for LANG-U1.4B
+  String get prepGameBadge => switch (lang) {
+    AppLanguage.ptBr => 'JOGO',
+    AppLanguage.en   => 'GAME',
+    AppLanguage.es   => 'JUEGO',
+  };
+
+  String get prepGfxDefault => switch (lang) {
+    AppLanguage.ptBr => 'Padrão',
+    AppLanguage.en   => 'Default',
+    AppLanguage.es   => 'Predeterminado',
+  };
+
+  String get prepFavoriteLabel => switch (lang) {
+    AppLanguage.ptBr => '★ Favorito',
+    AppLanguage.en   => '★ Favorite',
+    AppLanguage.es   => '★ Favorito',
+  };
+
+  String get prepScanStatusReady => switch (lang) {
+    AppLanguage.ptBr => '● PRONTO',
+    AppLanguage.en   => '● READY',
+    AppLanguage.es   => '● LISTO',
+  };
+
+  String get prepScanStatusIncomplete => switch (lang) {
+    AppLanguage.ptBr => '● INCOMPLETO',
+    AppLanguage.en   => '● INCOMPLETE',
+    AppLanguage.es   => '● INCOMPLETO',
+  };
+
+  String get prepScanSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Verificação local do jogo',
+    AppLanguage.en   => 'Local game check',
+    AppLanguage.es   => 'Verificación local del juego',
+  };
+
+  String get prepSelectGame => switch (lang) {
+    AppLanguage.ptBr => 'Selecionar jogo',
+    AppLanguage.en   => 'Select game',
+    AppLanguage.es   => 'Seleccionar juego',
+  };
+
   // ─── GFX Profile screen — LANG-U1.4 ──────────────────────────────────────────
 
   String get gfxTitle => switch (lang) {
