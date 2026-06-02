@@ -408,7 +408,7 @@ Telas já existentes na base atual:
   - Aba Histórico (placeholder refinado visualmente)
   - Aba Configurações (placeholder refinado visualmente)
 - GameDetailScreen
-- GfxProfileScreen (tela dedicada de GFX Profile — criada na Fase GFX-U1.1)
+- GfxProfileScreen (tela dedicada de GFX Profile — criada na Fase GFX-U1.1; migrada para AppStrings na Fase LANG-U1.4A)
 
 A existência dessas telas não significa aprovação visual final.
 
@@ -1103,6 +1103,21 @@ Concluído:
   - flutter analyze passando. flutter test passando (397/397).
   - Commit: a0308a1 — feat: traduzir onboarding.
   - Aprovado no Samsung S24 Ultra em Português, English e Español. Sem crash. Sem tela vermelha. Sem overflow relevante. Sem atraso novo.
+- Fase LANG-U1.4A concluída: GfxProfileScreen migrada para AppStrings.
+  - GfxProfileScreen migrada para AppStrings/languageNotifier.
+  - Título, prefixo "Atual/Current/Actual", nomes dos perfis, descrições e disclaimer migrados.
+  - Tela Perfil GFX responde à troca de idioma sem reinicialização do app.
+  - Seleção de perfil continua funcionando.
+  - Retorno automático ao Detalhe do Jogo continua funcionando.
+  - Persistência em localProfileName preservada.
+  - Layout, ícones, cores, destaque do perfil selecionado e SingleChildScrollView preservados.
+  - PrepararTab, BibliotecaTab e GameDetailScreen não alteradas.
+  - InicioTab, HistoricoTab, ConfiguracoesTab, HomeScreen, onboarding e SplashScreen não alterados.
+  - ApexScanService, repositories, services, Kotlin, AndroidManifest e pubspec não alterados.
+  - Nenhuma dependência nova adicionada.
+  - flutter analyze passando. flutter test passando (417/417).
+  - Commit: b4a1d2e — feat: traduzir tela de perfil gfx.
+  - Aprovado no Samsung S24 Ultra em Português (BR), English e Español. Sem crash. Sem tela vermelha. Sem overflow. Sem atraso novo.
 
 Observação sobre a Fase 1.6B:
 
@@ -1292,6 +1307,12 @@ Arquivos alterados na Fase LANG-U1.3B:
 - lib/presentation/screens/permissions/permissions_screen.dart (alterado — migrada para AppStrings/languageNotifier)
 - test/core/i18n/app_strings_test.dart (alterado — testes dos novos getters/métodos de onboarding)
 
+Arquivos alterados na Fase LANG-U1.4A:
+
+- lib/core/i18n/app_strings.dart (alterado — getters/métodos para GfxProfileScreen: título, prefixo atual, nomes e descrições de perfis, disclaimer)
+- lib/presentation/screens/gfx_profile/gfx_profile_screen.dart (alterado — migrada para AppStrings/languageNotifier)
+- test/core/i18n/app_strings_test.dart (alterado — testes dos novos getters/métodos da GfxProfileScreen)
+
 Estado visual atual:
 
 Aprovado como checkpoint da Fase 2-O.5: seção "MÉTRICAS REAIS" validada no Samsung S24 Ultra com RAM disponível, RAM total, estado de memória e latência Apex lidos do dispositivo real.
@@ -1325,6 +1346,7 @@ Fase LANG-U1.2 concluída: card "Idioma do app" real na ConfiguraçõesTab. Exib
 Fase LANG-U1.2A concluída: ajuste visual do seletor de idioma. Opção "Español" não fica cortada na borda inferior. Respiro inferior adequado no bottom sheet. Lógica de idioma preservada. Nenhum Kotlin, AndroidManifest ou pubspec alterado. flutter analyze passando. flutter test passando. Commit 10f9559. Aprovado no Samsung S24 Ultra.
 Fase LANG-U1.3A concluída: InicioTab, HistoricoTab e SplashScreen migradas para AppStrings. Chip de memória do Histórico corrigido com variante por idioma (PT-BR: GB livre · normal, EN: GB free · stable, ES: GB libres · estable). Validado em English, Español e Português (BR) no Samsung S24 Ultra. Sem crash. Sem tela vermelha. Sem overflow. Sem atraso novo. Nenhum Kotlin, AndroidManifest ou pubspec alterado. flutter analyze passando. flutter test passando (361/361). Commit f6bfa02.
 Fase LANG-U1.3B concluída: Welcome, HowItWorks e Permissions migradas para AppStrings. Textos do onboarding traduzidos para PT-BR, English e Español. Tagline consistente por idioma. Splash nativa Android não alterada. Nenhum Kotlin, AndroidManifest ou pubspec alterado. Nenhuma dependência nova. flutter analyze passando. flutter test passando (397/397). Commit a0308a1. Aprovado no Samsung S24 Ultra em Português, English e Español. Sem crash. Sem tela vermelha. Sem overflow. Sem atraso novo.
+Fase LANG-U1.4A concluída: GfxProfileScreen migrada para AppStrings/languageNotifier. Título, prefixo "Atual/Current/Actual", nomes dos perfis, descrições e disclaimer traduzidos para PT-BR, English e Español. Seleção de perfil, retorno ao Detalhe do Jogo e persistência em localProfileName preservados. PrepararTab, BibliotecaTab e GameDetailScreen não alteradas. Nenhum Kotlin, AndroidManifest ou pubspec alterado. Nenhuma dependência nova. flutter analyze passando. flutter test passando (417/417). Commit b4a1d2e. Aprovado no Samsung S24 Ultra em Português (BR), English e Español. Sem crash. Sem tela vermelha. Sem overflow. Sem atraso novo.
 Ainda não é o visual final absoluto do produto.
 
 Observação:
@@ -1334,7 +1356,7 @@ A Biblioteca funciona com adição via BottomSheet com autocomplete inteligente 
 Pendências conhecidas:
 
 - Logo/asset oficial interno ainda não foi aprovado para uso definitivo nas telas Flutter.
-- Localização multilíngue: infraestrutura criada (Fase LANG-U1.1). Card "Idioma do app" real + BottomNav + ConfiguraçõesTab migrados (Fase LANG-U1.2). Seletor visual ajustado (Fase LANG-U1.2A). InicioTab + HistoricoTab + SplashScreen migradas (Fase LANG-U1.3A). Welcome + HowItWorks + Permissions migradas (Fase LANG-U1.3B). Migração das telas restantes pendente: LANG-U1.4 (Preparar + Perfil GFX), LANG-U1.5 (Biblioteca + Detalhe do Jogo), LANG-U1.6 (validação final PT-BR / EN / ES).
+- Localização multilíngue: infraestrutura criada (Fase LANG-U1.1). Card "Idioma do app" real + BottomNav + ConfiguraçõesTab migrados (Fase LANG-U1.2). Seletor visual ajustado (Fase LANG-U1.2A). InicioTab + HistoricoTab + SplashScreen migradas (Fase LANG-U1.3A). Welcome + HowItWorks + Permissions migradas (Fase LANG-U1.3B). GfxProfileScreen migrada (Fase LANG-U1.4A). Migração das telas restantes pendente: LANG-U1.4B (PrepararTab), LANG-U1.5 (Biblioteca + Detalhe do Jogo), LANG-U1.6 (validação final PT-BR / EN / ES).
 - Tela Add Game separada não implementada (adição atual é diálogo inline na BibliotecaTab).
 - GFX Profile: tela dedicada GfxProfileScreen criada (Fase GFX-U1.1) com Equilibrado, Desempenho, Qualidade, Economia e Nenhum. Acesso no Detalhe do Jogo com visual premium (Fase GFX-U1.1A). Influência na jornada — PrepararTab e Apex Scan local: implementada (Fase GFX-U2.A+B). Influência no Histórico: implementada (Fase GFX-U2.C — chip GFX nos cards do Histórico). Influência na InicioTab: implementada (Fase GFX-U2.D — chip GFX semântico no card de última sessão). Recomendações locais baseadas em perfil: implementadas (Fase GFX-U2.E.1 — seção "Sugestões" no _PrepScanCard da PrepararTab). Perfis avançados não implementados (futuros: Fluidez, Competitivo, Ultra Visual, Personalizado). Recomendações mais granulares por perfil avançado: pendente (futuro).
 - Apex Scan: motor local criado (Fase 2M.2). Card visual implementado no Detalhe do Jogo (Fase 2M.4A). Métricas reais parciais implementadas (Fase 2-O.3): RAM disponível, RAM total, estado de memória e latência Apex. PrepararTab possui _PrepScanCard com checks locais honestos (app vinculado, GFX, prioridade) — não usa ApexScanService diretamente. Integração da aba Preparar com ApexScanService completo: pendente (Fase 2M.4B adiada). FPS real, GPU real, limpeza de RAM, boost real e otimização real não implementados.
@@ -1352,7 +1374,7 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5, 2-S.4, 2-S.5, 2-T.1, 2-T.2A, GFX-U1.1, GFX-U1.1A, GFX-U2.A+B, GFX-U2.C, GFX-U2.D, GFX-U2.E.1, SET-U1.1, SET-U1.2, SET-U1.3, LANG-U1.1, LANG-U1.2, LANG-U1.2A, LANG-U1.3A e LANG-U1.3B concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5, 2-S.4, 2-S.5, 2-T.1, 2-T.2A, GFX-U1.1, GFX-U1.1A, GFX-U2.A+B, GFX-U2.C, GFX-U2.D, GFX-U2.E.1, SET-U1.1, SET-U1.2, SET-U1.3, LANG-U1.1, LANG-U1.2, LANG-U1.2A, LANG-U1.3A, LANG-U1.3B e LANG-U1.4A concluídas.
 
 Fase 2-O — Apex Metrics Real v1 (concluída):
 - Fase 2-O.1: camada de dados de métricas reais criada.
@@ -1639,14 +1661,26 @@ Fase LANG-U — Idioma real:
   - flutter analyze passando. flutter test passando (397/397).
   - Commit: a0308a1 — feat: traduzir onboarding.
   - Aprovado no Samsung S24 Ultra em Português, English e Español. Sem crash. Sem tela vermelha. Sem overflow. Sem atraso novo.
-- Fases LANG-U1.4 a LANG-U1.6: pendentes, aguardam aprovação de escopo.
-  - LANG-U1.4: Preparar + Perfil GFX.
+- Fase LANG-U1.4A concluída: GfxProfileScreen migrada para AppStrings (concluída).
+  - GfxProfileScreen migrada para AppStrings/languageNotifier.
+  - Título, prefixo "Atual/Current/Actual", nomes dos perfis, descrições e disclaimer migrados.
+  - Tela Perfil GFX responde à troca de idioma sem reinicialização do app.
+  - Seleção de perfil, retorno ao Detalhe do Jogo e persistência em localProfileName preservados.
+  - Layout, ícones, cores, destaque do perfil selecionado e SingleChildScrollView preservados.
+  - PrepararTab, BibliotecaTab, GameDetailScreen e demais telas não alteradas.
+  - ApexScanService, repositories, services, Kotlin, AndroidManifest e pubspec não alterados.
+  - Nenhuma dependência nova adicionada.
+  - flutter analyze passando. flutter test passando (417/417).
+  - Commit: b4a1d2e — feat: traduzir tela de perfil gfx.
+  - Aprovado no Samsung S24 Ultra em Português (BR), English e Español. Sem crash. Sem tela vermelha. Sem overflow. Sem atraso novo.
+- Fases LANG-U1.4B a LANG-U1.6: pendentes, aguardam aprovação de escopo.
+  - LANG-U1.4B: PrepararTab.
   - LANG-U1.5: Biblioteca + Detalhe do Jogo.
   - LANG-U1.6: validação final PT-BR / EN / ES.
 
 Próximo passo imediato:
-- LANG-U1.3B concluída: Welcome, HowItWorks e Permissions migradas para AppStrings e validadas no Samsung S24 Ultra em PT-BR, EN e ES. flutter test passando (397/397). Commit a0308a1.
-- Próxima fase sugerida: LANG-U1.4 — migrar PrepararTab + GfxProfileScreen para AppStrings.
+- LANG-U1.4A concluída: GfxProfileScreen migrada para AppStrings e validada no Samsung S24 Ultra em PT-BR, EN e ES. flutter test passando (417/417). Commit b4a1d2e.
+- Próxima fase sugerida: LANG-U1.4B — migrar PrepararTab para AppStrings.
   - Cobertura crescente: cada fase migra um bloco de telas sem quebrar as anteriores.
   - Sem nova dependência (AppStrings e languageNotifier já disponíveis).
   - Candidatos alternativos: refinamento visual, Boost Engine (Fase 3), ou outro a definir.
