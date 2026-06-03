@@ -474,6 +474,7 @@ class _SelectedGameCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final gfxProfile = GfxProfile.fromLabel(game.localProfileName);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -562,10 +563,8 @@ class _SelectedGameCard extends StatelessWidget {
                       spacing: 6,
                       children: [
                         _InfoChip(
-                          label: 'GFX: ${game.localProfileName ?? s.prepGfxDefault}',
-                          color: GfxProfile.fromLabel(game.localProfileName)
-                                  ?.accentColor ??
-                              AppColors.energyOrange,
+                          label: 'GFX: ${gfxProfile != null ? s.gfxProfileLabel(gfxProfile) : s.prepGfxDefault}',
+                          color: gfxProfile?.accentColor ?? AppColors.energyOrange,
                         ),
                         if (game.isFavorite)
                           _InfoChip(
