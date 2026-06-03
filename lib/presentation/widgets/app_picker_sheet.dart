@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
+import 'package:apex_booster_plus/core/i18n/app_language.dart';
+import 'package:apex_booster_plus/core/i18n/app_strings.dart';
 import 'package:apex_booster_plus/data/datasources/installed_apps_datasource.dart';
 import 'package:apex_booster_plus/domain/entities/installed_app.dart';
 import 'package:apex_booster_plus/presentation/widgets/app_icon_widget.dart';
@@ -116,24 +118,30 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF111318),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            _buildHandle(),
-            _buildHeader(context),
-            if (!_loading && !_failed && _allApps.isNotEmpty) _buildSearch(),
-            if (!_loading && !_failed && _allApps.isNotEmpty) _buildFilterToggle(),
-            Divider(height: 1, color: AppColors.white.withValues(alpha: 0.07)),
-            Expanded(child: _buildBody(context)),
-          ],
-        ),
-      ),
+    return ListenableBuilder(
+      listenable: languageNotifier,
+      builder: (context, _) {
+        final s = AppStrings(languageNotifier.value);
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF111318),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                _buildHandle(),
+                _buildHeader(context, s),
+                if (!_loading && !_failed && _allApps.isNotEmpty) _buildSearch(s),
+                if (!_loading && !_failed && _allApps.isNotEmpty) _buildFilterToggle(s),
+                Divider(height: 1, color: AppColors.white.withValues(alpha: 0.07)),
+                Expanded(child: _buildBody(context, s)),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -151,7 +159,7 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, AppStrings s) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
       child: Column(
@@ -166,7 +174,7 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
               ),
               const SizedBox(width: 10),
               Text(
-                'Escolher app instalado',
+                s.pickerTitle,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: AppColors.white,
                       fontWeight: FontWeight.bold,
@@ -176,7 +184,7 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Selecione o jogo instalado no seu dispositivo.',
+            s.pickerSubtitle,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textGray,
                   fontSize: 11,
@@ -189,7 +197,7 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
     );
   }
 
-  Widget _buildSearch() {
+  Widget _buildSearch(AppStrings s) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
       child: TextField(
@@ -197,7 +205,7 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
         style: const TextStyle(color: AppColors.white, fontSize: 14),
         cursorColor: AppColors.cyberBlue,
         decoration: InputDecoration(
-          hintText: 'Buscar por nome ou pacote',
+          hintText: s.pickerSearchHint,
           hintStyle: const TextStyle(color: AppColors.textGray, fontSize: 14),
           prefixIcon: const Icon(
             Icons.search_rounded,
@@ -212,7 +220,7 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
                     size: 16,
                   ),
                   onPressed: _searchController.clear,
-                  tooltip: 'Limpar busca',
+                  tooltip: s.pickerClearSearch,
                 )
               : null,
           enabledBorder: OutlineInputBorder(
@@ -235,7 +243,7 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
     );
   }
 
-  Widget _buildFilterToggle() {
+  Widget _buildFilterToggle(AppStrings s) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 16, 8),
       child: Row(
@@ -248,7 +256,7 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Apenas jogos verificados',
+              s.libraryToggleVerified,
               style: TextStyle(
                 color: _onlyGames ? AppColors.apexGreen : AppColors.textGray,
                 fontSize: 12,
@@ -271,7 +279,7 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
     );
   }
 
-  Widget _buildBody(BuildContext context) {
+  Widget _buildBody(BuildContext context, AppStrings s) {
     if (_loading) {
       return const Center(
         child: CircularProgressIndicator(
@@ -281,17 +289,17 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
       );
     }
     if (_failed) {
-      return _PickerErrorState(onManual: _useManual, onRetry: _retry);
+      return _PickerErrorState(s: s, onManual: _useManual, onRetry: _retry);
     }
     if (_filtered.isEmpty) {
       final query = _searchController.text.trim();
       if (query.isNotEmpty) {
-        return _EmptySearchState(query: query, onManual: _useManual);
+        return _EmptySearchState(s: s, query: query, onManual: _useManual);
       }
       if (_onlyGames) {
-        return _NoGamesState(onManual: _useManual);
+        return _NoGamesState(s: s, onManual: _useManual);
       }
-      return _EmptyAppsState(onManual: _useManual);
+      return _EmptyAppsState(s: s, onManual: _useManual);
     }
     return ListView.separated(
       itemCount: _filtered.length,
@@ -366,9 +374,9 @@ class _AppPickerItem extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
-                  'JOGO',
-                  style: TextStyle(
+                child: Text(
+                  AppStrings(languageNotifier.value).libraryBadgeVerified,
+                  style: const TextStyle(
                     color: AppColors.apexGreen,
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
@@ -391,10 +399,15 @@ class _AppPickerItem extends StatelessWidget {
 // ─── Empty search state ───────────────────────────────────────────────────────
 
 class _EmptySearchState extends StatelessWidget {
+  final AppStrings s;
   final String query;
   final VoidCallback onManual;
 
-  const _EmptySearchState({required this.query, required this.onManual});
+  const _EmptySearchState({
+    required this.s,
+    required this.query,
+    required this.onManual,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -410,7 +423,7 @@ class _EmptySearchState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Nenhum resultado para "$query".',
+            s.pickerNoResults(query),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.white,
                   fontSize: 13,
@@ -420,7 +433,7 @@ class _EmptySearchState extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Tente outro nome ou use a entrada manual.',
+            s.pickerNoResultsHint,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textGray,
                   fontSize: 12,
@@ -428,7 +441,7 @@ class _EmptySearchState extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          _ManualButton(onManual: onManual),
+          _ManualButton(s: s, onManual: onManual),
         ],
       ),
     );
@@ -438,9 +451,10 @@ class _EmptySearchState extends StatelessWidget {
 // ─── Empty apps state ─────────────────────────────────────────────────────────
 
 class _EmptyAppsState extends StatelessWidget {
+  final AppStrings s;
   final VoidCallback onManual;
 
-  const _EmptyAppsState({required this.onManual});
+  const _EmptyAppsState({required this.s, required this.onManual});
 
   @override
   Widget build(BuildContext context) {
@@ -456,7 +470,7 @@ class _EmptyAppsState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Nenhum app instalado encontrado.',
+            s.pickerNoApps,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.white,
                   fontSize: 13,
@@ -466,7 +480,7 @@ class _EmptyAppsState extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Use a entrada manual para adicionar o jogo.',
+            s.pickerNoAppsHint,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textGray,
                   fontSize: 12,
@@ -474,7 +488,7 @@ class _EmptyAppsState extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          _ManualButton(onManual: onManual),
+          _ManualButton(s: s, onManual: onManual),
         ],
       ),
     );
@@ -484,10 +498,15 @@ class _EmptyAppsState extends StatelessWidget {
 // ─── Error state ──────────────────────────────────────────────────────────────
 
 class _PickerErrorState extends StatelessWidget {
+  final AppStrings s;
   final VoidCallback onManual;
   final VoidCallback onRetry;
 
-  const _PickerErrorState({required this.onManual, required this.onRetry});
+  const _PickerErrorState({
+    required this.s,
+    required this.onManual,
+    required this.onRetry,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -503,7 +522,7 @@ class _PickerErrorState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Não foi possível carregar os apps instalados.',
+            s.pickerLoadError,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.textGray,
                   fontSize: 13,
@@ -525,14 +544,14 @@ class _PickerErrorState extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 elevation: 0,
               ),
-              child: const Text(
-                'Tentar novamente',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              child: Text(
+                s.pickerRetry,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ),
           ),
           const SizedBox(height: 12),
-          _ManualButton(onManual: onManual),
+          _ManualButton(s: s, onManual: onManual),
         ],
       ),
     );
@@ -542,9 +561,10 @@ class _PickerErrorState extends StatelessWidget {
 // ─── No games state ───────────────────────────────────────────────────────────
 
 class _NoGamesState extends StatelessWidget {
+  final AppStrings s;
   final VoidCallback onManual;
 
-  const _NoGamesState({required this.onManual});
+  const _NoGamesState({required this.s, required this.onManual});
 
   @override
   Widget build(BuildContext context) {
@@ -560,7 +580,7 @@ class _NoGamesState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Nenhum jogo verificado encontrado.',
+            s.pickerNoGames,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.white,
                   fontSize: 13,
@@ -570,7 +590,7 @@ class _NoGamesState extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Desative o filtro para ver todos os apps instalados.',
+            s.pickerNoGamesHint,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textGray,
                   fontSize: 12,
@@ -578,7 +598,7 @@ class _NoGamesState extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          _ManualButton(onManual: onManual),
+          _ManualButton(s: s, onManual: onManual),
         ],
       ),
     );
@@ -588,9 +608,10 @@ class _NoGamesState extends StatelessWidget {
 // ─── Shared manual button ─────────────────────────────────────────────────────
 
 class _ManualButton extends StatelessWidget {
+  final AppStrings s;
   final VoidCallback onManual;
 
-  const _ManualButton({required this.onManual});
+  const _ManualButton({required this.s, required this.onManual});
 
   @override
   Widget build(BuildContext context) {
@@ -609,9 +630,9 @@ class _ManualButton extends StatelessWidget {
           ),
           padding: const EdgeInsets.symmetric(horizontal: 24),
         ),
-        child: const Text(
-          'Usar entrada manual',
-          style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+        child: Text(
+          s.pickerUseManual,
+          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
         ),
       ),
     );

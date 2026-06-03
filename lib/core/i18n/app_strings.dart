@@ -1348,6 +1348,233 @@ class AppStrings {
     AppLanguage.es   => 'ABRIR JUEGO',
   };
 
+  // Feature cards inside the library tab
+  String get libraryFavBadge => 'FAV';
+
+  String get libraryFavTitle => switch (lang) {
+    AppLanguage.ptBr => 'Jogos favoritos',
+    AppLanguage.en   => 'Favorite games',
+    AppLanguage.es   => 'Juegos favoritos',
+  };
+
+  String get libraryFavSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Acesso rápido aos jogos que você mais usa.',
+    AppLanguage.en   => 'Quick access to your most-used games.',
+    AppLanguage.es   => 'Acceso rápido a los juegos que más usas.',
+  };
+
+  String get libraryGfxBadge => 'GFX';
+
+  String get libraryLocalProfilesTitle => switch (lang) {
+    AppLanguage.ptBr => 'Perfis locais',
+    AppLanguage.en   => 'Local profiles',
+    AppLanguage.es   => 'Perfiles locales',
+  };
+
+  String get libraryLocalProfilesSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Configure preferências GFX locais no detalhe de cada jogo.',
+    AppLanguage.en   => "Set local GFX preferences in each game's detail.",
+    AppLanguage.es   => 'Configura preferencias GFX locales en el detalle de cada juego.',
+  };
+
+  // Add game sheet
+  String get libraryAddGameSheetTitle => switch (lang) {
+    AppLanguage.ptBr => 'Adicionar jogo',
+    AppLanguage.en   => 'Add game',
+    AppLanguage.es   => 'Agregar juego',
+  };
+
+  String get libraryFieldGameName => switch (lang) {
+    AppLanguage.ptBr => 'Nome do jogo',
+    AppLanguage.en   => 'Game name',
+    AppLanguage.es   => 'Nombre del juego',
+  };
+
+  String get libraryFieldPackageName => switch (lang) {
+    AppLanguage.ptBr => 'Package name (opcional)',
+    AppLanguage.en   => 'Package name (optional)',
+    AppLanguage.es   => 'Package name (opcional)',
+  };
+
+  // Dialog/sheet action buttons (lowercase form used in dialogs)
+  String get libraryCancelLower => switch (lang) {
+    AppLanguage.ptBr => 'Cancelar',
+    AppLanguage.en   => 'Cancel',
+    AppLanguage.es   => 'Cancelar',
+  };
+
+  String get libraryActionAddLower => switch (lang) {
+    AppLanguage.ptBr => 'Adicionar',
+    AppLanguage.en   => 'Add',
+    AppLanguage.es   => 'Agregar',
+  };
+
+  // Validation errors
+  String get libraryValidationNameRequired => switch (lang) {
+    AppLanguage.ptBr => 'Nome obrigatório',
+    AppLanguage.en   => 'Name required',
+    AppLanguage.es   => 'Nombre requerido',
+  };
+
+  String get libraryValidationAppNotFound => switch (lang) {
+    AppLanguage.ptBr => 'App não encontrado nos instalados',
+    AppLanguage.en   => 'App not found in installed apps',
+    AppLanguage.es   => 'App no encontrado en apps instaladas',
+  };
+
+  // SnackBar when no app could be resolved (uses the label from libraryChooseInstalled)
+  String get librarySnackNoApp => switch (lang) {
+    AppLanguage.ptBr => "Nenhum app encontrado. Use 'ESCOLHER APP INSTALADO'.",
+    AppLanguage.en   => "No app found. Use 'CHOOSE INSTALLED APP'.",
+    AppLanguage.es   => "Ninguna app encontrada. Usa 'ELEGIR APP INSTALADO'.",
+  };
+
+  // Remove game dialog
+  String get libraryRemoveTitle => switch (lang) {
+    AppLanguage.ptBr => 'Remover jogo',
+    AppLanguage.en   => 'Remove game',
+    AppLanguage.es   => 'Eliminar juego',
+  };
+
+  String libraryRemoveConfirm(String name) => switch (lang) {
+    AppLanguage.ptBr => 'Remover $name da biblioteca?',
+    AppLanguage.en   => 'Remove $name from the library?',
+    AppLanguage.es   => '¿Eliminar $name de la biblioteca?',
+  };
+
+  String get libraryActionRemove => switch (lang) {
+    AppLanguage.ptBr => 'Remover',
+    AppLanguage.en   => 'Remove',
+    AppLanguage.es   => 'Eliminar',
+  };
+
+  // Not-verified game dialog
+  String get libraryNotVerifiedTitle => switch (lang) {
+    AppLanguage.ptBr => 'App não verificado como jogo',
+    AppLanguage.en   => 'App not verified as game',
+    AppLanguage.es   => 'App no verificado como juego',
+  };
+
+  String get libraryNotVerifiedContent => switch (lang) {
+    AppLanguage.ptBr =>
+      'Este app não foi identificado pelo Android como um jogo.\n'
+      'Você ainda pode adicioná-lo à sua biblioteca.\n'
+      'Adicionar mesmo assim?',
+    AppLanguage.en =>
+      'This app was not identified by Android as a game.\n'
+      'You can still add it to your library.\n'
+      'Add anyway?',
+    AppLanguage.es =>
+      'Esta app no fue identificada por Android como un juego.\n'
+      'Aún puedes agregarla a tu biblioteca.\n'
+      '¿Agregar de todos modos?',
+  };
+
+  String get libraryActionAddAnyway => switch (lang) {
+    AppLanguage.ptBr => 'Adicionar mesmo assim',
+    AppLanguage.en   => 'Add anyway',
+    AppLanguage.es   => 'Agregar de todos modos',
+  };
+
+  // Multiple matches sheet (auto-link disambiguation)
+  String get libraryMultiMatchTitle => switch (lang) {
+    AppLanguage.ptBr => 'Mais de um app encontrado',
+    AppLanguage.en   => 'Multiple apps found',
+    AppLanguage.es   => 'Más de una app encontrada',
+  };
+
+  String get libraryMultiMatchSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Escolha qual app vincular ou continue como manual.',
+    AppLanguage.en   => 'Choose which app to link or continue manually.',
+    AppLanguage.es   => 'Elige qué app vincular o continúa manualmente.',
+  };
+
+  String get libraryContinueManual => switch (lang) {
+    AppLanguage.ptBr => 'Continuar como manual',
+    AppLanguage.en   => 'Continue manually',
+    AppLanguage.es   => 'Continuar manualmente',
+  };
+
+  // ─── App Picker — LANG-U1.5A ─────────────────────────────────────────────────
+
+  String get pickerTitle => switch (lang) {
+    AppLanguage.ptBr => 'Escolher app instalado',
+    AppLanguage.en   => 'Choose installed app',
+    AppLanguage.es   => 'Elegir app instalado',
+  };
+
+  String get pickerSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Selecione o jogo instalado no seu dispositivo.',
+    AppLanguage.en   => 'Select the game installed on your device.',
+    AppLanguage.es   => 'Selecciona el juego instalado en tu dispositivo.',
+  };
+
+  String get pickerSearchHint => switch (lang) {
+    AppLanguage.ptBr => 'Buscar por nome ou pacote',
+    AppLanguage.en   => 'Search by name or package',
+    AppLanguage.es   => 'Buscar por nombre o paquete',
+  };
+
+  String get pickerClearSearch => switch (lang) {
+    AppLanguage.ptBr => 'Limpar busca',
+    AppLanguage.en   => 'Clear search',
+    AppLanguage.es   => 'Limpiar búsqueda',
+  };
+
+  String pickerNoResults(String query) => switch (lang) {
+    AppLanguage.ptBr => 'Nenhum resultado para "$query".',
+    AppLanguage.en   => 'No results for "$query".',
+    AppLanguage.es   => 'Sin resultados para "$query".',
+  };
+
+  String get pickerNoResultsHint => switch (lang) {
+    AppLanguage.ptBr => 'Tente outro nome ou use a entrada manual.',
+    AppLanguage.en   => 'Try another name or use manual input.',
+    AppLanguage.es   => 'Prueba otro nombre o usa la entrada manual.',
+  };
+
+  String get pickerNoApps => switch (lang) {
+    AppLanguage.ptBr => 'Nenhum app instalado encontrado.',
+    AppLanguage.en   => 'No installed apps found.',
+    AppLanguage.es   => 'Ninguna app instalada encontrada.',
+  };
+
+  String get pickerNoAppsHint => switch (lang) {
+    AppLanguage.ptBr => 'Use a entrada manual para adicionar o jogo.',
+    AppLanguage.en   => 'Use manual input to add the game.',
+    AppLanguage.es   => 'Usa la entrada manual para agregar el juego.',
+  };
+
+  String get pickerLoadError => switch (lang) {
+    AppLanguage.ptBr => 'Não foi possível carregar os apps instalados.',
+    AppLanguage.en   => 'Could not load installed apps.',
+    AppLanguage.es   => 'No se pudieron cargar las apps instaladas.',
+  };
+
+  String get pickerRetry => switch (lang) {
+    AppLanguage.ptBr => 'Tentar novamente',
+    AppLanguage.en   => 'Try again',
+    AppLanguage.es   => 'Intentar de nuevo',
+  };
+
+  String get pickerUseManual => switch (lang) {
+    AppLanguage.ptBr => 'Usar entrada manual',
+    AppLanguage.en   => 'Use manual input',
+    AppLanguage.es   => 'Usar entrada manual',
+  };
+
+  String get pickerNoGames => switch (lang) {
+    AppLanguage.ptBr => 'Nenhum jogo verificado encontrado.',
+    AppLanguage.en   => 'No verified games found.',
+    AppLanguage.es   => 'No se encontraron juegos verificados.',
+  };
+
+  String get pickerNoGamesHint => switch (lang) {
+    AppLanguage.ptBr => 'Desative o filtro para ver todos os apps instalados.',
+    AppLanguage.en   => 'Disable the filter to see all installed apps.',
+    AppLanguage.es   => 'Desactiva el filtro para ver todas las apps instaladas.',
+  };
+
   // ─── Game Detail — LANG-U1.5 ─────────────────────────────────────────────────
 
   String get detailGfxProfileLabel => switch (lang) {

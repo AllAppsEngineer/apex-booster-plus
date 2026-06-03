@@ -3,6 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
+import 'package:apex_booster_plus/core/i18n/app_language.dart';
+import 'package:apex_booster_plus/core/i18n/app_strings.dart';
 import 'package:apex_booster_plus/data/datasources/installed_apps_datasource.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_game_library_repository.dart';
 import 'package:apex_booster_plus/domain/entities/apex_game.dart';
@@ -145,11 +147,11 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
 
     if (!mounted) return;
 
+    final s = AppStrings(languageNotifier.value);
+
     if (resolvedPkg == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Nenhum app encontrado. Use 'ESCOLHER APP INSTALADO'."),
-        ),
+        SnackBar(content: Text(s.librarySnackNoApp)),
       );
       return;
     }
@@ -158,7 +160,7 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
 
     if (existingGames.any((g) => g.packageName == resolvedPkg)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Já instalado')),
+        SnackBar(content: Text(s.libraryAlreadyAdded)),
       );
       return;
     }
@@ -166,7 +168,7 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
     final normalizedInput = _normalize(name);
     if (existingGames.any((g) => _normalize(g.name) == normalizedInput)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Já instalado')),
+        SnackBar(content: Text(s.libraryAlreadyAdded)),
       );
       return;
     }
@@ -228,75 +230,76 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
       );
     }
 
-    final state = _controller.state;
+    return ListenableBuilder(
+      listenable: languageNotifier,
+      builder: (context, _) {
+        final s = AppStrings(languageNotifier.value);
+        final state = _controller.state;
 
-    return ApexBackground(
-      child: SafeArea(
-        child: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const _BibliotecaHeader(),
-              const SizedBox(height: 28),
-              if (state.games.isEmpty)
-                const _BibliotecaEmptyCard()
-              else
-                _GameList(
-                  games: state.games,
-                  notVerifiedPkgs: _notVerifiedPkgs,
-                  onTap: (id) async {
-                    await context.push('/game-detail/$id');
-                    if (!mounted) return;
-                    await _controller.loadGames();
-                    if (mounted) setState(() {});
-                  },
-                  onToggleFavorite: (id) async {
-                    await _controller.toggleFavorite(id);
-                    if (mounted) setState(() {});
-                  },
-                  onRemove: (id, name) async {
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      barrierColor: Colors.black.withValues(alpha: 0.75),
-                      builder: (_) => _RemoveGameDialog(gameName: name),
-                    );
-                    if (confirmed != true) return;
-                    if (!mounted) return;
-                    await _controller.removeGame(id);
-                    if (mounted) setState(() {});
-                  },
-                ),
-              const SizedBox(height: 16),
-              ApexFeatureCard(
-                badge: 'FAV',
-                title: 'Jogos favoritos',
-                subtitle: 'Acesso rápido aos jogos que você mais usa.',
-                accentColor: AppColors.cyberBlue,
-                delay: 100.ms,
+        return ApexBackground(
+          child: SafeArea(
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _BibliotecaHeader(),
+                  const SizedBox(height: 28),
+                  if (state.games.isEmpty)
+                    _BibliotecaEmptyCard()
+                  else
+                    _GameList(
+                      games: state.games,
+                      notVerifiedPkgs: _notVerifiedPkgs,
+                      onTap: (id) async {
+                        await context.push('/game-detail/$id');
+                        if (!mounted) return;
+                        await _controller.loadGames();
+                        if (mounted) setState(() {});
+                      },
+                      onToggleFavorite: (id) async {
+                        await _controller.toggleFavorite(id);
+                        if (mounted) setState(() {});
+                      },
+                      onRemove: (id, name) async {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          barrierColor: Colors.black.withValues(alpha: 0.75),
+                          builder: (_) => _RemoveGameDialog(gameName: name),
+                        );
+                        if (confirmed != true) return;
+                        if (!mounted) return;
+                        await _controller.removeGame(id);
+                        if (mounted) setState(() {});
+                      },
+                    ),
+                  const SizedBox(height: 16),
+                  ApexFeatureCard(
+                    badge: s.libraryFavBadge,
+                    title: s.libraryFavTitle,
+                    subtitle: s.libraryFavSubtitle,
+                    accentColor: AppColors.cyberBlue,
+                    delay: 100.ms,
+                  ),
+                  const SizedBox(height: 12),
+                  ApexFeatureCard(
+                    badge: s.libraryGfxBadge,
+                    title: s.libraryLocalProfilesTitle,
+                    subtitle: s.libraryLocalProfilesSubtitle,
+                    accentColor: AppColors.energyOrange,
+                    delay: 200.ms,
+                  ),
+                  const SizedBox(height: 32),
+                  _BibliotecaCTA(onPressed: _openAddGameDialog),
+                  const SizedBox(height: 10),
+                  _AppPickerButton(onPressed: _openPickerSheet),
+                ],
               ),
-              const SizedBox(height: 12),
-              ApexFeatureCard(
-                badge: 'GFX',
-                title: 'Perfis locais',
-                subtitle:
-                    'Configure preferências GFX locais no detalhe de cada jogo.',
-                accentColor: AppColors.energyOrange,
-                delay: 200.ms,
-              ),
-              const SizedBox(height: 32),
-              _BibliotecaCTA(
-                onPressed: _openAddGameDialog,
-              ),
-              const SizedBox(height: 10),
-              _AppPickerButton(
-                onPressed: _openPickerSheet,
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -308,11 +311,12 @@ class _BibliotecaHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Biblioteca',
+          s.libraryTitle,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 color: AppColors.white,
                 fontWeight: FontWeight.bold,
@@ -324,7 +328,7 @@ class _BibliotecaHeader extends StatelessWidget {
             .slideY(begin: -0.08, end: 0, duration: 400.ms),
         const SizedBox(height: 8),
         Text(
-          'Organize seus jogos em um só lugar.',
+          s.librarySubtitle,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.textGray,
               ),
@@ -341,6 +345,7 @@ class _BibliotecaEmptyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -375,7 +380,7 @@ class _BibliotecaEmptyCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Nenhum jogo adicionado ainda.',
+            s.libraryEmptyTitle,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppColors.white,
                   fontWeight: FontWeight.bold,
@@ -383,7 +388,7 @@ class _BibliotecaEmptyCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Toque em ADICIONAR JOGO para começar sua biblioteca gamer.',
+            s.libraryEmptyDesc,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.textGray,
                   fontSize: 13,
@@ -417,11 +422,12 @@ class _GameList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '${games.length} ${games.length == 1 ? 'jogo' : 'jogos'} na biblioteca',
+          s.libraryGameCount(games.length),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: AppColors.textGray,
                 fontSize: 12,
@@ -531,7 +537,7 @@ class _GameCard extends StatelessWidget {
                               ),
                             ),
                             child: Text(
-                              'Não verificado',
+                              AppStrings(languageNotifier.value).libraryBadgeNotVerified,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,
@@ -697,15 +703,16 @@ class _AddGameSheetState extends State<_AddGameSheet> {
   }
 
   void _submit() {
+    final s = AppStrings(languageNotifier.value);
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      setState(() => _nameError = 'Nome obrigatório');
+      setState(() => _nameError = s.libraryValidationNameRequired);
       return;
     }
     final pkg = _pkgController.text.trim();
     if (pkg.isNotEmpty &&
         !widget.installedApps.any((a) => a.packageName == pkg)) {
-      setState(() => _pkgError = 'App não encontrado nos instalados');
+      setState(() => _pkgError = s.libraryValidationAppNotFound);
       return;
     }
     Navigator.of(context).pop((name, pkg.isEmpty ? null : pkg));
@@ -742,32 +749,41 @@ class _AddGameSheetState extends State<_AddGameSheet> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                child: Text(
-                  'Adicionar jogo',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
+                child: Builder(builder: (ctx) {
+                  final s = AppStrings(languageNotifier.value);
+                  return Text(
+                    s.libraryAddGameSheetTitle,
+                    style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  );
+                }),
               ),
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _SheetField(
-                  controller: _nameController,
-                  label: 'Nome do jogo',
-                  autofocus: widget.initialName.isEmpty,
-                  errorText: _nameError,
-                ),
+                child: Builder(builder: (_) {
+                  final s = AppStrings(languageNotifier.value);
+                  return _SheetField(
+                    controller: _nameController,
+                    label: s.libraryFieldGameName,
+                    autofocus: widget.initialName.isEmpty,
+                    errorText: _nameError,
+                  );
+                }),
               ),
               const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _SheetField(
-                  controller: _pkgController,
-                  label: 'Package name (opcional)',
-                  errorText: _pkgError,
-                ),
+                child: Builder(builder: (_) {
+                  final s = AppStrings(languageNotifier.value);
+                  return _SheetField(
+                    controller: _pkgController,
+                    label: s.libraryFieldPackageName,
+                    errorText: _pkgError,
+                  );
+                }),
               ),
               const SizedBox(height: 8),
               Expanded(
@@ -800,40 +816,43 @@ class _AddGameSheetState extends State<_AddGameSheet> {
                 height: 1,
                 color: AppColors.white.withValues(alpha: 0.07),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(null),
-                      child: const Text(
-                        'Cancelar',
-                        style: TextStyle(color: AppColors.textGray),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.cyberBlue,
-                        foregroundColor: AppColors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+              Builder(builder: (ctx) {
+                final s = AppStrings(languageNotifier.value);
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(null),
+                        child: Text(
+                          s.libraryCancelLower,
+                          style: const TextStyle(color: AppColors.textGray),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 10),
-                        elevation: 0,
                       ),
-                      child: const Text(
-                        'Adicionar',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 13),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.cyberBlue,
+                          foregroundColor: AppColors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 10),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          s.libraryActionAddLower,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
+                    ],
+                  ),
+                );
+              }),
             ],
           ),
         ),
@@ -965,6 +984,7 @@ class _RemoveGameDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return AlertDialog(
       backgroundColor: const Color(0xFF111318),
       shape: RoundedRectangleBorder(
@@ -974,41 +994,29 @@ class _RemoveGameDialog extends StatelessWidget {
           width: 1,
         ),
       ),
-      title: const Text(
-        'Remover jogo',
-        style: TextStyle(
+      title: Text(
+        s.libraryRemoveTitle,
+        style: const TextStyle(
           color: AppColors.white,
           fontWeight: FontWeight.bold,
           fontSize: 16,
         ),
       ),
-      content: RichText(
-        text: TextSpan(
-          style: const TextStyle(
-            color: AppColors.textGray,
-            fontSize: 14,
-            height: 1.5,
-          ),
-          children: [
-            const TextSpan(text: 'Remover '),
-            TextSpan(
-              text: gameName,
-              style: const TextStyle(
-                color: AppColors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const TextSpan(text: ' da biblioteca?'),
-          ],
+      content: Text(
+        s.libraryRemoveConfirm(gameName),
+        style: const TextStyle(
+          color: AppColors.textGray,
+          fontSize: 14,
+          height: 1.5,
         ),
       ),
       actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text(
-            'Cancelar',
-            style: TextStyle(color: AppColors.textGray),
+          child: Text(
+            s.libraryCancelLower,
+            style: const TextStyle(color: AppColors.textGray),
           ),
         ),
         ElevatedButton(
@@ -1022,9 +1030,9 @@ class _RemoveGameDialog extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             elevation: 0,
           ),
-          child: const Text(
-            'Remover',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          child: Text(
+            s.libraryActionRemove,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
         ),
       ],
@@ -1039,6 +1047,7 @@ class _NotVerifiedGameDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return AlertDialog(
       backgroundColor: const Color(0xFF111318),
       shape: RoundedRectangleBorder(
@@ -1048,19 +1057,17 @@ class _NotVerifiedGameDialog extends StatelessWidget {
           width: 1,
         ),
       ),
-      title: const Text(
-        'App não verificado como jogo',
-        style: TextStyle(
+      title: Text(
+        s.libraryNotVerifiedTitle,
+        style: const TextStyle(
           color: AppColors.white,
           fontWeight: FontWeight.bold,
           fontSize: 16,
         ),
       ),
-      content: const Text(
-        'Este app não foi identificado pelo Android como um jogo.\n'
-        'Você ainda pode adicioná-lo à sua biblioteca.\n'
-        'Adicionar mesmo assim?',
-        style: TextStyle(
+      content: Text(
+        s.libraryNotVerifiedContent,
+        style: const TextStyle(
           color: AppColors.textGray,
           fontSize: 14,
           height: 1.5,
@@ -1070,9 +1077,9 @@ class _NotVerifiedGameDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text(
-            'Cancelar',
-            style: TextStyle(color: AppColors.textGray),
+          child: Text(
+            s.libraryCancelLower,
+            style: const TextStyle(color: AppColors.textGray),
           ),
         ),
         ElevatedButton(
@@ -1086,9 +1093,9 @@ class _NotVerifiedGameDialog extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             elevation: 0,
           ),
-          child: const Text(
-            'Adicionar mesmo assim',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          child: Text(
+            s.libraryActionAddAnyway,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
         ),
       ],
@@ -1118,9 +1125,9 @@ class _BibliotecaCTA extends StatelessWidget {
           ),
           elevation: 0,
         ),
-        child: const Text(
-          'ADICIONAR JOGO',
-          style: TextStyle(
+        child: Text(
+          AppStrings(languageNotifier.value).libraryAddGame,
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 14,
             letterSpacing: 1.5,
@@ -1144,9 +1151,9 @@ class _AppPickerButton extends StatelessWidget {
       child: OutlinedButton.icon(
         onPressed: onPressed,
         icon: const Icon(Icons.apps_rounded, size: 16),
-        label: const Text(
-          'ESCOLHER APP INSTALADO',
-          style: TextStyle(
+        label: Text(
+          AppStrings(languageNotifier.value).libraryChooseInstalled,
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 13,
             letterSpacing: 1.2,
@@ -1173,6 +1180,7 @@ class _AppMatchSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF111318),
@@ -1207,7 +1215,7 @@ class _AppMatchSheet extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        'Mais de um app encontrado',
+                        s.libraryMultiMatchTitle,
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               color: AppColors.white,
                               fontWeight: FontWeight.bold,
@@ -1217,7 +1225,7 @@ class _AppMatchSheet extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Escolha qual app vincular ou continue como manual.',
+                    s.libraryMultiMatchSubtitle,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.textGray,
                           fontSize: 11,
@@ -1334,7 +1342,7 @@ class _ManualItem extends StatelessWidget {
             const SizedBox(width: 14),
             Expanded(
               child: Text(
-                'Continuar como manual',
+                AppStrings(languageNotifier.value).libraryContinueManual,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppColors.textGray,
                       fontStyle: FontStyle.italic,

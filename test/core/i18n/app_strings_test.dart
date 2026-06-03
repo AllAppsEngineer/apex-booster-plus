@@ -876,4 +876,298 @@ void main() {
       expect(ptBr.prepSelectGame, isNot(equals(en.prepSelectGame)));
     });
   });
+
+  // ─── Library / Biblioteca — LANG-U1.5A ───────────────────────────────────────
+
+  group('AppStrings — Library strings (LANG-U1.5A)', () {
+    test('libraryFavBadge is non-empty for all languages', () {
+      expect(ptBr.libraryFavBadge, isNotEmpty);
+      expect(en.libraryFavBadge, isNotEmpty);
+      expect(es.libraryFavBadge, isNotEmpty);
+    });
+
+    test('libraryFavTitle is non-empty for all languages', () {
+      expect(ptBr.libraryFavTitle, isNotEmpty);
+      expect(en.libraryFavTitle, isNotEmpty);
+      expect(es.libraryFavTitle, isNotEmpty);
+    });
+
+    test('libraryFavTitle differs ptBr vs en', () {
+      expect(ptBr.libraryFavTitle, isNot(equals(en.libraryFavTitle)));
+    });
+
+    test('libraryFavSubtitle is non-empty for all languages', () {
+      expect(ptBr.libraryFavSubtitle, isNotEmpty);
+      expect(en.libraryFavSubtitle, isNotEmpty);
+      expect(es.libraryFavSubtitle, isNotEmpty);
+    });
+
+    test('libraryFavSubtitle differs ptBr vs en', () {
+      expect(ptBr.libraryFavSubtitle, isNot(equals(en.libraryFavSubtitle)));
+    });
+
+    test('libraryLocalProfilesTitle is non-empty for all languages', () {
+      expect(ptBr.libraryLocalProfilesTitle, isNotEmpty);
+      expect(en.libraryLocalProfilesTitle, isNotEmpty);
+      expect(es.libraryLocalProfilesTitle, isNotEmpty);
+    });
+
+    test('libraryLocalProfilesTitle differs ptBr vs en', () {
+      expect(
+        ptBr.libraryLocalProfilesTitle,
+        isNot(equals(en.libraryLocalProfilesTitle)),
+      );
+    });
+
+    test('libraryAddGameSheetTitle is non-empty for all languages', () {
+      expect(ptBr.libraryAddGameSheetTitle, isNotEmpty);
+      expect(en.libraryAddGameSheetTitle, isNotEmpty);
+      expect(es.libraryAddGameSheetTitle, isNotEmpty);
+    });
+
+    test('libraryAddGameSheetTitle differs ptBr vs en', () {
+      expect(
+        ptBr.libraryAddGameSheetTitle,
+        isNot(equals(en.libraryAddGameSheetTitle)),
+      );
+    });
+
+    test('libraryFieldGameName is non-empty for all languages', () {
+      expect(ptBr.libraryFieldGameName, isNotEmpty);
+      expect(en.libraryFieldGameName, isNotEmpty);
+      expect(es.libraryFieldGameName, isNotEmpty);
+    });
+
+    test('libraryFieldPackageName is non-empty for all languages', () {
+      expect(ptBr.libraryFieldPackageName, isNotEmpty);
+      expect(en.libraryFieldPackageName, isNotEmpty);
+      expect(es.libraryFieldPackageName, isNotEmpty);
+    });
+
+    test('libraryValidationNameRequired is non-empty for all languages', () {
+      expect(ptBr.libraryValidationNameRequired, isNotEmpty);
+      expect(en.libraryValidationNameRequired, isNotEmpty);
+      expect(es.libraryValidationNameRequired, isNotEmpty);
+    });
+
+    test('libraryValidationNameRequired differs ptBr vs en', () {
+      expect(
+        ptBr.libraryValidationNameRequired,
+        isNot(equals(en.libraryValidationNameRequired)),
+      );
+    });
+
+    test('libraryValidationAppNotFound is non-empty for all languages', () {
+      expect(ptBr.libraryValidationAppNotFound, isNotEmpty);
+      expect(en.libraryValidationAppNotFound, isNotEmpty);
+      expect(es.libraryValidationAppNotFound, isNotEmpty);
+    });
+
+    test('libraryValidationAppNotFound differs ptBr vs en', () {
+      expect(
+        ptBr.libraryValidationAppNotFound,
+        isNot(equals(en.libraryValidationAppNotFound)),
+      );
+    });
+
+    test('librarySnackNoApp is non-empty for all languages', () {
+      expect(ptBr.librarySnackNoApp, isNotEmpty);
+      expect(en.librarySnackNoApp, isNotEmpty);
+      expect(es.librarySnackNoApp, isNotEmpty);
+    });
+
+    test('librarySnackNoApp differs ptBr vs en', () {
+      expect(ptBr.librarySnackNoApp, isNot(equals(en.librarySnackNoApp)));
+    });
+
+    test('libraryRemoveTitle is non-empty for all languages', () {
+      expect(ptBr.libraryRemoveTitle, isNotEmpty);
+      expect(en.libraryRemoveTitle, isNotEmpty);
+      expect(es.libraryRemoveTitle, isNotEmpty);
+    });
+
+    test('libraryRemoveTitle differs ptBr vs en', () {
+      expect(ptBr.libraryRemoveTitle, isNot(equals(en.libraryRemoveTitle)));
+    });
+
+    test('libraryRemoveConfirm includes the game name', () {
+      const name = 'Free Fire';
+      expect(ptBr.libraryRemoveConfirm(name), contains(name));
+      expect(en.libraryRemoveConfirm(name), contains(name));
+      expect(es.libraryRemoveConfirm(name), contains(name));
+    });
+
+    test('libraryRemoveConfirm differs ptBr vs en', () {
+      expect(
+        ptBr.libraryRemoveConfirm('X'),
+        isNot(equals(en.libraryRemoveConfirm('X'))),
+      );
+    });
+
+    test('libraryNotVerifiedTitle is non-empty for all languages', () {
+      expect(ptBr.libraryNotVerifiedTitle, isNotEmpty);
+      expect(en.libraryNotVerifiedTitle, isNotEmpty);
+      expect(es.libraryNotVerifiedTitle, isNotEmpty);
+    });
+
+    test('libraryNotVerifiedTitle differs ptBr vs en', () {
+      expect(
+        ptBr.libraryNotVerifiedTitle,
+        isNot(equals(en.libraryNotVerifiedTitle)),
+      );
+    });
+
+    test('libraryNotVerifiedContent is non-empty for all languages', () {
+      expect(ptBr.libraryNotVerifiedContent, isNotEmpty);
+      expect(en.libraryNotVerifiedContent, isNotEmpty);
+      expect(es.libraryNotVerifiedContent, isNotEmpty);
+    });
+
+    test('libraryNotVerifiedContent differs ptBr vs en', () {
+      expect(
+        ptBr.libraryNotVerifiedContent,
+        isNot(equals(en.libraryNotVerifiedContent)),
+      );
+    });
+
+    test('libraryActionAddAnyway is non-empty for all languages', () {
+      expect(ptBr.libraryActionAddAnyway, isNotEmpty);
+      expect(en.libraryActionAddAnyway, isNotEmpty);
+      expect(es.libraryActionAddAnyway, isNotEmpty);
+    });
+
+    test('libraryActionAddAnyway differs ptBr vs en', () {
+      expect(
+        ptBr.libraryActionAddAnyway,
+        isNot(equals(en.libraryActionAddAnyway)),
+      );
+    });
+
+    test('libraryMultiMatchTitle is non-empty for all languages', () {
+      expect(ptBr.libraryMultiMatchTitle, isNotEmpty);
+      expect(en.libraryMultiMatchTitle, isNotEmpty);
+      expect(es.libraryMultiMatchTitle, isNotEmpty);
+    });
+
+    test('libraryMultiMatchTitle differs ptBr vs en', () {
+      expect(
+        ptBr.libraryMultiMatchTitle,
+        isNot(equals(en.libraryMultiMatchTitle)),
+      );
+    });
+
+    test('libraryContinueManual is non-empty for all languages', () {
+      expect(ptBr.libraryContinueManual, isNotEmpty);
+      expect(en.libraryContinueManual, isNotEmpty);
+      expect(es.libraryContinueManual, isNotEmpty);
+    });
+
+    test('libraryContinueManual differs ptBr vs en', () {
+      expect(
+        ptBr.libraryContinueManual,
+        isNot(equals(en.libraryContinueManual)),
+      );
+    });
+  });
+
+  // ─── App Picker — LANG-U1.5A ─────────────────────────────────────────────────
+
+  group('AppStrings — App Picker strings (LANG-U1.5A)', () {
+    test('pickerTitle is non-empty for all languages', () {
+      expect(ptBr.pickerTitle, isNotEmpty);
+      expect(en.pickerTitle, isNotEmpty);
+      expect(es.pickerTitle, isNotEmpty);
+    });
+
+    test('pickerTitle differs ptBr vs en', () {
+      expect(ptBr.pickerTitle, isNot(equals(en.pickerTitle)));
+    });
+
+    test('pickerSubtitle is non-empty for all languages', () {
+      expect(ptBr.pickerSubtitle, isNotEmpty);
+      expect(en.pickerSubtitle, isNotEmpty);
+      expect(es.pickerSubtitle, isNotEmpty);
+    });
+
+    test('pickerSubtitle differs ptBr vs en', () {
+      expect(ptBr.pickerSubtitle, isNot(equals(en.pickerSubtitle)));
+    });
+
+    test('pickerSearchHint is non-empty for all languages', () {
+      expect(ptBr.pickerSearchHint, isNotEmpty);
+      expect(en.pickerSearchHint, isNotEmpty);
+      expect(es.pickerSearchHint, isNotEmpty);
+    });
+
+    test('pickerSearchHint differs ptBr vs en', () {
+      expect(ptBr.pickerSearchHint, isNot(equals(en.pickerSearchHint)));
+    });
+
+    test('pickerNoResults includes the query for all languages', () {
+      const q = 'Free Fire';
+      expect(ptBr.pickerNoResults(q), contains(q));
+      expect(en.pickerNoResults(q), contains(q));
+      expect(es.pickerNoResults(q), contains(q));
+    });
+
+    test('pickerNoResults differs ptBr vs en', () {
+      expect(ptBr.pickerNoResults('X'), isNot(equals(en.pickerNoResults('X'))));
+    });
+
+    test('pickerNoApps is non-empty for all languages', () {
+      expect(ptBr.pickerNoApps, isNotEmpty);
+      expect(en.pickerNoApps, isNotEmpty);
+      expect(es.pickerNoApps, isNotEmpty);
+    });
+
+    test('pickerNoApps differs ptBr vs en', () {
+      expect(ptBr.pickerNoApps, isNot(equals(en.pickerNoApps)));
+    });
+
+    test('pickerLoadError is non-empty for all languages', () {
+      expect(ptBr.pickerLoadError, isNotEmpty);
+      expect(en.pickerLoadError, isNotEmpty);
+      expect(es.pickerLoadError, isNotEmpty);
+    });
+
+    test('pickerLoadError differs ptBr vs en', () {
+      expect(ptBr.pickerLoadError, isNot(equals(en.pickerLoadError)));
+    });
+
+    test('pickerRetry is non-empty for all languages', () {
+      expect(ptBr.pickerRetry, isNotEmpty);
+      expect(en.pickerRetry, isNotEmpty);
+      expect(es.pickerRetry, isNotEmpty);
+    });
+
+    test('pickerRetry differs ptBr vs en', () {
+      expect(ptBr.pickerRetry, isNot(equals(en.pickerRetry)));
+    });
+
+    test('pickerUseManual is non-empty for all languages', () {
+      expect(ptBr.pickerUseManual, isNotEmpty);
+      expect(en.pickerUseManual, isNotEmpty);
+      expect(es.pickerUseManual, isNotEmpty);
+    });
+
+    test('pickerNoGames is non-empty for all languages', () {
+      expect(ptBr.pickerNoGames, isNotEmpty);
+      expect(en.pickerNoGames, isNotEmpty);
+      expect(es.pickerNoGames, isNotEmpty);
+    });
+
+    test('pickerNoGames differs ptBr vs en', () {
+      expect(ptBr.pickerNoGames, isNot(equals(en.pickerNoGames)));
+    });
+
+    test('pickerNoGamesHint is non-empty for all languages', () {
+      expect(ptBr.pickerNoGamesHint, isNotEmpty);
+      expect(en.pickerNoGamesHint, isNotEmpty);
+      expect(es.pickerNoGamesHint, isNotEmpty);
+    });
+
+    test('pickerNoGamesHint differs ptBr vs en', () {
+      expect(ptBr.pickerNoGamesHint, isNot(equals(en.pickerNoGamesHint)));
+    });
+  });
 }
