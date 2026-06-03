@@ -370,7 +370,7 @@ class _BibliotecaEmptyCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const ApexBadge(label: 'BIB', color: AppColors.cyberBlue),
+              ApexBadge(label: s.homeLibraryBadge, color: AppColors.cyberBlue),
               Icon(
                 Icons.arrow_forward_ios_rounded,
                 color: AppColors.cyberBlue.withValues(alpha: 0.45),
