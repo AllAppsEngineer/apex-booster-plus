@@ -1,3 +1,4 @@
+import 'package:apex_booster_plus/domain/entities/apex_scan_result.dart';
 import 'package:apex_booster_plus/domain/entities/gfx_profile.dart';
 import 'app_language.dart';
 
@@ -1577,6 +1578,12 @@ class AppStrings {
 
   // ─── Game Detail — LANG-U1.5 ─────────────────────────────────────────────────
 
+  String get detailTitle => switch (lang) {
+    AppLanguage.ptBr => 'Detalhe do Jogo',
+    AppLanguage.en   => 'Game Detail',
+    AppLanguage.es   => 'Detalle del Juego',
+  };
+
   String get detailGfxProfileLabel => switch (lang) {
     AppLanguage.ptBr => 'Perfil GFX',
     AppLanguage.en   => 'GFX Profile',
@@ -1606,4 +1613,294 @@ class AppStrings {
     AppLanguage.en   => 'This game may have been removed from the library.',
     AppLanguage.es   => 'Este juego puede haber sido eliminado de la biblioteca.',
   };
+
+  // Detail header & info rows
+  String get detailPackageLabel => 'Package';
+
+  String get detailNotConfigured => switch (lang) {
+    AppLanguage.ptBr => 'Não configurado',
+    AppLanguage.en   => 'Not configured',
+    AppLanguage.es   => 'No configurado',
+  };
+
+  String get detailAddedAt => switch (lang) {
+    AppLanguage.ptBr => 'Adicionado em',
+    AppLanguage.en   => 'Added on',
+    AppLanguage.es   => 'Agregado el',
+  };
+
+  String get detailUpdatedAt => switch (lang) {
+    AppLanguage.ptBr => 'Atualizado em',
+    AppLanguage.en   => 'Updated on',
+    AppLanguage.es   => 'Actualizado el',
+  };
+
+  String get detailFavoriteBadge => switch (lang) {
+    AppLanguage.ptBr => 'FAVORITO',
+    AppLanguage.en   => 'FAVORITE',
+    AppLanguage.es   => 'FAVORITO',
+  };
+
+  // GFX Profile action card
+  String get detailGfxNoProfileDefined => switch (lang) {
+    AppLanguage.ptBr => 'Nenhum perfil definido',
+    AppLanguage.en   => 'No profile defined',
+    AppLanguage.es   => 'Sin perfil definido',
+  };
+
+  String get detailGfxHint => switch (lang) {
+    AppLanguage.ptBr => 'Toque para ajustar a preparação local',
+    AppLanguage.en   => 'Tap to adjust local preparation',
+    AppLanguage.es   => 'Toca para ajustar la preparación local',
+  };
+
+  String get detailGfxAdjust => switch (lang) {
+    AppLanguage.ptBr => 'AJUSTAR',
+    AppLanguage.en   => 'ADJUST',
+    AppLanguage.es   => 'AJUSTAR',
+  };
+
+  // Edit dialog
+  String get detailEditTitle => switch (lang) {
+    AppLanguage.ptBr => 'Editar jogo',
+    AppLanguage.en   => 'Edit game',
+    AppLanguage.es   => 'Editar juego',
+  };
+
+  String get detailEditSave => switch (lang) {
+    AppLanguage.ptBr => 'Salvar',
+    AppLanguage.en   => 'Save',
+    AppLanguage.es   => 'Guardar',
+  };
+
+  // Launch button
+  String get detailNoAppLinked => switch (lang) {
+    AppLanguage.ptBr => 'SEM APP VINCULADO',
+    AppLanguage.en   => 'NO APP LINKED',
+    AppLanguage.es   => 'SIN APP VINCULADO',
+  };
+
+  // Launch error messages
+  String get detailAppNotFound => switch (lang) {
+    AppLanguage.ptBr => 'App não encontrado. Verifique se ainda está instalado.',
+    AppLanguage.en   => 'App not found. Check if it is still installed.',
+    AppLanguage.es   => 'App no encontrado. Verifica si aún está instalado.',
+  };
+
+  String get detailOpenFailed => switch (lang) {
+    AppLanguage.ptBr => 'Não foi possível abrir o jogo.',
+    AppLanguage.en   => 'Could not open the game.',
+    AppLanguage.es   => 'No se pudo abrir el juego.',
+  };
+
+  // Apex Boost Mode steps
+  String get detailProfileDefault => switch (lang) {
+    AppLanguage.ptBr => 'padrão',
+    AppLanguage.en   => 'default',
+    AppLanguage.es   => 'predeterminado',
+  };
+
+  String get detailBoostStepGame => switch (lang) {
+    AppLanguage.ptBr => 'Jogo localizado: OK',
+    AppLanguage.en   => 'Game found: OK',
+    AppLanguage.es   => 'Juego localizado: OK',
+  };
+
+  String detailBoostStepProfile(String label) => switch (lang) {
+    AppLanguage.ptBr => 'Perfil $label: OK',
+    AppLanguage.en   => 'Profile $label: OK',
+    AppLanguage.es   => 'Perfil $label: OK',
+  };
+
+  String get detailBoostStepRoute => switch (lang) {
+    AppLanguage.ptBr => 'Rota validada: OK',
+    AppLanguage.en   => 'Route validated: OK',
+    AppLanguage.es   => 'Ruta validada: OK',
+  };
+
+  String get detailBoostStepSession => switch (lang) {
+    AppLanguage.ptBr => 'Sessão armada: OK',
+    AppLanguage.en   => 'Session ready: OK',
+    AppLanguage.es   => 'Sesión armada: OK',
+  };
+
+  String get detailBoostStepOpening => switch (lang) {
+    AppLanguage.ptBr => 'Abrindo jogo...',
+    AppLanguage.en   => 'Opening game...',
+    AppLanguage.es   => 'Abriendo juego...',
+  };
+
+  // Apex Scan card
+  String get detailScanSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Status local da preparação',
+    AppLanguage.en   => 'Local preparation status',
+    AppLanguage.es   => 'Estado local de la preparación',
+  };
+
+  String get detailScanStatusReady => switch (lang) {
+    AppLanguage.ptBr => 'Pronto para iniciar',
+    AppLanguage.en   => 'Ready to start',
+    AppLanguage.es   => 'Listo para iniciar',
+  };
+
+  String get detailScanStatusAppNotFound => switch (lang) {
+    AppLanguage.ptBr => 'App não encontrado',
+    AppLanguage.en   => 'App not found',
+    AppLanguage.es   => 'App no encontrado',
+  };
+
+  String get detailScanStatusIncomplete => switch (lang) {
+    AppLanguage.ptBr => 'Cadastro incompleto',
+    AppLanguage.en   => 'Incomplete profile',
+    AppLanguage.es   => 'Perfil incompleto',
+  };
+
+  // Performance modules section
+  String get detailModulesTitle => switch (lang) {
+    AppLanguage.ptBr => 'MÓDULOS DE PERFORMANCE',
+    AppLanguage.en   => 'PERFORMANCE MODULES',
+    AppLanguage.es   => 'MÓDULOS DE RENDIMIENTO',
+  };
+
+  String get detailModuleOptimization => switch (lang) {
+    AppLanguage.ptBr => 'Otimização: OK',
+    AppLanguage.en   => 'Optimization: OK',
+    AppLanguage.es   => 'Optimización: OK',
+  };
+
+  String get detailModuleBoostApplied => switch (lang) {
+    AppLanguage.ptBr => 'Boost aplicado',
+    AppLanguage.en   => 'Boost applied',
+    AppLanguage.es   => 'Boost aplicado',
+  };
+
+  String get detailModulePerfImproved => switch (lang) {
+    AppLanguage.ptBr => 'Performance melhorada',
+    AppLanguage.en   => 'Performance improved',
+    AppLanguage.es   => 'Rendimiento mejorado',
+  };
+
+  // Real metrics section
+  String get detailMetricsTitle => switch (lang) {
+    AppLanguage.ptBr => 'MÉTRICAS REAIS',
+    AppLanguage.en   => 'REAL METRICS',
+    AppLanguage.es   => 'MÉTRICAS REALES',
+  };
+
+  String get detailMetricsSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Snapshot atual do dispositivo',
+    AppLanguage.en   => 'Current device snapshot',
+    AppLanguage.es   => 'Snapshot actual del dispositivo',
+  };
+
+  String get detailMetricsLoading => switch (lang) {
+    AppLanguage.ptBr => 'Lendo métricas...',
+    AppLanguage.en   => 'Reading metrics...',
+    AppLanguage.es   => 'Leyendo métricas...',
+  };
+
+  String get detailMetricsUnavailable => switch (lang) {
+    AppLanguage.ptBr => 'Métricas indisponíveis',
+    AppLanguage.en   => 'Metrics unavailable',
+    AppLanguage.es   => 'Métricas no disponibles',
+  };
+
+  String get detailLatencySubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Teste de rede',
+    AppLanguage.en   => 'Network test',
+    AppLanguage.es   => 'Prueba de red',
+  };
+
+  String get detailMemoryLow => switch (lang) {
+    AppLanguage.ptBr => 'Memória baixa',
+    AppLanguage.en   => 'Low memory',
+    AppLanguage.es   => 'Memoria baja',
+  };
+
+  // Apex Scan check messages — GameDetailScreen (LANG-U1.5B)
+
+  String get detailScanVinculoOk => switch (lang) {
+    AppLanguage.ptBr => 'App vinculado ao cadastro',
+    AppLanguage.en   => 'App linked to profile',
+    AppLanguage.es   => 'App vinculado al perfil',
+  };
+
+  String get detailScanVinculoWarn => switch (lang) {
+    AppLanguage.ptBr => 'Sem packageName — vínculo não confirmado',
+    AppLanguage.en   => 'No packageName — link not confirmed',
+    AppLanguage.es   => 'Sin packageName — vínculo no confirmado',
+  };
+
+  String get detailScanAcessoOk => switch (lang) {
+    AppLanguage.ptBr => 'App instalado e acessível',
+    AppLanguage.en   => 'App installed and accessible',
+    AppLanguage.es   => 'App instalado y accesible',
+  };
+
+  String get detailScanAcessoWarn => switch (lang) {
+    AppLanguage.ptBr => 'Acesso não verificado — sem packageName',
+    AppLanguage.en   => 'Access not verified — no packageName',
+    AppLanguage.es   => 'Acceso no verificado — sin packageName',
+  };
+
+  String get detailScanAcessoFail => switch (lang) {
+    AppLanguage.ptBr => 'App não encontrado nos instalados',
+    AppLanguage.en   => 'App not found in installed apps',
+    AppLanguage.es   => 'App no encontrado en apps instaladas',
+  };
+
+  String get detailScanConsistenciaOk => switch (lang) {
+    AppLanguage.ptBr => 'Cadastro consistente',
+    AppLanguage.en   => 'Profile consistent',
+    AppLanguage.es   => 'Perfil consistente',
+  };
+
+  String get detailScanConsistenciaInfo => switch (lang) {
+    AppLanguage.ptBr => 'Configuração inicial',
+    AppLanguage.en   => 'Initial setup',
+    AppLanguage.es   => 'Configuración inicial',
+  };
+
+  /// Returns the translated message for a [ScanCheck] from [ApexScanService].
+  ///
+  /// Pass [profileLabel] (i.e. game.localProfileName) so the GFX profile check
+  /// message is resolved correctly for the active language.
+  String detailScanCheckMessage(ScanCheck check, {String? profileLabel}) {
+    switch (check.id) {
+      case 'vinculo':
+        return check.status == ScanCheckStatus.ok
+            ? detailScanVinculoOk
+            : detailScanVinculoWarn;
+      case 'acesso':
+        return switch (check.status) {
+          ScanCheckStatus.ok   => detailScanAcessoOk,
+          ScanCheckStatus.warn => detailScanAcessoWarn,
+          ScanCheckStatus.fail => detailScanAcessoFail,
+          _                    => check.message,
+        };
+      case 'perfil':
+        if (check.status == ScanCheckStatus.ok) {
+          final profile = GfxProfile.fromLabel(profileLabel);
+          if (profile != null) {
+            return switch (profile) {
+              GfxProfile.balanced    => prepGfxMsgBalanced,
+              GfxProfile.performance => prepGfxMsgPerformance,
+              GfxProfile.quality     => prepGfxMsgQuality,
+              GfxProfile.economy     => prepGfxMsgEconomy,
+            };
+          }
+        }
+        return prepGfxMsgNone;
+      case 'prioridade':
+        return check.status == ScanCheckStatus.ok
+            ? prepScanMsgPriorityOk
+            : prepScanMsgPriorityInfo;
+      case 'consistencia':
+        return check.status == ScanCheckStatus.ok
+            ? detailScanConsistenciaOk
+            : detailScanConsistenciaInfo;
+      default:
+        return check.message;
+    }
+  }
 }

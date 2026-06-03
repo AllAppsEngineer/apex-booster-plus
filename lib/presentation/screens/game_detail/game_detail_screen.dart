@@ -6,9 +6,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
+import 'package:apex_booster_plus/core/i18n/app_language.dart';
+import 'package:apex_booster_plus/core/i18n/app_strings.dart';
 import 'package:apex_booster_plus/data/datasources/installed_apps_datasource.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_game_library_repository.dart';
 import 'package:apex_booster_plus/domain/entities/apex_game.dart';
+import 'package:apex_booster_plus/domain/entities/gfx_profile.dart';
 import 'package:apex_booster_plus/domain/entities/installed_app.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/data/services/device_metrics_service_impl.dart';
@@ -221,9 +224,10 @@ class _GameDetailScreenState extends State<GameDetailScreen>
 
     if (error == null) return;
 
+    final s = AppStrings(languageNotifier.value);
     final message = error is PlatformException && error.code == 'APP_NOT_FOUND'
-        ? 'App não encontrado. Verifique se ainda está instalado.'
-        : 'Não foi possível abrir o jogo.';
+        ? s.detailAppNotFound
+        : s.detailOpenFailed;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -364,6 +368,7 @@ class _BackHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 12, 8, 4),
       child: Row(
@@ -375,10 +380,10 @@ class _BackHeader extends StatelessWidget {
               color: AppColors.white,
               size: 20,
             ),
-            tooltip: 'Voltar',
+            tooltip: s.actionBack,
           ),
           Text(
-            'Detalhe do Jogo',
+            s.detailTitle,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppColors.white,
                   fontWeight: FontWeight.bold,
@@ -393,7 +398,7 @@ class _BackHeader extends StatelessWidget {
                 color: AppColors.cyberBlue,
                 size: 20,
               ),
-              tooltip: 'Editar',
+              tooltip: s.actionEdit,
             ),
         ],
       ),
@@ -410,6 +415,7 @@ class _GameNotFound extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -423,7 +429,7 @@ class _GameNotFound extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Jogo não encontrado',
+              s.detailNotFoundTitle,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.white,
                     fontWeight: FontWeight.bold,
@@ -432,7 +438,7 @@ class _GameNotFound extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Este jogo pode ter sido removido da biblioteca.',
+              s.detailNotFoundDesc,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textGray,
                     fontSize: 13,
@@ -453,9 +459,9 @@ class _GameNotFound extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 28),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'VOLTAR',
-                  style: TextStyle(
+                child: Text(
+                  s.actionBackButton,
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
                     letterSpacing: 1.2,
@@ -500,6 +506,7 @@ class _GameDetailContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
@@ -509,10 +516,10 @@ class _GameDetailContent extends StatelessWidget {
           _GameHeaderCard(game: game),
           const SizedBox(height: 16),
           _InfoRow(
-            title: 'Package',
+            title: s.detailPackageLabel,
             icon: Icons.apps_rounded,
             value: game.packageName,
-            emptyMessage: 'Não configurado',
+            emptyMessage: s.detailNotConfigured,
             accentColor: AppColors.cyberBlue,
             delay: 100.ms,
           ),
@@ -523,7 +530,7 @@ class _GameDetailContent extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _InfoRow(
-            title: 'Adicionado em',
+            title: s.detailAddedAt,
             icon: Icons.calendar_today_rounded,
             value: _formatDate(game.createdAt),
             accentColor: AppColors.apexGreen,
@@ -531,7 +538,7 @@ class _GameDetailContent extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _InfoRow(
-            title: 'Atualizado em',
+            title: s.detailUpdatedAt,
             icon: Icons.update_rounded,
             value: _formatDate(game.updatedAt),
             accentColor: AppColors.textGray,
@@ -544,6 +551,7 @@ class _GameDetailContent extends StatelessWidget {
               deviceMetrics: deviceMetrics,
               metricsLoading: metricsLoading,
               metricsError: metricsError,
+              profileName: game.localProfileName,
             ),
           ],
         ],
@@ -559,6 +567,7 @@ class _GameHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -590,7 +599,7 @@ class _GameHeaderCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    _Badge(label: 'GAME', color: AppColors.cyberBlue),
+                    _Badge(label: s.libraryBadgeVerified, color: AppColors.cyberBlue),
                     if (game.isFavorite) ...[
                       const SizedBox(width: 8),
                       _FavoriteBadge(),
@@ -651,6 +660,7 @@ class _FavoriteBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -661,14 +671,14 @@ class _FavoriteBadge extends StatelessWidget {
           width: 1,
         ),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.star_rounded, color: AppColors.apexGreen, size: 12),
-          SizedBox(width: 4),
+          const Icon(Icons.star_rounded, color: AppColors.apexGreen, size: 12),
+          const SizedBox(width: 4),
           Text(
-            'FAVORITO',
-            style: TextStyle(
+            s.detailFavoriteBadge,
+            style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 10,
@@ -772,7 +782,12 @@ class _GfxProfileActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     final hasProfile = profileName != null && profileName!.isNotEmpty;
+    final resolvedProfile = GfxProfile.fromLabel(profileName);
+    final resolvedLabel = (hasProfile && resolvedProfile != null)
+        ? s.gfxProfileLabel(resolvedProfile)
+        : s.detailGfxNoProfileDefined;
 
     return Ink(
       width: double.infinity,
@@ -825,9 +840,9 @@ class _GfxProfileActionCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Perfil GFX',
-                      style: TextStyle(
+                    Text(
+                      s.detailGfxProfileLabel,
+                      style: const TextStyle(
                         color: AppColors.textGray,
                         fontSize: 11,
                         letterSpacing: 0.5,
@@ -835,21 +850,23 @@ class _GfxProfileActionCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      hasProfile ? profileName! : 'Nenhum perfil definido',
+                      resolvedLabel,
                       style: TextStyle(
-                        color: hasProfile
+                        color: hasProfile && resolvedProfile != null
                             ? AppColors.white
                             : AppColors.textGray.withValues(alpha: 0.55),
-                        fontWeight:
-                            hasProfile ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: hasProfile && resolvedProfile != null
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                         fontSize: 14,
-                        fontStyle:
-                            hasProfile ? FontStyle.normal : FontStyle.italic,
+                        fontStyle: hasProfile && resolvedProfile != null
+                            ? FontStyle.normal
+                            : FontStyle.italic,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Toque para ajustar a preparação local',
+                      s.detailGfxHint,
                       style: TextStyle(
                         color: AppColors.textGray.withValues(alpha: 0.55),
                         fontSize: 10,
@@ -871,9 +888,9 @@ class _GfxProfileActionCard extends StatelessWidget {
                     width: 1,
                   ),
                 ),
-                child: const Text(
-                  'AJUSTAR',
-                  style: TextStyle(
+                child: Text(
+                  s.detailGfxAdjust,
+                  style: const TextStyle(
                     color: AppColors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 10,
@@ -932,20 +949,21 @@ class _EditGameDialogState extends State<_EditGameDialog> {
   }
 
   void _submit() {
+    final s = AppStrings(languageNotifier.value);
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      setState(() => _nameError = 'Nome obrigatório');
+      setState(() => _nameError = s.libraryValidationNameRequired);
       return;
     }
 
     final pkg = _pkgController.text.trim();
     if (pkg.isNotEmpty) {
       if (!widget.installedApps.any((a) => a.packageName == pkg)) {
-        setState(() => _pkgError = 'App não encontrado nos instalados');
+        setState(() => _pkgError = s.libraryValidationAppNotFound);
         return;
       }
       if (widget.otherGamePackages.contains(pkg)) {
-        setState(() => _pkgError = 'Já instalado');
+        setState(() => _pkgError = s.libraryAlreadyAdded);
         return;
       }
     }
@@ -955,6 +973,7 @@ class _EditGameDialogState extends State<_EditGameDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return AlertDialog(
       backgroundColor: const Color(0xFF111318),
       shape: RoundedRectangleBorder(
@@ -964,9 +983,9 @@ class _EditGameDialogState extends State<_EditGameDialog> {
           width: 1,
         ),
       ),
-      title: const Text(
-        'Editar jogo',
-        style: TextStyle(
+      title: Text(
+        s.detailEditTitle,
+        style: const TextStyle(
           color: AppColors.white,
           fontWeight: FontWeight.bold,
           fontSize: 16,
@@ -978,7 +997,7 @@ class _EditGameDialogState extends State<_EditGameDialog> {
         children: [
           _DialogField(
             controller: _nameController,
-            label: 'Nome do jogo',
+            label: s.libraryFieldGameName,
             autofocus: true,
             errorText: _nameError,
             onChanged: (_) {
@@ -988,7 +1007,7 @@ class _EditGameDialogState extends State<_EditGameDialog> {
           const SizedBox(height: 12),
           _DialogField(
             controller: _pkgController,
-            label: 'Package name (opcional)',
+            label: s.libraryFieldPackageName,
             errorText: _pkgError,
             onChanged: (_) {
               if (_pkgError != null) setState(() => _pkgError = null);
@@ -1000,9 +1019,9 @@ class _EditGameDialogState extends State<_EditGameDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(null),
-          child: const Text(
-            'Cancelar',
-            style: TextStyle(color: AppColors.textGray),
+          child: Text(
+            s.libraryCancelLower,
+            style: const TextStyle(color: AppColors.textGray),
           ),
         ),
         ElevatedButton(
@@ -1016,9 +1035,9 @@ class _EditGameDialogState extends State<_EditGameDialog> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             elevation: 0,
           ),
-          child: const Text(
-            'Salvar',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          child: Text(
+            s.detailEditSave,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
         ),
       ],
@@ -1093,6 +1112,7 @@ class _LaunchGameButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
       child: SizedBox(
@@ -1102,7 +1122,7 @@ class _LaunchGameButton extends StatelessWidget {
           onPressed: hasPackage ? onTap : null,
           icon: const Icon(Icons.sports_esports_rounded, size: 20),
           label: Text(
-            hasPackage ? 'ABRIR JOGO' : 'SEM APP VINCULADO',
+            hasPackage ? s.detailOpenGame : s.detailNoAppLinked,
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 14,
@@ -1154,16 +1174,18 @@ class _PrepLaunchSheetState extends State<_PrepLaunchSheet> {
   @override
   void initState() {
     super.initState();
-    final profileLabel = (widget.profileName?.isNotEmpty == true)
-        ? widget.profileName!
-        : 'padrão';
+    final s = AppStrings(languageNotifier.value);
+    final resolvedBoostProfile = GfxProfile.fromLabel(widget.profileName);
+    final profileLabel = resolvedBoostProfile != null
+        ? s.gfxProfileLabel(resolvedBoostProfile)
+        : s.detailProfileDefault;
     _steps = [
-      _Step('Core Apex: OK', isCheck: true),
-      _Step('Jogo localizado: OK', isCheck: true),
-      _Step('Perfil $profileLabel: OK', isCheck: true),
-      _Step('Rota validada: OK', isCheck: true),
-      _Step('Sessão armada: OK', isCheck: true),
-      _Step('Abrindo jogo...', isCheck: false),
+      const _Step('Core Apex: OK', isCheck: true),
+      _Step(s.detailBoostStepGame, isCheck: true),
+      _Step(s.detailBoostStepProfile(profileLabel), isCheck: true),
+      _Step(s.detailBoostStepRoute, isCheck: true),
+      _Step(s.detailBoostStepSession, isCheck: true),
+      _Step(s.detailBoostStepOpening, isCheck: false),
     ];
     _runSequence();
   }
@@ -1297,19 +1319,21 @@ class _ApexScanCard extends StatelessWidget {
   final DeviceMetrics? deviceMetrics;
   final bool metricsLoading;
   final bool metricsError;
+  final String? profileName;
 
   const _ApexScanCard({
     required this.result,
     this.deviceMetrics,
     this.metricsLoading = false,
     this.metricsError = false,
+    this.profileName,
   });
 
-  String _statusLabel() {
-    if (result.score == ScanScore.pronto) return 'Pronto para iniciar';
+  String _statusLabel(AppStrings s) {
+    if (result.score == ScanScore.pronto) return s.detailScanStatusReady;
     final acesso = result.checks.where((c) => c.id == 'acesso').firstOrNull;
-    if (acesso?.status == ScanCheckStatus.fail) return 'App não encontrado';
-    return 'Cadastro incompleto';
+    if (acesso?.status == ScanCheckStatus.fail) return s.detailScanStatusAppNotFound;
+    return s.detailScanStatusIncomplete;
   }
 
   Color _statusColor() => result.score == ScanScore.pronto
@@ -1322,6 +1346,7 @@ class _ApexScanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     final statusColor = _statusColor();
     return Container(
       width: double.infinity,
@@ -1365,8 +1390,8 @@ class _ApexScanCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Status local da preparação',
-                        style: TextStyle(
+                        s.detailScanSubtitle,
+                        style: const TextStyle(
                           color: AppColors.textGray,
                           fontSize: 10,
                           letterSpacing: 0.3,
@@ -1393,7 +1418,7 @@ class _ApexScanCard extends StatelessWidget {
                       Icon(_statusIcon(), color: statusColor, size: 12),
                       const SizedBox(width: 5),
                       Text(
-                        _statusLabel(),
+                        _statusLabel(s),
                         style: TextStyle(
                           color: statusColor,
                           fontWeight: FontWeight.bold,
@@ -1425,7 +1450,14 @@ class _ApexScanCard extends StatelessWidget {
             child: Column(
               children: [
                 for (int i = 0; i < result.checks.length; i++)
-                  _ScanCheckRow(check: result.checks[i], index: i),
+                  _ScanCheckRow(
+                    check: result.checks[i],
+                    index: i,
+                    translatedMessage: s.detailScanCheckMessage(
+                      result.checks[i],
+                      profileLabel: profileName,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -1469,22 +1501,22 @@ class _ApexScanCard extends StatelessWidget {
 class _PerformanceModulesSection extends StatelessWidget {
   const _PerformanceModulesSection();
 
-  static const _modules = [
-    'FPS: OK',
-    'RAM: OK',
-    'GPU: OK',
-    'Ping: OK',
-    'Otimização: OK',
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
+    final modules = [
+      'FPS: OK',
+      'RAM: OK',
+      'GPU: OK',
+      'Ping: OK',
+      s.detailModuleOptimization,
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'MÓDULOS DE PERFORMANCE',
-          style: TextStyle(
+        Text(
+          s.detailModulesTitle,
+          style: const TextStyle(
             color: AppColors.textGray,
             fontWeight: FontWeight.bold,
             fontSize: 10,
@@ -1496,17 +1528,17 @@ class _PerformanceModulesSection extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            for (int i = 0; i < _modules.length; i++)
-              _ModuleChip(label: _modules[i], index: i),
+            for (int i = 0; i < modules.length; i++)
+              _ModuleChip(label: modules[i], index: i),
           ],
         ),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: const [
-            _ConfirmBadge(label: 'Boost aplicado', delay: 1050),
-            _ConfirmBadge(label: 'Performance melhorada', delay: 1100),
+          children: [
+            _ConfirmBadge(label: s.detailModuleBoostApplied, delay: 1050),
+            _ConfirmBadge(label: s.detailModulePerfImproved, delay: 1100),
           ],
         ),
       ],
@@ -1629,8 +1661,13 @@ class _ConfirmBadge extends StatelessWidget {
 class _ScanCheckRow extends StatelessWidget {
   final ScanCheck check;
   final int index;
+  final String? translatedMessage;
 
-  const _ScanCheckRow({required this.check, required this.index});
+  const _ScanCheckRow({
+    required this.check,
+    required this.index,
+    this.translatedMessage,
+  });
 
   (IconData, Color) _iconAndColor() {
     return switch (check.status) {
@@ -1657,7 +1694,7 @@ class _ScanCheckRow extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              check.message,
+              translatedMessage ?? check.message,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: check.status == ScanCheckStatus.info
                         ? AppColors.textGray
@@ -1689,17 +1726,17 @@ class _RealMetricsSection extends StatelessWidget {
     required this.hasError,
   });
 
-  String _formatMb(int bytes) {
-    if (bytes <= 0) return 'Indisponível';
+  String _formatMb(int bytes, AppStrings s) {
+    if (bytes <= 0) return s.snapshotUnavailable;
     final mb = bytes / (1024 * 1024);
     return '${mb.toStringAsFixed(0)} MB';
   }
 
-  String _latencyLabel(DeviceMetrics m) => switch (m.latencyStatus) {
+  String _latencyLabel(DeviceMetrics m, AppStrings s) => switch (m.latencyStatus) {
         LatencyStatus.success => '${m.latencyMs} ms',
-        LatencyStatus.timeout => 'Timeout',
-        LatencyStatus.noNetwork => 'Sem rede',
-        LatencyStatus.error => 'Indisponível',
+        LatencyStatus.timeout => s.snapshotLatencyTimeout,
+        LatencyStatus.noNetwork => s.snapshotLatencyNoNetwork,
+        LatencyStatus.error => s.snapshotUnavailable,
       };
 
   Color _latencyColor(DeviceMetrics m) => switch (m.latencyStatus) {
@@ -1709,9 +1746,9 @@ class _RealMetricsSection extends StatelessWidget {
         LatencyStatus.error => AppColors.textGray,
       };
 
-  String _memoryStateLabel(DeviceMetrics m) {
-    if (m.totalMemoryBytes <= 0) return 'Indisponível';
-    return m.isLowMemory ? 'Memória baixa' : 'Normal';
+  String _memoryStateLabel(DeviceMetrics m, AppStrings s) {
+    if (m.totalMemoryBytes <= 0) return s.snapshotUnavailable;
+    return m.isLowMemory ? s.detailMemoryLow : s.snapshotMemoryNormal;
   }
 
   Color _memoryStateColor(DeviceMetrics m) {
@@ -1721,6 +1758,7 @@ class _RealMetricsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1728,9 +1766,9 @@ class _RealMetricsSection extends StatelessWidget {
           children: [
             const Icon(Icons.memory_rounded, color: AppColors.cyberBlue, size: 13),
             const SizedBox(width: 6),
-            const Text(
-              'MÉTRICAS REAIS',
-              style: TextStyle(
+            Text(
+              s.detailMetricsTitle,
+              style: const TextStyle(
                 color: AppColors.textGray,
                 fontWeight: FontWeight.bold,
                 fontSize: 10,
@@ -1740,9 +1778,9 @@ class _RealMetricsSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 2),
-        const Text(
-          'Snapshot atual do dispositivo',
-          style: TextStyle(
+        Text(
+          s.detailMetricsSubtitle,
+          style: const TextStyle(
             color: AppColors.textGray,
             fontSize: 9,
             letterSpacing: 0.3,
@@ -1755,30 +1793,30 @@ class _RealMetricsSection extends StatelessWidget {
           const _MetricsErrorRow()
         else ...[
           _RealMetricRow(
-            label: 'Memória disponível',
-            value: _formatMb(metrics!.availableMemoryBytes),
+            label: s.snapshotRamAvail,
+            value: _formatMb(metrics!.availableMemoryBytes, s),
             valueColor: AppColors.white,
           ),
           _RealMetricRow(
-            label: 'Memória total',
-            value: _formatMb(metrics!.totalMemoryBytes),
+            label: s.snapshotRamTotal,
+            value: _formatMb(metrics!.totalMemoryBytes, s),
             valueColor: AppColors.white,
           ),
           _RealMetricRow(
-            label: 'Estado de memória',
-            value: _memoryStateLabel(metrics!),
+            label: s.snapshotRamState,
+            value: _memoryStateLabel(metrics!, s),
             valueColor: _memoryStateColor(metrics!),
           ),
           _RealMetricRow(
-            label: 'Latência Apex',
-            subtitle: 'Teste de rede',
-            value: _latencyLabel(metrics!),
+            label: s.snapshotLatency,
+            subtitle: s.detailLatencySubtitle,
+            value: _latencyLabel(metrics!, s),
             valueColor: _latencyColor(metrics!),
           ),
         ],
         const SizedBox(height: 10),
         Text(
-          'Snapshot do dispositivo. Não representa alteração de jogos.',
+          s.snapshotDisclaimer,
           style: TextStyle(
             color: AppColors.textGray.withValues(alpha: 0.5),
             fontSize: 10,
@@ -1798,6 +1836,7 @@ class _MetricsLoadingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
@@ -1812,7 +1851,7 @@ class _MetricsLoadingRow extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            'Lendo métricas...',
+            s.detailMetricsLoading,
             style: TextStyle(
               color: AppColors.textGray.withValues(alpha: 0.7),
               fontSize: 11,
@@ -1830,6 +1869,7 @@ class _MetricsErrorRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
@@ -1841,7 +1881,7 @@ class _MetricsErrorRow extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            'Métricas indisponíveis',
+            s.detailMetricsUnavailable,
             style: TextStyle(
               color: AppColors.textGray.withValues(alpha: 0.6),
               fontSize: 11,

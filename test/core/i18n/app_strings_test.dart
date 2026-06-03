@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:apex_booster_plus/core/i18n/app_language.dart';
 import 'package:apex_booster_plus/core/i18n/app_strings.dart';
+import 'package:apex_booster_plus/domain/entities/apex_scan_result.dart';
 import 'package:apex_booster_plus/domain/entities/gfx_profile.dart';
 
 void main() {
@@ -1168,6 +1169,286 @@ void main() {
 
     test('pickerNoGamesHint differs ptBr vs en', () {
       expect(ptBr.pickerNoGamesHint, isNot(equals(en.pickerNoGamesHint)));
+    });
+  });
+
+  // ─── Game Detail — LANG-U1.5B ─────────────────────────────────────────────────
+
+  group('AppStrings — Game Detail strings (LANG-U1.5B)', () {
+    void expectNonEmptyAll(String Function(AppStrings) f, String name) {
+      test('$name is non-empty for all languages', () {
+        expect(f(ptBr), isNotEmpty, reason: 'ptBr.$name');
+        expect(f(en), isNotEmpty, reason: 'en.$name');
+        expect(f(es), isNotEmpty, reason: 'es.$name');
+      });
+    }
+
+    void expectDiffers(String Function(AppStrings) f, String name) {
+      test('$name differs ptBr vs en', () {
+        expect(f(ptBr), isNot(equals(f(en))), reason: name);
+      });
+    }
+
+    // Non-empty checks
+    expectNonEmptyAll((s) => s.detailTitle, 'detailTitle');
+    expectNonEmptyAll((s) => s.detailPackageLabel, 'detailPackageLabel');
+    expectNonEmptyAll((s) => s.detailNotConfigured, 'detailNotConfigured');
+    expectNonEmptyAll((s) => s.detailAddedAt, 'detailAddedAt');
+    expectNonEmptyAll((s) => s.detailUpdatedAt, 'detailUpdatedAt');
+    expectNonEmptyAll((s) => s.detailFavoriteBadge, 'detailFavoriteBadge');
+    expectNonEmptyAll((s) => s.detailGfxNoProfileDefined, 'detailGfxNoProfileDefined');
+    expectNonEmptyAll((s) => s.detailGfxHint, 'detailGfxHint');
+    expectNonEmptyAll((s) => s.detailGfxAdjust, 'detailGfxAdjust');
+    expectNonEmptyAll((s) => s.detailEditTitle, 'detailEditTitle');
+    expectNonEmptyAll((s) => s.detailEditSave, 'detailEditSave');
+    expectNonEmptyAll((s) => s.detailNoAppLinked, 'detailNoAppLinked');
+    expectNonEmptyAll((s) => s.detailProfileDefault, 'detailProfileDefault');
+    expectNonEmptyAll((s) => s.detailBoostStepGame, 'detailBoostStepGame');
+    expectNonEmptyAll((s) => s.detailBoostStepProfile('X'), 'detailBoostStepProfile');
+    expectNonEmptyAll((s) => s.detailBoostStepRoute, 'detailBoostStepRoute');
+    expectNonEmptyAll((s) => s.detailBoostStepSession, 'detailBoostStepSession');
+    expectNonEmptyAll((s) => s.detailBoostStepOpening, 'detailBoostStepOpening');
+    expectNonEmptyAll((s) => s.detailScanSubtitle, 'detailScanSubtitle');
+    expectNonEmptyAll((s) => s.detailScanStatusReady, 'detailScanStatusReady');
+    expectNonEmptyAll((s) => s.detailScanStatusAppNotFound, 'detailScanStatusAppNotFound');
+    expectNonEmptyAll((s) => s.detailScanStatusIncomplete, 'detailScanStatusIncomplete');
+    expectNonEmptyAll((s) => s.detailModulesTitle, 'detailModulesTitle');
+    expectNonEmptyAll((s) => s.detailModuleOptimization, 'detailModuleOptimization');
+    expectNonEmptyAll((s) => s.detailModuleBoostApplied, 'detailModuleBoostApplied');
+    expectNonEmptyAll((s) => s.detailModulePerfImproved, 'detailModulePerfImproved');
+    expectNonEmptyAll((s) => s.detailMetricsTitle, 'detailMetricsTitle');
+    expectNonEmptyAll((s) => s.detailMetricsSubtitle, 'detailMetricsSubtitle');
+    expectNonEmptyAll((s) => s.detailMetricsLoading, 'detailMetricsLoading');
+    expectNonEmptyAll((s) => s.detailMetricsUnavailable, 'detailMetricsUnavailable');
+    expectNonEmptyAll((s) => s.detailLatencySubtitle, 'detailLatencySubtitle');
+    expectNonEmptyAll((s) => s.detailMemoryLow, 'detailMemoryLow');
+    expectNonEmptyAll((s) => s.detailAppNotFound, 'detailAppNotFound');
+    expectNonEmptyAll((s) => s.detailOpenFailed, 'detailOpenFailed');
+
+    // Differ ptBr vs en
+    expectDiffers((s) => s.detailTitle, 'detailTitle');
+    expectDiffers((s) => s.detailNotConfigured, 'detailNotConfigured');
+    expectDiffers((s) => s.detailAddedAt, 'detailAddedAt');
+    expectDiffers((s) => s.detailUpdatedAt, 'detailUpdatedAt');
+    expectDiffers((s) => s.detailGfxNoProfileDefined, 'detailGfxNoProfileDefined');
+    expectDiffers((s) => s.detailGfxHint, 'detailGfxHint');
+    expectDiffers((s) => s.detailEditTitle, 'detailEditTitle');
+    expectDiffers((s) => s.detailEditSave, 'detailEditSave');
+    expectDiffers((s) => s.detailNoAppLinked, 'detailNoAppLinked');
+    expectDiffers((s) => s.detailProfileDefault, 'detailProfileDefault');
+    expectDiffers((s) => s.detailBoostStepGame, 'detailBoostStepGame');
+    expectDiffers((s) => s.detailBoostStepOpening, 'detailBoostStepOpening');
+    expectDiffers((s) => s.detailScanSubtitle, 'detailScanSubtitle');
+    expectDiffers((s) => s.detailScanStatusReady, 'detailScanStatusReady');
+    expectDiffers((s) => s.detailScanStatusIncomplete, 'detailScanStatusIncomplete');
+    expectDiffers((s) => s.detailModulesTitle, 'detailModulesTitle');
+    expectDiffers((s) => s.detailModuleOptimization, 'detailModuleOptimization');
+    expectDiffers((s) => s.detailModulePerfImproved, 'detailModulePerfImproved');
+    expectDiffers((s) => s.detailMetricsTitle, 'detailMetricsTitle');
+    expectDiffers((s) => s.detailMetricsSubtitle, 'detailMetricsSubtitle');
+    expectDiffers((s) => s.detailMetricsLoading, 'detailMetricsLoading');
+    expectDiffers((s) => s.detailMetricsUnavailable, 'detailMetricsUnavailable');
+    expectDiffers((s) => s.detailLatencySubtitle, 'detailLatencySubtitle');
+    expectDiffers((s) => s.detailMemoryLow, 'detailMemoryLow');
+    expectDiffers((s) => s.detailAppNotFound, 'detailAppNotFound');
+    expectDiffers((s) => s.detailOpenFailed, 'detailOpenFailed');
+
+    // detailPackageLabel is same across all languages (technical term)
+    test('detailPackageLabel is "Package" for all languages', () {
+      expect(ptBr.detailPackageLabel, 'Package');
+      expect(en.detailPackageLabel, 'Package');
+      expect(es.detailPackageLabel, 'Package');
+    });
+
+    // detailBoostStepProfile includes the label
+    test('detailBoostStepProfile includes the label', () {
+      expect(ptBr.detailBoostStepProfile('Desempenho'), contains('Desempenho'));
+      expect(en.detailBoostStepProfile('Performance'), contains('Performance'));
+      expect(es.detailBoostStepProfile('Rendimiento'), contains('Rendimiento'));
+    });
+
+    // detailBoostStepProfile differs between ptBr and en
+    test('detailBoostStepProfile differs ptBr vs en for same label', () {
+      expect(
+        ptBr.detailBoostStepProfile('X'),
+        isNot(equals(en.detailBoostStepProfile('X'))),
+      );
+    });
+
+    // detailFavoriteBadge ptBr is FAVORITO, en is FAVORITE
+    test('detailFavoriteBadge ptBr is FAVORITO', () {
+      expect(ptBr.detailFavoriteBadge, 'FAVORITO');
+    });
+
+    test('detailFavoriteBadge en is FAVORITE', () {
+      expect(en.detailFavoriteBadge, 'FAVORITE');
+    });
+
+    // detailMemoryLow
+    test('detailMemoryLow ptBr contains "baixa"', () {
+      expect(ptBr.detailMemoryLow.toLowerCase(), contains('baixa'));
+    });
+
+    test('detailMemoryLow en contains "low"', () {
+      expect(en.detailMemoryLow.toLowerCase(), contains('low'));
+    });
+
+    // Apex Scan check message getters (LANG-U1.5B)
+    expectNonEmptyAll((s) => s.detailScanVinculoOk, 'detailScanVinculoOk');
+    expectNonEmptyAll((s) => s.detailScanVinculoWarn, 'detailScanVinculoWarn');
+    expectNonEmptyAll((s) => s.detailScanAcessoOk, 'detailScanAcessoOk');
+    expectNonEmptyAll((s) => s.detailScanAcessoWarn, 'detailScanAcessoWarn');
+    expectNonEmptyAll((s) => s.detailScanAcessoFail, 'detailScanAcessoFail');
+    expectNonEmptyAll((s) => s.detailScanConsistenciaOk, 'detailScanConsistenciaOk');
+    expectNonEmptyAll((s) => s.detailScanConsistenciaInfo, 'detailScanConsistenciaInfo');
+
+    expectDiffers((s) => s.detailScanVinculoOk, 'detailScanVinculoOk');
+    expectDiffers((s) => s.detailScanAcessoOk, 'detailScanAcessoOk');
+    expectDiffers((s) => s.detailScanAcessoFail, 'detailScanAcessoFail');
+    expectDiffers((s) => s.detailScanConsistenciaOk, 'detailScanConsistenciaOk');
+    expectDiffers((s) => s.detailScanConsistenciaInfo, 'detailScanConsistenciaInfo');
+
+    test('detailScanVinculoOk ptBr matches original PT-BR', () {
+      expect(ptBr.detailScanVinculoOk, 'App vinculado ao cadastro');
+    });
+
+    test('detailScanVinculoOk en contains "linked"', () {
+      expect(en.detailScanVinculoOk.toLowerCase(), contains('linked'));
+    });
+
+    test('detailScanAcessoOk ptBr matches original PT-BR', () {
+      expect(ptBr.detailScanAcessoOk, 'App instalado e acessível');
+    });
+
+    test('detailScanAcessoOk en contains "accessible"', () {
+      expect(en.detailScanAcessoOk.toLowerCase(), contains('accessible'));
+    });
+
+    test('detailScanAcessoFail ptBr matches original PT-BR', () {
+      expect(ptBr.detailScanAcessoFail, 'App não encontrado nos instalados');
+    });
+
+    test('detailScanAcessoFail en contains "not found"', () {
+      expect(en.detailScanAcessoFail.toLowerCase(), contains('not found'));
+    });
+  });
+
+  // ─── detailScanCheckMessage — LANG-U1.5B ────────────────────────────────────
+
+  group('AppStrings — detailScanCheckMessage (LANG-U1.5B)', () {
+    ScanCheck check(String id, ScanCheckStatus status) => ScanCheck(
+          id: id,
+          label: id,
+          status: status,
+          message: 'original_pt_br',
+        );
+
+    test('vinculo/ok returns detailScanVinculoOk', () {
+      final c = check('vinculo', ScanCheckStatus.ok);
+      expect(en.detailScanCheckMessage(c), en.detailScanVinculoOk);
+      expect(es.detailScanCheckMessage(c), es.detailScanVinculoOk);
+      expect(ptBr.detailScanCheckMessage(c), ptBr.detailScanVinculoOk);
+    });
+
+    test('vinculo/warn returns detailScanVinculoWarn', () {
+      final c = check('vinculo', ScanCheckStatus.warn);
+      expect(en.detailScanCheckMessage(c), en.detailScanVinculoWarn);
+      expect(es.detailScanCheckMessage(c), es.detailScanVinculoWarn);
+    });
+
+    test('acesso/ok returns detailScanAcessoOk', () {
+      final c = check('acesso', ScanCheckStatus.ok);
+      expect(en.detailScanCheckMessage(c), en.detailScanAcessoOk);
+      expect(es.detailScanCheckMessage(c), es.detailScanAcessoOk);
+      expect(ptBr.detailScanCheckMessage(c), ptBr.detailScanAcessoOk);
+    });
+
+    test('acesso/warn returns detailScanAcessoWarn', () {
+      final c = check('acesso', ScanCheckStatus.warn);
+      expect(en.detailScanCheckMessage(c), en.detailScanAcessoWarn);
+    });
+
+    test('acesso/fail returns detailScanAcessoFail', () {
+      final c = check('acesso', ScanCheckStatus.fail);
+      expect(en.detailScanCheckMessage(c), en.detailScanAcessoFail);
+      expect(es.detailScanCheckMessage(c), es.detailScanAcessoFail);
+    });
+
+    test('perfil/info returns prepGfxMsgNone', () {
+      final c = check('perfil', ScanCheckStatus.info);
+      expect(en.detailScanCheckMessage(c), en.prepGfxMsgNone);
+      expect(es.detailScanCheckMessage(c), es.prepGfxMsgNone);
+    });
+
+    test('perfil/ok with Performance profile returns prepGfxMsgPerformance', () {
+      final c = check('perfil', ScanCheckStatus.ok);
+      expect(
+        en.detailScanCheckMessage(c, profileLabel: 'Desempenho'),
+        en.prepGfxMsgPerformance,
+      );
+      expect(
+        es.detailScanCheckMessage(c, profileLabel: 'Desempenho'),
+        es.prepGfxMsgPerformance,
+      );
+    });
+
+    test('perfil/ok with unknown profile falls back to prepGfxMsgNone', () {
+      final c = check('perfil', ScanCheckStatus.ok);
+      expect(en.detailScanCheckMessage(c, profileLabel: null), en.prepGfxMsgNone);
+      expect(en.detailScanCheckMessage(c, profileLabel: 'unknown'), en.prepGfxMsgNone);
+    });
+
+    test('prioridade/ok returns prepScanMsgPriorityOk', () {
+      final c = check('prioridade', ScanCheckStatus.ok);
+      expect(en.detailScanCheckMessage(c), en.prepScanMsgPriorityOk);
+      expect(es.detailScanCheckMessage(c), es.prepScanMsgPriorityOk);
+    });
+
+    test('prioridade/info returns prepScanMsgPriorityInfo', () {
+      final c = check('prioridade', ScanCheckStatus.info);
+      expect(en.detailScanCheckMessage(c), en.prepScanMsgPriorityInfo);
+    });
+
+    test('consistencia/ok returns detailScanConsistenciaOk', () {
+      final c = check('consistencia', ScanCheckStatus.ok);
+      expect(en.detailScanCheckMessage(c), en.detailScanConsistenciaOk);
+      expect(es.detailScanCheckMessage(c), es.detailScanConsistenciaOk);
+    });
+
+    test('consistencia/info returns detailScanConsistenciaInfo', () {
+      final c = check('consistencia', ScanCheckStatus.info);
+      expect(en.detailScanCheckMessage(c), en.detailScanConsistenciaInfo);
+      expect(es.detailScanCheckMessage(c), es.detailScanConsistenciaInfo);
+    });
+
+    test('unknown id falls back to check.message', () {
+      final c = check('unknown_check', ScanCheckStatus.ok);
+      expect(ptBr.detailScanCheckMessage(c), 'original_pt_br');
+      expect(en.detailScanCheckMessage(c), 'original_pt_br');
+    });
+
+    test('en vinculo/ok differs from ptBr', () {
+      final c = check('vinculo', ScanCheckStatus.ok);
+      expect(
+        ptBr.detailScanCheckMessage(c),
+        isNot(equals(en.detailScanCheckMessage(c))),
+      );
+    });
+
+    test('en acesso/ok differs from ptBr', () {
+      final c = check('acesso', ScanCheckStatus.ok);
+      expect(
+        ptBr.detailScanCheckMessage(c),
+        isNot(equals(en.detailScanCheckMessage(c))),
+      );
+    });
+
+    test('en perfil/ok with Desempenho differs from ptBr', () {
+      final c = check('perfil', ScanCheckStatus.ok);
+      expect(
+        ptBr.detailScanCheckMessage(c, profileLabel: 'Desempenho'),
+        isNot(equals(en.detailScanCheckMessage(c, profileLabel: 'Desempenho'))),
+      );
     });
   });
 }
