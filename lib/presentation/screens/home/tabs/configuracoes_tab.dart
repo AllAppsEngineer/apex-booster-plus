@@ -809,6 +809,49 @@ class _AboutCard extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          const Divider(color: Color(0xFF2A2A2A), height: 1),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.privacy_tip_outlined,
+                size: 14,
+                color: AppColors.textGray.withValues(alpha: 0.55),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  s.aboutPrivacyLabel,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textGray,
+                        fontSize: 12,
+                      ),
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.textGray.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(
+                    color: AppColors.textGray.withValues(alpha: 0.18),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  s.aboutPrivacyStatus,
+                  style: TextStyle(
+                    color: AppColors.textGray.withValues(alpha: 0.65),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     )

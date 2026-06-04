@@ -339,6 +339,18 @@ class AppStrings {
     AppLanguage.es   => 'SOBRE',
   };
 
+  String get aboutPrivacyLabel => switch (lang) {
+    AppLanguage.ptBr => 'Política de Privacidade',
+    AppLanguage.en   => 'Privacy Policy',
+    AppLanguage.es   => 'Política de Privacidad',
+  };
+
+  String get aboutPrivacyStatus => switch (lang) {
+    AppLanguage.ptBr => 'Em preparação',
+    AppLanguage.en   => 'Coming soon',
+    AppLanguage.es   => 'Próximamente',
+  };
+
   // ─── Home / Início — LANG-U1.3 ───────────────────────────────────────────────
 
   String get homeTitle => switch (lang) {

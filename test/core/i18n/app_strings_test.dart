@@ -50,6 +50,8 @@ void main() {
     expectNonEmpty((s) => s.libraryAddGame, 'libraryAddGame');
     expectNonEmpty((s) => s.libraryEmptyTitle, 'libraryEmptyTitle');
     expectNonEmpty((s) => s.detailOpenGame, 'detailOpenGame');
+    expectNonEmpty((s) => s.aboutPrivacyLabel, 'aboutPrivacyLabel');
+    expectNonEmpty((s) => s.aboutPrivacyStatus, 'aboutPrivacyStatus');
   });
 
   // ─── Strings differ between languages ────────────────────────────────────────

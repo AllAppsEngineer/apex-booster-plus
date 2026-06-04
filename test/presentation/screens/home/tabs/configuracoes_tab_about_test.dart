@@ -92,4 +92,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Idioma do app'), findsOneWidget);
   });
+
+  testWidgets('card Sobre exibe item Politica de Privacidade', (tester) async {
+    await tester.pumpWidget(_wrapConfig());
+    await tester.pumpAndSettle();
+    expect(find.text('Política de Privacidade'), findsOneWidget);
+  });
+
+  testWidgets('card Sobre exibe status Em preparacao para politica de privacidade',
+      (tester) async {
+    await tester.pumpWidget(_wrapConfig());
+    await tester.pumpAndSettle();
+    expect(find.text('Em preparação'), findsOneWidget);
+  });
 }
