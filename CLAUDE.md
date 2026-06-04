@@ -505,7 +505,8 @@ Git iniciado.
 
 Fluxo básico atual:
 
-Splash → Welcome → HowItWorks → Permissions → Home.
+Primeira abertura: Splash → Welcome → HowItWorks → Permissions → Home (salva apex_onboarding_done = true).
+Aberturas seguintes: Splash → Home diretamente.
 
 Telas existentes:
 
@@ -1377,6 +1378,14 @@ Arquivos criados na Fase LANG-U2:
 - tool/check_hardcoded_strings.dart (criado — script executor: dart run tool/check_hardcoded_strings.dart)
 - test/tool/hardcoded_strings_checker_test.dart (criado — testes unitários do guardião)
 
+Arquivos criados ou alterados na Fase ONB-U1:
+
+- lib/core/onboarding/onboarding_service.dart (criado — OnboardingService com persistência via shared_preferences, chave apex_onboarding_done)
+- lib/presentation/screens/splash/splash_screen.dart (alterado — verifica flag apex_onboarding_done e roteia para Welcome ou Home)
+- lib/presentation/screens/permissions/permissions_screen.dart (alterado — salva apex_onboarding_done = true ao tocar CONTINUAR)
+- test/core/onboarding/onboarding_service_test.dart (criado — testes do OnboardingService)
+- test/widget_test.dart (alterado — testes de onboarding ajustados)
+
 Estado visual atual:
 
 Aprovado como checkpoint da Fase 2-O.5: seção "MÉTRICAS REAIS" validada no Samsung S24 Ultra com RAM disponível, RAM total, estado de memória e latência Apex lidos do dispositivo real.
@@ -1415,6 +1424,7 @@ Fase LANG-U1.4B concluída: PrepararTab migrada para AppStrings/languageNotifier
 Fase LANG-U1.5A concluída: BibliotecaTab e AppPickerSheet migrados para AppStrings/languageNotifier. Header, subtítulo, contador, cards, badges, favoritos, empty state, CTAs, fluxos ADICIONAR JOGO e ESCOLHER APP INSTALADO traduzidos para PT-BR, EN e ES. Lazy load preservado. Sugestões/autocomplete, bloqueio de duplicados, favoritar/desfavoritar e persistência preservados. Ícones reais e layout preservados. GameDetailScreen não alterada. Nenhum Kotlin, AndroidManifest ou pubspec alterado. Nenhuma dependência nova. flutter analyze passando. flutter test passando (495/495). Commit 443d51d. Aprovado no Samsung S24 Ultra em Português (BR), English e Español. Sem crash. Sem tela vermelha. Sem overflow. Sem atraso novo.
 Fase LANG-U1.5B concluída: GameDetailScreen migrada para AppStrings/languageNotifier. Título, package, Perfil GFX, datas, Apex Scan, métricas reais, edição de dados, diálogos, disclaimers e botão ABRIR JOGO traduzidos para PT-BR, EN e ES. Correção validada: perfil GFX salvo como string bruta é exibido com nome traduzido por idioma (PT-BR: "Desempenho", EN: "Performance", ES: "Rendimiento"). Apex Scan não exibe mais textos PT-BR em EN/ES. Abrir jogo, Apex Boost Mode, registro de sessão, Perfil GFX, Apex Scan, métricas/snapshot e edição de dados preservados. Nenhum Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova dependência. flutter analyze passando. flutter test passando. Commit fb68af4. Aprovado no Samsung S24 Ultra em Português (BR), English e Español. Sem crash. Sem tela vermelha. Sem overflow. Sem atraso novo. LANG-U1.5 fechada.
 Fase LANG-U2 concluída: Guardião de strings hardcoded v1 criado. Varre 13 arquivos de UI migrados — ignora imports, comentários, testes e app_strings.dart. Blocklist cobre termos críticos PT-BR (Desempenho, Qualidade, Favorito, Abrir jogo, Preparar sessão, Detalhe do Jogo etc.). Whitelist conservadora sem JOGO/JUEGO/GAME. Resultado atual: nenhum hardcoded PT-BR encontrado nas telas migradas. Sem alteração em UI, pubspec, Kotlin, AndroidManifest ou dependências. flutter analyze passando. flutter test passando (651/651). Commit e60e515.
+Fase ONB-U1 concluída: onboarding exibido somente na primeira abertura. OnboardingService criado com persistência via shared_preferences (chave: apex_onboarding_done). SplashScreen verifica a flag: se ausente → Splash → Welcome → HowItWorks → Permissions; se presente → Home diretamente. PermissionsScreen salva apex_onboarding_done = true ao tocar CONTINUAR. Idioma salvo preservado. Navegação do onboarding preservada. Testes de onboarding criados/ajustados. Nenhuma nova dependência. Nenhum Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão. flutter analyze passando. flutter test passando (657/657). dart run tool/check_hardcoded_strings.dart passando. Working tree limpo. Commit: ffc0ef9 — feat: exibir onboarding somente na primeira abertura. Aprovado no Samsung S24 Ultra.
 Ainda não é o visual final absoluto do produto.
 
 Observação:
@@ -1442,7 +1452,7 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5, 2-S.4, 2-S.5, 2-T.1, 2-T.2A, GFX-U1.1, GFX-U1.1A, GFX-U2.A+B, GFX-U2.C, GFX-U2.D, GFX-U2.E.1, SET-U1.1, SET-U1.2, SET-U1.3, LANG-U1.1, LANG-U1.2, LANG-U1.2A, LANG-U1.3A, LANG-U1.3B, LANG-U1.4A, LANG-U1.4B, LANG-U1.5A e LANG-U1.5B concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5, 2-S.4, 2-S.5, 2-T.1, 2-T.2A, GFX-U1.1, GFX-U1.1A, GFX-U2.A+B, GFX-U2.C, GFX-U2.D, GFX-U2.E.1, SET-U1.1, SET-U1.2, SET-U1.3, LANG-U1.1, LANG-U1.2, LANG-U1.2A, LANG-U1.3A, LANG-U1.3B, LANG-U1.4A, LANG-U1.4B, LANG-U1.5A, LANG-U1.5B e ONB-U1 concluídas.
 
 Fase 2-O — Apex Metrics Real v1 (concluída):
 - Fase 2-O.1: camada de dados de métricas reais criada.
@@ -1782,12 +1792,26 @@ Fase LANG-U — Idioma real:
   - LANG-U1.5 fechada.
 - Fase LANG-U1.6: validação final PT-BR / EN / ES — pendente.
 
+Fase ONB-U — Onboarding condicional:
+- Fase ONB-U1: onboarding somente na primeira abertura (concluída).
+  - OnboardingService criado: lê/salva flag apex_onboarding_done via shared_preferences.
+  - SplashScreen: lê a flag antes de navegar. Flag ausente → onboarding completo. Flag presente → Home diretamente.
+  - PermissionsScreen: salva apex_onboarding_done = true ao tocar CONTINUAR.
+  - Idioma salvo (apex_app_language) preservado em ambos os fluxos.
+  - Navegação do onboarding (Permissions ← HowItWorks ← Welcome) e botão Voltar Android preservados.
+  - Testes do OnboardingService criados. test/widget_test.dart ajustado.
+  - Nenhuma nova dependência. Nenhum Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova permissão.
+  - flutter analyze passando. flutter test passando (657/657).
+  - dart run tool/check_hardcoded_strings.dart passando. Working tree limpo.
+  - Commit: ffc0ef9 — feat: exibir onboarding somente na primeira abertura.
+  - Aprovado no Samsung S24 Ultra.
+
 Próximo passo imediato:
-- LANG-U1.5B concluída: GameDetailScreen migrada para AppStrings e validada no Samsung S24 Ultra em PT-BR, EN e ES. flutter test passando. Commit fb68af4. LANG-U1.5 fechada.
-- Próxima fase sugerida: LANG-U1.6 — validação final completa PT-BR / EN / ES em todas as telas.
-  - Percorrer todas as telas migradas nos três idiomas e confirmar ausência de textos PT-BR hardcoded.
-  - Sem nova dependência (AppStrings e languageNotifier já disponíveis).
-  - Candidatos alternativos após LANG-U1.6: refinamento visual, Boost Engine (Fase 3), ou outro a definir.
+- ONB-U1 concluída: onboarding exibido somente na primeira abertura. flutter test passando (657/657). Commit ffc0ef9. Working tree limpo.
+- Próxima fase sugerida: STORE-U1.1 — corrigir copy do HowItWorks e ajustar card NOTIF para não prometer métricas/permissões ainda inexistentes.
+  - Revisar textos do HowItWorks que possam mencionar funcionalidades não implementadas.
+  - Ajustar card de notificações/permissões para ser honesto com o estado real do produto.
+  - Candidatos alternativos: LANG-U1.6 (validação final PT-BR / EN / ES), refinamento visual, Boost Engine (Fase 3).
 
 Nota estratégica:
 - Fase 2M.4B (integração do ApexScanService completo na aba Preparar): continua adiada. PrepararTab já tem _PrepScanCard com checks locais — integração com ApexScanService é refinamento futuro, não bloqueador.
