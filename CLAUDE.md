@@ -1452,7 +1452,7 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5, 2-S.4, 2-S.5, 2-T.1, 2-T.2A, GFX-U1.1, GFX-U1.1A, GFX-U2.A+B, GFX-U2.C, GFX-U2.D, GFX-U2.E.1, SET-U1.1, SET-U1.2, SET-U1.3, LANG-U1.1, LANG-U1.2, LANG-U1.2A, LANG-U1.3A, LANG-U1.3B, LANG-U1.4A, LANG-U1.4B, LANG-U1.5A, LANG-U1.5B e ONB-U1 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5, 2-S.4, 2-S.5, 2-T.1, 2-T.2A, GFX-U1.1, GFX-U1.1A, GFX-U2.A+B, GFX-U2.C, GFX-U2.D, GFX-U2.E.1, SET-U1.1, SET-U1.2, SET-U1.3, LANG-U1.1, LANG-U1.2, LANG-U1.2A, LANG-U1.3A, LANG-U1.3B, LANG-U1.4A, LANG-U1.4B, LANG-U1.5A, LANG-U1.5B, ONB-U1 e STORE-U1.1 concluídas.
 
 Fase 2-O — Apex Metrics Real v1 (concluída):
 - Fase 2-O.1: camada de dados de métricas reais criada.
@@ -1806,11 +1806,20 @@ Fase ONB-U — Onboarding condicional:
   - Commit: ffc0ef9 — feat: exibir onboarding somente na primeira abertura.
   - Aprovado no Samsung S24 Ultra.
 
+Fase STORE-U — Copy honesta para Store/Produto:
+- Fase STORE-U1.1: copy honesta do HowItWorks e Permissions (concluída).
+  - HowItWorks não menciona mais bateria ou temperatura.
+  - Card SCAN descreve RAM, latência e prontidão da sessão — sem prometer métricas não implementadas.
+  - Card NOTIF não promete alertas ou lembretes automáticos.
+  - Texto deixa claro que notificações não são solicitadas nesta versão.
+  - Alteração feita somente em AppStrings. Nenhuma lógica alterada.
+  - Nenhum AndroidManifest, Kotlin, pubspec ou dependência alterado.
+  - flutter analyze passando. flutter test passando (657/657).
+  - dart run tool/check_hardcoded_strings.dart passando.
+
 Próximo passo imediato:
-- ONB-U1 concluída: onboarding exibido somente na primeira abertura. flutter test passando (657/657). Commit ffc0ef9. Working tree limpo.
-- Próxima fase sugerida: STORE-U1.1 — corrigir copy do HowItWorks e ajustar card NOTIF para não prometer métricas/permissões ainda inexistentes.
-  - Revisar textos do HowItWorks que possam mencionar funcionalidades não implementadas.
-  - Ajustar card de notificações/permissões para ser honesto com o estado real do produto.
+- STORE-U1.1 concluída: copy honesta do HowItWorks e Permissions. flutter test passando (657/657). Working tree limpo.
+- Próxima fase sugerida: STORE-U1.2 — Política de Privacidade + link no Sobre.
   - Candidatos alternativos: LANG-U1.6 (validação final PT-BR / EN / ES), refinamento visual, Boost Engine (Fase 3).
 
 Nota estratégica:
