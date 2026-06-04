@@ -1371,6 +1371,12 @@ Arquivos alterados na Fase LANG-U1.5B:
 - lib/presentation/screens/game_detail/game_detail_screen.dart (alterado — migrada para AppStrings/languageNotifier)
 - test/core/i18n/app_strings_test.dart (alterado — testes dos novos getters/métodos da GameDetailScreen)
 
+Arquivos criados na Fase LANG-U2:
+
+- tool/hardcoded_strings_checker.dart (criado — lógica de varredura: blocklist de termos críticos PT-BR, whitelist conservadora, lista dos 13 arquivos de UI migrados)
+- tool/check_hardcoded_strings.dart (criado — script executor: dart run tool/check_hardcoded_strings.dart)
+- test/tool/hardcoded_strings_checker_test.dart (criado — testes unitários do guardião)
+
 Estado visual atual:
 
 Aprovado como checkpoint da Fase 2-O.5: seção "MÉTRICAS REAIS" validada no Samsung S24 Ultra com RAM disponível, RAM total, estado de memória e latência Apex lidos do dispositivo real.
@@ -1408,6 +1414,7 @@ Fase LANG-U1.4A concluída: GfxProfileScreen migrada para AppStrings/languageNot
 Fase LANG-U1.4B concluída: PrepararTab migrada para AppStrings/languageNotifier. Textos da aba Preparar, Apex Scan local, snapshot do dispositivo, recomendações GFX, CTA, loading, empty state, disclaimers, badges e labels traduzidos para PT-BR, English e Español. Lógica de score/status, seleção de jogo e CONTINUAR PARA DETALHES preservados. Perfil GFX continua influenciando mensagem e sugestões. BibliotecaTab, GameDetailScreen e demais telas não alteradas. Nenhum Kotlin, AndroidManifest ou pubspec alterado. Nenhuma dependência nova. flutter analyze passando. flutter test passando (445/445). Commit 74a76ea. Aprovado no Samsung S24 Ultra em Português (BR), English e Español. Sem crash. Sem tela vermelha. Sem overflow. Sem atraso novo. LANG-U1.4 fechada.
 Fase LANG-U1.5A concluída: BibliotecaTab e AppPickerSheet migrados para AppStrings/languageNotifier. Header, subtítulo, contador, cards, badges, favoritos, empty state, CTAs, fluxos ADICIONAR JOGO e ESCOLHER APP INSTALADO traduzidos para PT-BR, EN e ES. Lazy load preservado. Sugestões/autocomplete, bloqueio de duplicados, favoritar/desfavoritar e persistência preservados. Ícones reais e layout preservados. GameDetailScreen não alterada. Nenhum Kotlin, AndroidManifest ou pubspec alterado. Nenhuma dependência nova. flutter analyze passando. flutter test passando (495/495). Commit 443d51d. Aprovado no Samsung S24 Ultra em Português (BR), English e Español. Sem crash. Sem tela vermelha. Sem overflow. Sem atraso novo.
 Fase LANG-U1.5B concluída: GameDetailScreen migrada para AppStrings/languageNotifier. Título, package, Perfil GFX, datas, Apex Scan, métricas reais, edição de dados, diálogos, disclaimers e botão ABRIR JOGO traduzidos para PT-BR, EN e ES. Correção validada: perfil GFX salvo como string bruta é exibido com nome traduzido por idioma (PT-BR: "Desempenho", EN: "Performance", ES: "Rendimiento"). Apex Scan não exibe mais textos PT-BR em EN/ES. Abrir jogo, Apex Boost Mode, registro de sessão, Perfil GFX, Apex Scan, métricas/snapshot e edição de dados preservados. Nenhum Kotlin, AndroidManifest ou pubspec alterado. Nenhuma nova dependência. flutter analyze passando. flutter test passando. Commit fb68af4. Aprovado no Samsung S24 Ultra em Português (BR), English e Español. Sem crash. Sem tela vermelha. Sem overflow. Sem atraso novo. LANG-U1.5 fechada.
+Fase LANG-U2 concluída: Guardião de strings hardcoded v1 criado. Varre 13 arquivos de UI migrados — ignora imports, comentários, testes e app_strings.dart. Blocklist cobre termos críticos PT-BR (Desempenho, Qualidade, Favorito, Abrir jogo, Preparar sessão, Detalhe do Jogo etc.). Whitelist conservadora sem JOGO/JUEGO/GAME. Resultado atual: nenhum hardcoded PT-BR encontrado nas telas migradas. Sem alteração em UI, pubspec, Kotlin, AndroidManifest ou dependências. flutter analyze passando. flutter test passando (651/651). Commit e60e515.
 Ainda não é o visual final absoluto do produto.
 
 Observação:
