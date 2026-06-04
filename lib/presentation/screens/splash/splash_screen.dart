@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/i18n/app_language.dart';
 import '../../../core/i18n/app_strings.dart';
+import '../../../core/onboarding/onboarding_service.dart';
 import '../../widgets/apex_background.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -33,8 +35,11 @@ class _SplashScreenState extends State<SplashScreen>
     Future.delayed(const Duration(milliseconds: 800), () {
       if (mounted) _ring2.repeat();
     });
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted) context.go('/welcome');
+    Future.delayed(const Duration(milliseconds: 2500), () async {
+      if (!mounted) return;
+      final prefs = await SharedPreferences.getInstance();
+      final done = OnboardingService(prefs).isDone();
+      if (mounted) context.go(done ? '/home' : '/welcome');
     });
   }
 

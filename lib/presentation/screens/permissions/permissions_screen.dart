@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/i18n/app_language.dart';
 import '../../../core/i18n/app_strings.dart';
+import '../../../core/onboarding/onboarding_service.dart';
 import '../../widgets/apex_background.dart';
 import '../../widgets/apex_feature_card.dart';
 
@@ -161,8 +163,10 @@ class PermissionsScreen extends StatelessWidget {
       child: SizedBox(
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: () {
-            context.go('/home');
+          onPressed: () async {
+            final prefs = await SharedPreferences.getInstance();
+            await OnboardingService(prefs).markDone();
+            if (context.mounted) context.go('/home');
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.apexGreen,
