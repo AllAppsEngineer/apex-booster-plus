@@ -1157,9 +1157,9 @@ class AppStrings {
   };
 
   String get howItWorksCardScanSubtitle => switch (lang) {
-    AppLanguage.ptBr => 'Leia rede, bateria, temperatura e foco.',
-    AppLanguage.en   => 'Read network, battery, temperature and focus.',
-    AppLanguage.es   => 'Lee red, batería, temperatura y foco.',
+    AppLanguage.ptBr => 'Leia memória, latência e prontidão da sessão.',
+    AppLanguage.en   => 'Read memory, latency and session readiness.',
+    AppLanguage.es   => 'Lee memoria, latencia y preparación de sesión.',
   };
 
   String get howItWorksCardGoSubtitle => switch (lang) {
@@ -1198,9 +1198,9 @@ class AppStrings {
   };
 
   String get permissionsCardNotifSubtitle => switch (lang) {
-    AppLanguage.ptBr => 'Alertas opcionais de sessão e lembretes de preparação.',
-    AppLanguage.en   => 'Optional session alerts and preparation reminders.',
-    AppLanguage.es   => 'Alertas opcionales de sesión y recordatorios de preparación.',
+    AppLanguage.ptBr => 'Não solicitada nesta versão. Sem alertas automáticos.',
+    AppLanguage.en   => 'Not requested in this version. No automatic alerts.',
+    AppLanguage.es   => 'No solicitada en esta versión. Sin alertas automáticas.',
   };
 
   String get permissionsCardAppsTitle => switch (lang) {
