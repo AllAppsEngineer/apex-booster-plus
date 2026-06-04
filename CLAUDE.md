@@ -1452,7 +1452,7 @@ Pendências conhecidas:
 
 ## 15. PRÓXIMO PASSO OFICIAL
 
-Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5, 2-S.4, 2-S.5, 2-T.1, 2-T.2A, GFX-U1.1, GFX-U1.1A, GFX-U2.A+B, GFX-U2.C, GFX-U2.D, GFX-U2.E.1, SET-U1.1, SET-U1.2, SET-U1.3, LANG-U1.1, LANG-U1.2, LANG-U1.2A, LANG-U1.3A, LANG-U1.3B, LANG-U1.4A, LANG-U1.4B, LANG-U1.5A, LANG-U1.5B, ONB-U1 e STORE-U1.1 concluídas.
+Fases 2A, 2B, 2C, 2D.1, 2D.3, 2E.1, 2F.2, 2G.2, 2H.2, 2I.2, 2J.2, 2K.2, 2L.1, 2L.2, 2M.1, 2M.2, 2M.4A, 2N, 2-O.1, 2-O.2, 2-O.3, 2-O.5, 2-O.6, 2-P.2, 2-P.3, 2-P.4, 2-P.6, 2-P.8, 2-Q.1, 2-Q.2, 2-Q.3, 2-Q.4, 2-Q.5, 2-Q.6, 2-Q.7, 2-R.1, 2-R.2, 2-R.3, 2-R.4, 2-R.5, PERF-G1.5, 2-S.4, 2-S.5, 2-T.1, 2-T.2A, GFX-U1.1, GFX-U1.1A, GFX-U2.A+B, GFX-U2.C, GFX-U2.D, GFX-U2.E.1, SET-U1.1, SET-U1.2, SET-U1.3, LANG-U1.1, LANG-U1.2, LANG-U1.2A, LANG-U1.3A, LANG-U1.3B, LANG-U1.4A, LANG-U1.4B, LANG-U1.5A, LANG-U1.5B, ONB-U1, STORE-U1.1 e STORE-U1.2 concluídas.
 
 Fase 2-O — Apex Metrics Real v1 (concluída):
 - Fase 2-O.1: camada de dados de métricas reais criada.
@@ -1816,10 +1816,21 @@ Fase STORE-U — Copy honesta para Store/Produto:
   - Nenhum AndroidManifest, Kotlin, pubspec ou dependência alterado.
   - flutter analyze passando. flutter test passando (657/657).
   - dart run tool/check_hardcoded_strings.dart passando.
+- Fase STORE-U1.2: Base de Política de Privacidade pré-store (concluída).
+  - docs/PRIVACY_POLICY_APEX_BOOSTER_PT_BR.md criado: documenta dados locais, biblioteca de jogos, packageName, perfil GFX, histórico de sessões, idioma, onboarding, RAM disponível, latência Apex, Modo Foco, internet e ausência de venda/compartilhamento de dados.
+  - docs/PLAY_STORE_PRIVACY_NOTES.md criado: notas operacionais para preenchimento do questionário de segurança de dados da Play Store.
+  - Card Sobre na ConfiguraçõesTab recebeu item "Política de Privacidade" exibido como "Em preparação" — sem URL externa ainda.
+  - Textos visíveis adicionados via AppStrings em PT-BR, EN e ES.
+  - Nenhuma URL pública declarada como pronta.
+  - Nenhuma dependência nova. Nenhum pubspec, Kotlin ou AndroidManifest alterado. Nenhuma nova permissão.
+  - flutter analyze passando. flutter test passando (661/661).
+  - dart run tool/check_hardcoded_strings.dart passando.
+  - Commit: a6dec10 — docs: adicionar base de privacidade pre-store.
+  - Pendência antes da publicação: publicar a política em URL pública real e substituir o item "Em preparação" por link funcional (Fase STORE-U1.2B).
 
 Próximo passo imediato:
-- STORE-U1.1 concluída: copy honesta do HowItWorks e Permissions. flutter test passando (657/657). Working tree limpo.
-- Próxima fase sugerida: STORE-U1.2 — Política de Privacidade + link no Sobre.
+- STORE-U1.2 concluída: base de Política de Privacidade + item no Sobre. flutter test passando (661/661). Working tree limpo.
+- Próxima fase sugerida: STORE-U1.2B — URL pública da Política de Privacidade + link funcional no card Sobre.
   - Candidatos alternativos: LANG-U1.6 (validação final PT-BR / EN / ES), refinamento visual, Boost Engine (Fase 3).
 
 Nota estratégica:
