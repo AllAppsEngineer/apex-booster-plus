@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:apex_booster_plus/core/i18n/app_language.dart';
 import 'package:apex_booster_plus/presentation/screens/home/tabs/configuracoes_tab.dart';
 
 Widget _wrapConfig() => MaterialApp(
@@ -57,6 +58,7 @@ void main() {
   tearDown(() {
     _clearFocusChannel();
     _clearAppsChannel();
+    languageNotifier.value = AppLanguage.ptBr;
   });
 
   testWidgets('card Sobre renderiza sem crash', (tester) async {
@@ -146,6 +148,50 @@ void main() {
     expect(
       _appsChannelCalls.single.arguments,
       {'url': 'https://allappsengineer.github.io/apex-booster-plus/privacy/'},
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'com idioma EN tocar em Privacy Policy abre /privacy/en/',
+      (tester) async {
+    languageNotifier.value = AppLanguage.en;
+    await tester.pumpWidget(_wrapConfig());
+    await tester.pumpAndSettle();
+
+    final privacyLabel = find.text('Privacy Policy');
+    await tester.ensureVisible(privacyLabel);
+    await tester.pumpAndSettle();
+    await tester.tap(privacyLabel);
+    await tester.pumpAndSettle();
+
+    expect(_appsChannelCalls, hasLength(1));
+    expect(_appsChannelCalls.single.method, 'openUrl');
+    expect(
+      _appsChannelCalls.single.arguments,
+      {'url': 'https://allappsengineer.github.io/apex-booster-plus/privacy/en/'},
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'com idioma ES tocar em Politica de Privacidad abre /privacy/es/',
+      (tester) async {
+    languageNotifier.value = AppLanguage.es;
+    await tester.pumpWidget(_wrapConfig());
+    await tester.pumpAndSettle();
+
+    final privacyLabel = find.text('Política de Privacidad');
+    await tester.ensureVisible(privacyLabel);
+    await tester.pumpAndSettle();
+    await tester.tap(privacyLabel);
+    await tester.pumpAndSettle();
+
+    expect(_appsChannelCalls, hasLength(1));
+    expect(_appsChannelCalls.single.method, 'openUrl');
+    expect(
+      _appsChannelCalls.single.arguments,
+      {'url': 'https://allappsengineer.github.io/apex-booster-plus/privacy/es/'},
     );
     expect(tester.takeException(), isNull);
   });

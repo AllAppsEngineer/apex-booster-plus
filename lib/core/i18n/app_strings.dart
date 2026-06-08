@@ -357,6 +357,12 @@ class AppStrings {
     AppLanguage.es   => 'No se pudo abrir la Política de Privacidad.',
   };
 
+  String get privacyPolicyUrl => switch (lang) {
+    AppLanguage.ptBr => 'https://allappsengineer.github.io/apex-booster-plus/privacy/',
+    AppLanguage.en   => 'https://allappsengineer.github.io/apex-booster-plus/privacy/en/',
+    AppLanguage.es   => 'https://allappsengineer.github.io/apex-booster-plus/privacy/es/',
+  };
+
   // ─── Home / Início — LANG-U1.3 ───────────────────────────────────────────────
 
   String get homeTitle => switch (lang) {

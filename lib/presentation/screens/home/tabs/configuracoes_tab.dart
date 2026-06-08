@@ -704,13 +704,10 @@ class _LanguageOption extends StatelessWidget {
 class _AboutCard extends StatelessWidget {
   const _AboutCard();
 
-  static const String _privacyPolicyUrl =
-      'https://allappsengineer.github.io/apex-booster-plus/privacy/';
-
   Future<void> _openPrivacyPolicy(BuildContext context, AppStrings s) async {
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await ExternalUrlService().openUrl(_privacyPolicyUrl);
+      await ExternalUrlService().openUrl(s.privacyPolicyUrl);
     } on PlatformException {
       if (!context.mounted) return;
       messenger.showSnackBar(
