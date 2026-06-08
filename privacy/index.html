@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Política de Privacidade — Apex Booster+</title>
+<meta name="description" content="Política de Privacidade do Apex Booster+: quais dados são armazenados localmente, quais leituras o app realiza e como a privacidade do usuário é protegida.">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: linear-gradient(180deg, #050505 0%, #080808 100%);
+    color: #F5F5F5;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 0 24px; width: 100%; }
+
+  .site-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 20px 0;
+  }
+  .header-inner { display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.02em; }
+  .logo-accent { color: #22C55E; }
+  .site-header nav a {
+    color: #A3A3A3;
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: color 0.15s ease;
+  }
+  .site-header nav a:hover { color: #22C55E; }
+
+  main { flex: 1; }
+
+  .policy { max-width: 760px; margin: 0 auto; padding: 56px 24px 96px; }
+  .policy h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+  .policy .updated { color: #A3A3A3; font-size: 0.9rem; margin-bottom: 40px; }
+
+  .policy h2 {
+    color: #22C55E;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 40px 0 12px;
+  }
+  .policy p { color: #C7C7C7; margin-bottom: 12px; font-size: 0.96rem; }
+  .policy ul { margin: 0 0 12px 1.2em; }
+  .policy li { color: #C7C7C7; margin-bottom: 6px; font-size: 0.96rem; }
+  .policy strong { color: #F5F5F5; }
+
+  .policy .table-wrap {
+    background: #101314;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .policy table { width: 100%; border-collapse: collapse; }
+  .policy th, .policy td {
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.92rem;
+    color: #C7C7C7;
+  }
+  .policy thead th { color: #F5F5F5; font-weight: 600; background: rgba(255, 255, 255, 0.03); }
+  .policy tr:last-child td { border-bottom: none; }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: 28px;
+    color: #A3A3A3;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  .back-link:hover { color: #22C55E; }
+
+  .site-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 32px 0;
+    text-align: center;
+  }
+  .footer-inner p { color: #A3A3A3; font-size: 0.9rem; margin-bottom: 4px; }
+  .footer-inner a { color: #22C55E; text-decoration: none; }
+  .footer-inner a:hover { text-decoration: underline; }
+  .muted { color: #6B6B6B; font-size: 0.8rem; margin-top: 8px; }
+
+  @media (max-width: 720px) {
+    .policy h1 { font-size: 1.6rem; }
+    .policy th, .policy td { padding: 10px 12px; font-size: 0.86rem; }
+  }
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <span class="logo">Apex<span class="logo-accent">Booster+</span></span>
+      <nav>
+        <a href="../">Início</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <article class="policy">
+      <a class="back-link" href="../">&larr; Voltar para o início</a>
+
+      <h1>Política de Privacidade — Apex Booster+</h1>
+      <p class="updated">Última atualização: 04 de junho de 2026</p>
+
+      <h2>1. Identificação do Responsável</h2>
+      <p><strong>Nome do app:</strong> Apex Booster+</p>
+      <p><strong>Desenvolvedor / Responsável:</strong> AllAppsEngineer</p>
+      <p><strong>Contato oficial:</strong> <a href="mailto:alessandro.lopes.adm@gmail.com" style="color:#22C55E;">alessandro.lopes.adm@gmail.com</a></p>
+
+      <h2>2. Dados Armazenados Localmente</h2>
+      <p>
+        O Apex Booster+ <strong>não possui servidor próprio</strong> e
+        <strong>não envia dados pessoais para servidores externos</strong>.
+        Todos os dados abaixo são armazenados exclusivamente no dispositivo do
+        usuário, por meio do <code>SharedPreferences</code> do Android:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Dado</th><th>Finalidade</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Biblioteca de jogos adicionados</td><td>Exibir e gerenciar a lista de jogos do usuário</td></tr>
+            <tr><td>Identificador (<code>packageName</code>) dos jogos</td><td>Identificar e abrir o app correspondente</td></tr>
+            <tr><td>Perfil GFX local por jogo</td><td>Salvar a preferência visual escolhida pelo usuário</td></tr>
+            <tr><td>Histórico de sessões</td><td>Exibir sessões anteriores e métricas locais</td></tr>
+            <tr><td>Idioma selecionado</td><td>Manter a preferência de idioma entre sessões</td></tr>
+            <tr><td>Flag de onboarding concluído</td><td>Evitar exibir o tutorial novamente na reabertura do app</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Esses dados <strong>não são sincronizados, vendidos ou compartilhados</strong> com terceiros.</p>
+
+      <h2>3. Leituras Locais do Dispositivo</h2>
+      <p>O app realiza as seguintes leituras <strong>locais</strong> para fins informativos:</p>
+      <ul>
+        <li><strong>RAM disponível e total:</strong> leitura da memória do dispositivo para exibir o snapshot da sessão.</li>
+        <li><strong>Latência básica de rede (Apex Ping):</strong> teste de conectividade próprio do app para avaliar a qualidade da conexão no momento da sessão. Não representa nem promete o ping real de servidores de jogos externos.</li>
+        <li><strong>Estado do Modo Foco / Não Perturbe (DND):</strong> verificado apenas quando o usuário concede a permissão de acesso à política de notificações. Não é ativado automaticamente.</li>
+      </ul>
+      <p>Essas leituras <strong>não são enviadas para nenhum servidor</strong>.</p>
+
+      <h2>4. Uso de Internet</h2>
+      <p>
+        O app utiliza a permissão de <strong>internet</strong> exclusivamente para o teste
+        básico de latência e conectividade mencionado acima (Apex Ping). Nenhuma outra
+        comunicação de rede é realizada. O app <strong>não coleta, transmite nem
+        armazena</strong> dados em servidores externos.
+      </p>
+
+      <h2>5. Apps Instalados</h2>
+      <p>Para permitir que o usuário selecione jogos da sua biblioteca de apps instalados, o Apex Booster+ pode listar apps iniciáveis disponíveis no dispositivo.</p>
+      <ul>
+        <li><strong>Sem acesso irrestrito:</strong> o app não solicita permissão de acesso irrestrito à lista completa de apps do sistema.</li>
+        <li><strong>Sem envio externo:</strong> a lista de apps instalados <strong>nunca é enviada para servidores</strong>.</li>
+        <li><strong>Controle do usuário:</strong> o usuário decide quais apps adicionar à biblioteca. O app não faz varredura automática nem exporta esses dados.</li>
+      </ul>
+
+      <h2>6. Dados Não Coletados</h2>
+      <p>O Apex Booster+ <strong>não coleta</strong> nenhum dos seguintes dados:</p>
+      <ul>
+        <li>Nome, e-mail ou qualquer identificador pessoal do usuário.</li>
+        <li>Localização precisa ou aproximada.</li>
+        <li>Contatos, fotos, vídeos ou arquivos pessoais.</li>
+        <li>Mensagens, chamadas ou dados de comunicação.</li>
+      </ul>
+
+      <h2>7. Compartilhamento de Dados</h2>
+      <p>O Apex Booster+ <strong>não vende, não aluga e não compartilha dados pessoais</strong> com anunciantes, parceiros ou terceiros. Não há:</p>
+      <ul>
+        <li>SDK de anúncios.</li>
+        <li>SDK de analytics ou atribuição de terceiros.</li>
+        <li>Rastreamento de comportamento para fins publicitários.</li>
+        <li>Cookies ou tecnologias de rastreamento.</li>
+      </ul>
+
+      <h2>8. Permissões Utilizadas</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Permissão</th><th>Finalidade</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Internet</td><td>Teste básico de latência e conectividade (Apex Ping)</td></tr>
+            <tr><td>Acesso ao Modo Foco / Não Perturbe</td><td>Modo Foco Gamer — somente quando o usuário concede a permissão</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Nenhuma permissão sensível adicional é solicitada nesta versão.</p>
+
+      <h2>9. Limites e Avisos Importantes</h2>
+      <ul>
+        <li>O Apex Booster+ <strong>não altera jogos de terceiros automaticamente</strong>.</li>
+        <li>O app <strong>não promete melhoria real de FPS, GPU, resolução, ping ou desempenho</strong> de jogos externos.</li>
+        <li>As métricas exibidas (RAM, latência Apex) são <strong>locais e informativas</strong> — não representam alteração automática do dispositivo ou dos jogos.</li>
+        <li>O Modo Foco Gamer ativa o Não Perturbe do Android somente quando o usuário concede a permissão explicitamente.</li>
+      </ul>
+
+      <h2>10. Contato</h2>
+      <p>
+        Para dúvidas, solicitações relacionadas aos dados armazenados localmente no
+        seu dispositivo ou qualquer questão sobre privacidade, entre em contato:
+      </p>
+      <p><strong>E-mail:</strong> <a href="mailto:alessandro.lopes.adm@gmail.com" style="color:#22C55E;">alessandro.lopes.adm@gmail.com</a></p>
+
+      <h2>11. Alterações nesta Política</h2>
+      <p>
+        Esta política pode ser atualizada periodicamente para refletir mudanças no
+        aplicativo. A data de "Última atualização" no topo deste documento sempre
+        indicará a versão vigente.
+      </p>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>Desenvolvido por <strong>AllAppsEngineer</strong></p>
+      <p><a href="mailto:alessandro.lopes.adm@gmail.com">alessandro.lopes.adm@gmail.com</a></p>
+      <p class="muted">&copy; 2026 Apex Booster+. Todos os direitos reservados.</p>
+    </div>
+  </footer>
+</body>
+</html>
