@@ -9,6 +9,10 @@ URL pública: https://allappsengineer.github.io/apex-booster-plus/
 - `index.html` — página inicial com apresentação breve do app e link para a Política de Privacidade.
 - `privacy/index.html` — Política de Privacidade do Apex Booster+ (PT-BR).
   URL: https://allappsengineer.github.io/apex-booster-plus/privacy/
+- `privacy/en/index.html` — Privacy Policy (EN).
+  URL: https://allappsengineer.github.io/apex-booster-plus/privacy/en/
+- `privacy/es/index.html` — Política de Privacidad (ES).
+  URL: https://allappsengineer.github.io/apex-booster-plus/privacy/es/
 
 ## Sobre
 
