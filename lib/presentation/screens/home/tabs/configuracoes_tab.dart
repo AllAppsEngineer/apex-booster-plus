@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
@@ -6,6 +7,7 @@ import 'package:apex_booster_plus/core/i18n/app_language.dart';
 import 'package:apex_booster_plus/core/i18n/app_strings.dart';
 import 'package:apex_booster_plus/core/i18n/language_service.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_session_repository.dart';
+import 'package:apex_booster_plus/data/services/external_url_service.dart';
 import 'package:apex_booster_plus/data/services/focus_mode_service_impl.dart';
 import 'package:apex_booster_plus/domain/services/focus_mode_service.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
@@ -702,6 +704,25 @@ class _LanguageOption extends StatelessWidget {
 class _AboutCard extends StatelessWidget {
   const _AboutCard();
 
+  static const String _privacyPolicyUrl =
+      'https://allappsengineer.github.io/apex-booster-plus/privacy/';
+
+  Future<void> _openPrivacyPolicy(BuildContext context, AppStrings s) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ExternalUrlService().openUrl(_privacyPolicyUrl);
+    } on PlatformException {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(s.aboutPrivacyOpenError),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = AppStrings(languageNotifier.value);
@@ -812,45 +833,53 @@ class _AboutCard extends StatelessWidget {
           const SizedBox(height: 12),
           const Divider(color: Color(0xFF2A2A2A), height: 1),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(
-                Icons.privacy_tip_outlined,
-                size: 14,
-                color: AppColors.textGray.withValues(alpha: 0.55),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  s.aboutPrivacyLabel,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textGray,
-                        fontSize: 12,
+          Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => _openPrivacyPolicy(context, s),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.privacy_tip_outlined,
+                    size: 14,
+                    color: AppColors.textGray.withValues(alpha: 0.55),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      s.aboutPrivacyLabel,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textGray,
+                            fontSize: 12,
+                          ),
+                    ),
+                  ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.cyberBlue.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(5),
+                      border: Border.all(
+                        color: AppColors.cyberBlue.withValues(alpha: 0.28),
+                        width: 1,
                       ),
-                ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.textGray.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(5),
-                  border: Border.all(
-                    color: AppColors.textGray.withValues(alpha: 0.18),
-                    width: 1,
+                    ),
+                    child: Text(
+                      s.aboutPrivacyAction,
+                      style: const TextStyle(
+                        color: AppColors.cyberBlue,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
                   ),
-                ),
-                child: Text(
-                  s.aboutPrivacyStatus,
-                  style: TextStyle(
-                    color: AppColors.textGray.withValues(alpha: 0.65),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.3,
-                  ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ],
       ),

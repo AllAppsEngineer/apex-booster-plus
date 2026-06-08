@@ -345,10 +345,16 @@ class AppStrings {
     AppLanguage.es   => 'Política de Privacidad',
   };
 
-  String get aboutPrivacyStatus => switch (lang) {
-    AppLanguage.ptBr => 'Em preparação',
-    AppLanguage.en   => 'Coming soon',
-    AppLanguage.es   => 'Próximamente',
+  String get aboutPrivacyAction => switch (lang) {
+    AppLanguage.ptBr => 'Ver política',
+    AppLanguage.en   => 'View policy',
+    AppLanguage.es   => 'Ver política',
+  };
+
+  String get aboutPrivacyOpenError => switch (lang) {
+    AppLanguage.ptBr => 'Não foi possível abrir a Política de Privacidade.',
+    AppLanguage.en   => 'Could not open the Privacy Policy.',
+    AppLanguage.es   => 'No se pudo abrir la Política de Privacidad.',
   };
 
   // ─── Home / Início — LANG-U1.3 ───────────────────────────────────────────────

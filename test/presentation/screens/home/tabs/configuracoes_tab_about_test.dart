@@ -29,13 +29,35 @@ void _clearFocusChannel() {
   );
 }
 
+const _appsChannel =
+    MethodChannel('com.allappsengineer.apex_booster_plus/apps');
+final List<MethodCall> _appsChannelCalls = [];
+
+void _mockAppsChannel() {
+  _appsChannelCalls.clear();
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(_appsChannel, (call) async {
+    _appsChannelCalls.add(call);
+    return null;
+  });
+}
+
+void _clearAppsChannel() {
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(_appsChannel, null);
+}
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     _mockFocusChannel();
+    _mockAppsChannel();
   });
 
-  tearDown(_clearFocusChannel);
+  tearDown(() {
+    _clearFocusChannel();
+    _clearAppsChannel();
+  });
 
   testWidgets('card Sobre renderiza sem crash', (tester) async {
     await tester.pumpWidget(_wrapConfig());
@@ -99,10 +121,32 @@ void main() {
     expect(find.text('Política de Privacidade'), findsOneWidget);
   });
 
-  testWidgets('card Sobre exibe status Em preparacao para politica de privacidade',
+  testWidgets('card Sobre exibe acao Ver politica para politica de privacidade',
       (tester) async {
     await tester.pumpWidget(_wrapConfig());
     await tester.pumpAndSettle();
-    expect(find.text('Em preparação'), findsOneWidget);
+    expect(find.text('Ver política'), findsOneWidget);
+    expect(find.text('Em preparação'), findsNothing);
+  });
+
+  testWidgets(
+      'tocar em Politica de Privacidade abre a URL publica via canal nativo',
+      (tester) async {
+    await tester.pumpWidget(_wrapConfig());
+    await tester.pumpAndSettle();
+
+    final privacyLabel = find.text('Política de Privacidade');
+    await tester.ensureVisible(privacyLabel);
+    await tester.pumpAndSettle();
+    await tester.tap(privacyLabel);
+    await tester.pumpAndSettle();
+
+    expect(_appsChannelCalls, hasLength(1));
+    expect(_appsChannelCalls.single.method, 'openUrl');
+    expect(
+      _appsChannelCalls.single.arguments,
+      {'url': 'https://allappsengineer.github.io/apex-booster-plus/privacy/'},
+    );
+    expect(tester.takeException(), isNull);
   });
 }
