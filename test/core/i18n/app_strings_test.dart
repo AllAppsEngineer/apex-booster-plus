@@ -203,6 +203,39 @@ void main() {
         isNot(equals(en.gfxProfileLabel(GfxProfile.quality))),
       );
     });
+
+    // LANG-U1.6-FIX-A1: raw DB key → fromLabel() → gfxProfileLabel() chain
+    group('gfxProfileLabel — full chain from raw DB key', () {
+      test('fromLabel resolves raw PT-BR key "Desempenho" to GfxProfile.performance', () {
+        expect(GfxProfile.fromLabel('Desempenho'), equals(GfxProfile.performance));
+      });
+
+      test('"Desempenho" chain: ptBr → Desempenho, en → Performance, es → Rendimiento', () {
+        final profile = GfxProfile.fromLabel('Desempenho')!;
+        expect(ptBr.gfxProfileLabel(profile), equals('Desempenho'));
+        expect(en.gfxProfileLabel(profile), equals('Performance'));
+        expect(es.gfxProfileLabel(profile), equals('Rendimiento'));
+      });
+
+      test('"Desempenho" chain: en and es must not equal ptBr raw key', () {
+        final profile = GfxProfile.fromLabel('Desempenho')!;
+        expect(en.gfxProfileLabel(profile), isNot(equals('Desempenho')));
+        expect(es.gfxProfileLabel(profile), isNot(equals('Desempenho')));
+      });
+
+      test('"Qualidade" chain: ptBr → Qualidade, en → Quality, es → Calidad', () {
+        final profile = GfxProfile.fromLabel('Qualidade')!;
+        expect(ptBr.gfxProfileLabel(profile), equals('Qualidade'));
+        expect(en.gfxProfileLabel(profile), equals('Quality'));
+        expect(es.gfxProfileLabel(profile), equals('Calidad'));
+      });
+
+      test('"Qualidade" chain: en and es must not equal ptBr raw key', () {
+        final profile = GfxProfile.fromLabel('Qualidade')!;
+        expect(en.gfxProfileLabel(profile), isNot(equals('Qualidade')));
+        expect(es.gfxProfileLabel(profile), isNot(equals('Qualidade')));
+      });
+    });
   });
 
   // ─── GFX scan messages ────────────────────────────────────────────────────────

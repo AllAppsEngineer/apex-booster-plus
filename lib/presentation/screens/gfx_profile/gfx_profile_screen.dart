@@ -329,6 +329,7 @@ class _GameBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedProfile = GfxProfile.fromLabel(game.localProfileName);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -367,7 +368,7 @@ class _GameBanner extends StatelessWidget {
                 if (game.localProfileName != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    '${s.gfxCurrentPrefix}${game.localProfileName}',
+                    '${s.gfxCurrentPrefix}${resolvedProfile != null ? s.gfxProfileLabel(resolvedProfile) : game.localProfileName!}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.energyOrange,
                           fontSize: 11,
