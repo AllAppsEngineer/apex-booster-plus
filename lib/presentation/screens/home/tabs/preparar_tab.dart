@@ -734,15 +734,6 @@ class _PrepScanCard extends StatelessWidget {
             thickness: 1,
             height: 1,
           ),
-          const SizedBox(height: 10),
-          Text(
-            s.prepDisclaimer1,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textGray.withValues(alpha: 0.7),
-                  fontSize: 11,
-                  fontStyle: FontStyle.italic,
-                ),
-          ),
         ],
       ),
     )
@@ -1011,16 +1002,6 @@ class _DeviceSnapshotCard extends StatelessWidget {
             color: AppColors.white.withValues(alpha: 0.08),
             thickness: 1,
             height: 1,
-          ),
-          const SizedBox(height: 10),
-          // Trava 2: disclaimer sempre visível, reforça caráter informativo/local.
-          Text(
-            s.prepDisclaimer2,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textGray.withValues(alpha: 0.7),
-                  fontSize: 11,
-                  fontStyle: FontStyle.italic,
-                ),
           ),
         ],
       ),

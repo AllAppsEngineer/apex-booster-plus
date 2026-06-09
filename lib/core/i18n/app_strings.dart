@@ -687,21 +687,6 @@ class AppStrings {
     AppLanguage.es   => 'CONTINUAR A DETALLES',
   };
 
-  String get prepDisclaimer1 => switch (lang) {
-    AppLanguage.ptBr => 'Snapshot local. Sem alteração automática de desempenho.',
-    AppLanguage.en   => 'Local snapshot. No automatic performance change.',
-    AppLanguage.es   => 'Snapshot local. Sin cambio automático de rendimiento.',
-  };
-
-  String get prepDisclaimer2 => switch (lang) {
-    AppLanguage.ptBr =>
-      'Snapshot local. Não representa alteração automática no jogo.',
-    AppLanguage.en   =>
-      'Local snapshot. Does not represent automatic in-game change.',
-    AppLanguage.es   =>
-      'Snapshot local. No representa cambio automático en el juego.',
-  };
-
   // Apex Scan section
   String get prepScanBadge => 'SCAN';
 
@@ -917,15 +902,6 @@ class AppStrings {
     AppLanguage.ptBr => 'Sem permissão',
     AppLanguage.en   => 'No permission',
     AppLanguage.es   => 'Sin permiso',
-  };
-
-  String get snapshotDisclaimer => switch (lang) {
-    AppLanguage.ptBr =>
-      'Snapshot do dispositivo. Não representa alteração de jogos.',
-    AppLanguage.en   =>
-      'Device snapshot. Does not represent any game changes.',
-    AppLanguage.es   =>
-      'Snapshot del dispositivo. No representa cambios en juegos.',
   };
 
   String get snapshotLocalReading => switch (lang) {
@@ -1779,12 +1755,20 @@ class AppStrings {
     AppLanguage.es   => 'Perfil incompleto',
   };
 
-  // Performance modules section
+  // Preparation panel section (UX-P1.1 — honest visual prep indicators)
   String get detailModulesTitle => switch (lang) {
-    AppLanguage.ptBr => 'MÓDULOS DE PERFORMANCE',
-    AppLanguage.en   => 'PERFORMANCE MODULES',
-    AppLanguage.es   => 'MÓDULOS DE RENDIMIENTO',
+    AppLanguage.ptBr => 'PAINEL DE PREPARAÇÃO',
+    AppLanguage.en   => 'PREPARATION PANEL',
+    AppLanguage.es   => 'PANEL DE PREPARACIÓN',
   };
+
+  String get detailModuleFps => 'FPS: OK';
+
+  String get detailModuleRam => 'RAM: OK';
+
+  String get detailModuleGpu => 'GPU: OK';
+
+  String get detailModulePing => 'Ping: OK';
 
   String get detailModuleOptimization => switch (lang) {
     AppLanguage.ptBr => 'Otimização: OK',

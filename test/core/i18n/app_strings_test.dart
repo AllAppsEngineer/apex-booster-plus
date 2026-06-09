@@ -1368,6 +1368,49 @@ void main() {
     });
   });
 
+  // ─── UX-P1.1 — Prep panel strings ───────────────────────────────────────────
+
+  group('AppStrings — UX-P1.1 prep panel strings', () {
+    // detailModulesTitle changed from "PERFORMANCE" to prep panel
+    test('detailModulesTitle ptBr is PAINEL DE PREPARAÇÃO', () {
+      expect(ptBr.detailModulesTitle, 'PAINEL DE PREPARAÇÃO');
+    });
+
+    test('detailModulesTitle en is PREPARATION PANEL', () {
+      expect(en.detailModulesTitle, 'PREPARATION PANEL');
+    });
+
+    test('detailModulesTitle es is PANEL DE PREPARACIÓN', () {
+      expect(es.detailModulesTitle, 'PANEL DE PREPARACIÓN');
+    });
+
+    // Module chips — same label in all languages (technical terms)
+    test('detailModuleFps is FPS: OK for all languages', () {
+      expect(ptBr.detailModuleFps, 'FPS: OK');
+      expect(en.detailModuleFps, 'FPS: OK');
+      expect(es.detailModuleFps, 'FPS: OK');
+    });
+
+    test('detailModuleRam is RAM: OK for all languages', () {
+      expect(ptBr.detailModuleRam, 'RAM: OK');
+      expect(en.detailModuleRam, 'RAM: OK');
+      expect(es.detailModuleRam, 'RAM: OK');
+    });
+
+    test('detailModuleGpu is GPU: OK for all languages', () {
+      expect(ptBr.detailModuleGpu, 'GPU: OK');
+      expect(en.detailModuleGpu, 'GPU: OK');
+      expect(es.detailModuleGpu, 'GPU: OK');
+    });
+
+    test('detailModulePing is Ping: OK for all languages', () {
+      expect(ptBr.detailModulePing, 'Ping: OK');
+      expect(en.detailModulePing, 'Ping: OK');
+      expect(es.detailModulePing, 'Ping: OK');
+    });
+
+  });
+
   // ─── detailScanCheckMessage — LANG-U1.5B ────────────────────────────────────
 
   group('AppStrings — detailScanCheckMessage (LANG-U1.5B)', () {

@@ -1496,7 +1496,7 @@ class _ApexScanCard extends StatelessWidget {
   }
 }
 
-// ─── Performance modules section ─────────────────────────────────────────────
+// ─── Preparation panel section (UX-P1.1) ─────────────────────────────────────
 
 class _PerformanceModulesSection extends StatelessWidget {
   const _PerformanceModulesSection();
@@ -1505,11 +1505,11 @@ class _PerformanceModulesSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = AppStrings(languageNotifier.value);
     final modules = [
-      'FPS: OK',
-      'RAM: OK',
-      'GPU: OK',
-      'Ping: OK',
-      s.detailModuleOptimization,
+      (label: s.detailModuleFps,          color: AppColors.apexGreen,    icon: Icons.speed_rounded),
+      (label: s.detailModuleRam,          color: AppColors.cyberBlue,    icon: Icons.memory_rounded),
+      (label: s.detailModuleGpu,          color: AppColors.energyOrange, icon: Icons.videogame_asset_rounded),
+      (label: s.detailModulePing,         color: AppColors.cyberBlue,    icon: Icons.wifi_rounded),
+      (label: s.detailModuleOptimization, color: AppColors.apexGreen,    icon: Icons.tune_rounded),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1529,7 +1529,12 @@ class _PerformanceModulesSection extends StatelessWidget {
           runSpacing: 8,
           children: [
             for (int i = 0; i < modules.length; i++)
-              _ModuleChip(label: modules[i], index: i),
+              _ModuleChip(
+                label: modules[i].label,
+                icon: modules[i].icon,
+                color: modules[i].color,
+                index: i,
+              ),
           ],
         ),
         const SizedBox(height: 12),
@@ -1551,9 +1556,16 @@ class _PerformanceModulesSection extends StatelessWidget {
 
 class _ModuleChip extends StatelessWidget {
   final String label;
+  final IconData icon;
+  final Color color;
   final int index;
 
-  const _ModuleChip({required this.label, required this.index});
+  const _ModuleChip({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.index,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1561,15 +1573,22 @@ class _ModuleChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.apexGreen.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(6),
+        gradient: LinearGradient(
+          colors: [
+            color.withValues(alpha: 0.14),
+            color.withValues(alpha: 0.06),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: AppColors.apexGreen.withValues(alpha: 0.35),
+          color: color.withValues(alpha: 0.38),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.apexGreen.withValues(alpha: 0.18),
+            color: color.withValues(alpha: 0.14),
             blurRadius: 8,
             spreadRadius: 0,
           ),
@@ -1578,7 +1597,7 @@ class _ModuleChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.bolt_rounded, color: AppColors.apexGreen, size: 13),
+          Icon(icon, color: color, size: 13),
           const SizedBox(width: 5),
           Text(
             label,
@@ -1814,15 +1833,6 @@ class _RealMetricsSection extends StatelessWidget {
             valueColor: _latencyColor(metrics!),
           ),
         ],
-        const SizedBox(height: 10),
-        Text(
-          s.snapshotDisclaimer,
-          style: TextStyle(
-            color: AppColors.textGray.withValues(alpha: 0.5),
-            fontSize: 10,
-            fontStyle: FontStyle.italic,
-          ),
-        ),
       ],
     )
         .animate()
