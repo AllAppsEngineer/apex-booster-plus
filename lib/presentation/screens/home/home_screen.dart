@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/i18n/app_language.dart';
 import '../../../core/i18n/app_strings.dart';
+import '../../../data/datasources/installed_apps_datasource.dart';
+import '../../../domain/entities/installed_app.dart';
 import 'tabs/inicio_tab.dart';
 import 'tabs/biblioteca_tab.dart';
 import 'tabs/preparar_tab.dart';
@@ -19,6 +21,19 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   DateTime? _lastBackPress;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future.delayed(const Duration(milliseconds: 1000));
+      if (!mounted) return;
+      InstalledAppsDatasource().getInstalledApps().catchError((Object e) {
+        debugPrint('[PERF-BIBLIO] warm-up erro: $e');
+        return const <InstalledApp>[];
+      });
+    });
+  }
 
   List<Widget> get _tabs => [
     InicioTab(isActive: _selectedIndex == 0),

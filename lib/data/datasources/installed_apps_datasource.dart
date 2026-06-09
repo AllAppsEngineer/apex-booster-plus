@@ -12,19 +12,29 @@ class InstalledAppsDatasource {
   // Session-only caches — nothing is persisted to disk
   static final Map<String, Uint8List?> _iconCache = {};
   static List<InstalledApp>? _appsCache;
+  static Future<List<InstalledApp>>? _loadingFuture;
 
-  Future<List<InstalledApp>> getInstalledApps() async {
-    if (_appsCache != null) return List.unmodifiable(_appsCache!);
-    final List<dynamic> raw =
-        await _channel.invokeMethod('getInstalledApps');
-    final list = raw
-        .map((e) => InstalledApp.fromMap(Map<String, dynamic>.from(e as Map)))
-        .toList();
-    list.sort(
-      (a, b) => a.appName.toLowerCase().compareTo(b.appName.toLowerCase()),
-    );
-    _appsCache = list;
-    return List.unmodifiable(_appsCache!);
+  Future<List<InstalledApp>> getInstalledApps() {
+    if (_appsCache != null) return Future.value(List.unmodifiable(_appsCache!));
+    return _loadingFuture ??= _doLoad();
+  }
+
+  Future<List<InstalledApp>> _doLoad() async {
+    try {
+      final List<dynamic> raw =
+          await _channel.invokeMethod('getInstalledApps');
+      final list = raw
+          .map((e) => InstalledApp.fromMap(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      list.sort(
+        (a, b) => a.appName.toLowerCase().compareTo(b.appName.toLowerCase()),
+      );
+      _appsCache = list;
+      return List.unmodifiable(list);
+    } catch (_) {
+      _loadingFuture = null;
+      rethrow;
+    }
   }
 
   Future<Uint8List?> getAppIcon(String packageName) async {
