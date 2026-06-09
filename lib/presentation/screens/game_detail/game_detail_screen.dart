@@ -1195,6 +1195,8 @@ class _PrepLaunchSheetState extends State<_PrepLaunchSheet> {
       await Future.delayed(_kStepDelay);
       if (!mounted) return;
       setState(() => _visibleCount = i + 1);
+      if (i == 1) unawaited(HapticFeedback.lightImpact());
+      if (i == _steps.length - 1) unawaited(HapticFeedback.mediumImpact());
     }
     await Future.delayed(_kStepDelay);
     if (!mounted) return;
