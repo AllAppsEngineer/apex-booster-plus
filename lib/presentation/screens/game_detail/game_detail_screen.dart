@@ -1114,7 +1114,7 @@ class _LaunchGameButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = AppStrings(languageNotifier.value);
-    return Padding(
+    final button = Padding(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
       child: SizedBox(
         width: double.infinity,
@@ -1145,6 +1145,16 @@ class _LaunchGameButton extends StatelessWidget {
         ),
       ),
     );
+
+    if (!hasPackage) return button;
+
+    return button
+        .animate(onPlay: (c) => c.repeat())
+        .shimmer(
+          duration: 2000.ms,
+          color: Colors.white.withValues(alpha: 0.32),
+          angle: 0.0,
+        );
   }
 }
 
