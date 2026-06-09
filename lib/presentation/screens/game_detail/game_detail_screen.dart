@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1253,6 +1254,12 @@ class _PrepLaunchSheetState extends State<_PrepLaunchSheet> {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              Center(
+                child: _BoostRingIndicator(
+                  progress: _visibleCount / _steps.length,
+                ),
+              ).animate().fadeIn(duration: 350.ms),
               const SizedBox(height: 20),
               for (int i = 0; i < _visibleCount; i++)
                 _PrepStepRow(
@@ -1309,6 +1316,82 @@ class _PrepStepRow extends StatelessWidget {
                 ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Boost ring indicator (UX-P1.3) ──────────────────────────────────────────
+
+class _BoostRingPainter extends CustomPainter {
+  final double progress;
+
+  const _BoostRingPainter({required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - 10) / 2;
+
+    final trackPaint = Paint()
+      ..color = AppColors.white.withValues(alpha: 0.07)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawCircle(center, radius, trackPaint);
+
+    if (progress <= 0) return;
+
+    final sweep = progress * 2 * math.pi;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    final glowPaint = Paint()
+      ..color = AppColors.apexGreen.withValues(alpha: 0.30)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 7
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+
+    canvas.drawArc(rect, -math.pi / 2, sweep, false, glowPaint);
+
+    final arcPaint = Paint()
+      ..color = AppColors.apexGreen
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(rect, -math.pi / 2, sweep, false, arcPaint);
+  }
+
+  @override
+  bool shouldRepaint(_BoostRingPainter old) => old.progress != progress;
+}
+
+class _BoostRingIndicator extends StatelessWidget {
+  final double progress;
+
+  const _BoostRingIndicator({required this.progress});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0.0, end: progress),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+      builder: (_, value, __) => SizedBox(
+        width: 64,
+        height: 64,
+        child: CustomPaint(
+          painter: _BoostRingPainter(progress: value),
+          child: const Center(
+            child: Icon(
+              Icons.rocket_launch_rounded,
+              color: AppColors.apexGreen,
+              size: 20,
+            ),
+          ),
+        ),
       ),
     );
   }
