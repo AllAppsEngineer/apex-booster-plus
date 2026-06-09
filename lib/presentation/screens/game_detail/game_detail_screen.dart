@@ -1180,6 +1180,7 @@ class _PrepLaunchSheet extends StatefulWidget {
 
 class _PrepLaunchSheetState extends State<_PrepLaunchSheet> {
   int _visibleCount = 1;
+  bool _showChips = false;
   late final List<_Step> _steps;
 
   @override
@@ -1205,7 +1206,10 @@ class _PrepLaunchSheetState extends State<_PrepLaunchSheet> {
     for (int i = 1; i < _steps.length; i++) {
       await Future.delayed(_kStepDelay);
       if (!mounted) return;
-      setState(() => _visibleCount = i + 1);
+      setState(() {
+        _visibleCount = i + 1;
+        if (i == _steps.length - 1) _showChips = true;
+      });
       if (i == 1) unawaited(HapticFeedback.lightImpact());
       if (i == _steps.length - 1) unawaited(HapticFeedback.mediumImpact());
     }
@@ -1230,12 +1234,13 @@ class _PrepLaunchSheetState extends State<_PrepLaunchSheet> {
       ),
       child: SafeArea(
         top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               Center(
                 child: Container(
                   width: 36,
@@ -1279,11 +1284,19 @@ class _PrepLaunchSheetState extends State<_PrepLaunchSheet> {
                     .animate(key: ValueKey(i))
                     .fadeIn(duration: 280.ms)
                     .slideX(begin: 0.04, end: 0, duration: 230.ms),
+              if (_showChips) ...[
+                const SizedBox(height: 12),
+                const _ReadinessChipsRow()
+                    .animate()
+                    .fadeIn(duration: 280.ms)
+                    .slideY(begin: 0.04, end: 0, duration: 230.ms),
+              ],
             ],
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }
 
@@ -1326,6 +1339,55 @@ class _PrepStepRow extends StatelessWidget {
                 ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Readiness chips (UX-P1.5) ───────────────────────────────────────────────
+
+class _ReadinessChipsRow extends StatelessWidget {
+  const _ReadinessChipsRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _ReadinessChip(label: s.boostChipSessionReady),
+        _ReadinessChip(label: s.detailScanStatusReady),
+      ],
+    );
+  }
+}
+
+class _ReadinessChip extends StatelessWidget {
+  final String label;
+
+  const _ReadinessChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.apexGreen.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.apexGreen.withValues(alpha: 0.35),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppColors.apexGreen,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.4,
+        ),
       ),
     );
   }

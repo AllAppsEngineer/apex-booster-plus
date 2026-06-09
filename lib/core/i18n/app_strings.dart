@@ -1730,6 +1730,13 @@ class AppStrings {
     AppLanguage.es   => 'Abriendo juego...',
   };
 
+  // Apex Boost Mode — readiness chips (UX-P1.5)
+  String get boostChipSessionReady => switch (lang) {
+    AppLanguage.ptBr => 'Sessão preparada',
+    AppLanguage.en   => 'Session ready',
+    AppLanguage.es   => 'Sesión preparada',
+  };
+
   // Apex Scan card
   String get detailScanSubtitle => switch (lang) {
     AppLanguage.ptBr => 'Status local da preparação',

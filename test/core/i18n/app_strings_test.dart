@@ -1529,4 +1529,58 @@ void main() {
       );
     });
   });
+
+  // ─── UX-P1.5 — Boost readiness chips ────────────────────────────────────────
+
+  group('AppStrings — UX-P1.5 boost readiness chips', () {
+    // boostChipSessionReady
+    test('boostChipSessionReady is non-empty for all languages', () {
+      expect(ptBr.boostChipSessionReady, isNotEmpty);
+      expect(en.boostChipSessionReady, isNotEmpty);
+      expect(es.boostChipSessionReady, isNotEmpty);
+    });
+
+    test('boostChipSessionReady ptBr is "Sessão preparada"', () {
+      expect(ptBr.boostChipSessionReady, 'Sessão preparada');
+    });
+
+    test('boostChipSessionReady en is "Session ready"', () {
+      expect(en.boostChipSessionReady, 'Session ready');
+    });
+
+    test('boostChipSessionReady es is "Sesión preparada"', () {
+      expect(es.boostChipSessionReady, 'Sesión preparada');
+    });
+
+    test('boostChipSessionReady differs ptBr vs en', () {
+      expect(ptBr.boostChipSessionReady, isNot(equals(en.boostChipSessionReady)));
+    });
+
+    // detailScanStatusReady reused as 2nd chip — verify exact approved values
+    test('detailScanStatusReady ptBr is "Pronto para iniciar"', () {
+      expect(ptBr.detailScanStatusReady, 'Pronto para iniciar');
+    });
+
+    test('detailScanStatusReady en is "Ready to start"', () {
+      expect(en.detailScanStatusReady, 'Ready to start');
+    });
+
+    test('detailScanStatusReady es is "Listo para iniciar"', () {
+      expect(es.detailScanStatusReady, 'Listo para iniciar');
+    });
+
+    // Prohibited copies must not appear in any chip
+    test('no chip contains prohibited technical claims', () {
+      final allChipsPtBr = [
+        ptBr.boostChipSessionReady,
+        ptBr.detailScanStatusReady,
+      ].join(' ').toLowerCase();
+      expect(allChipsPtBr, isNot(contains('fps aumentado')));
+      expect(allChipsPtBr, isNot(contains('gpu otimizada')));
+      expect(allChipsPtBr, isNot(contains('ram limpa')));
+      expect(allChipsPtBr, isNot(contains('ping reduzido')));
+      expect(allChipsPtBr, isNot(contains('performance melhorada')));
+      expect(allChipsPtBr, isNot(contains('boost real')));
+    });
+  });
 }
