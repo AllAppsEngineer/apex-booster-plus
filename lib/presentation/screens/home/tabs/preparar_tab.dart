@@ -187,7 +187,13 @@ class _PrepararTabState extends State<PrepararTab> {
   void didUpdateWidget(PrepararTab oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isActive && !oldWidget.isActive) {
-      _refreshSelectedGame();
+      // Full reload when no game is selected — picks up games added in Biblioteca
+      // after this tab was last loaded. _refreshSelectedGame exits early on null.
+      if (_selectedGame == null) {
+        _load();
+      } else {
+        _refreshSelectedGame();
+      }
     }
   }
 
