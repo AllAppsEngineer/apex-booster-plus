@@ -1914,6 +1914,62 @@ class AppStrings {
     AppLanguage.es   => 'Sesión preparada',
   };
 
+  // Apex Ritual Cinematográfico — subtitle and chips (PREMIUM-U2)
+  String get boostSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Preparando sessão Apex.',
+    AppLanguage.en   => 'Preparing Apex session.',
+    AppLanguage.es   => 'Preparando sesión Apex.',
+  };
+
+  String get boostChipProfileLoaded => switch (lang) {
+    AppLanguage.ptBr => 'Perfil carregado',
+    AppLanguage.en   => 'Profile loaded',
+    AppLanguage.es   => 'Perfil cargado',
+  };
+
+  // Apex Ritual Cinematográfico — step labels (PREMIUM-U2)
+  String get ritualStepGameLock => switch (lang) {
+    AppLanguage.ptBr => 'Jogo no alvo',
+    AppLanguage.en   => 'Game on target',
+    AppLanguage.es   => 'Juego en objetivo',
+  };
+
+  String ritualStepProfileLoad(String label) => switch (lang) {
+    AppLanguage.ptBr => 'Perfil $label carregado',
+    AppLanguage.en   => 'Profile $label loaded',
+    AppLanguage.es   => 'Perfil $label cargado',
+  };
+
+  String get ritualStepProfileReady => switch (lang) {
+    AppLanguage.ptBr => 'Preferências prontas',
+    AppLanguage.en   => 'Preferences ready',
+    AppLanguage.es   => 'Preferencias listas',
+  };
+
+  String get ritualStepFocusPrep => switch (lang) {
+    AppLanguage.ptBr => 'Foco de sessão pronto',
+    AppLanguage.en   => 'Session focus ready',
+    AppLanguage.es   => 'Foco de sesión listo',
+  };
+
+  String get ritualStepApexScan => switch (lang) {
+    AppLanguage.ptBr => 'Apex Scan: OK',
+    AppLanguage.en   => 'Apex Scan: OK',
+    AppLanguage.es   => 'Apex Scan: OK',
+  };
+
+  String get ritualStepVisualSync => switch (lang) {
+    AppLanguage.ptBr => 'Sequência sincronizada',
+    AppLanguage.en   => 'Sequence synced',
+    AppLanguage.es   => 'Secuencia sincronizada',
+  };
+
+  String get ritualStepReadyState => switch (lang) {
+    AppLanguage.ptBr => 'Abrindo com estilo...',
+    AppLanguage.en   => 'Opening in style...',
+    AppLanguage.es   => 'Abriendo con estilo...',
+  };
+
   // Apex Scan card
   String get detailScanSubtitle => switch (lang) {
     AppLanguage.ptBr => 'Status local da preparação',

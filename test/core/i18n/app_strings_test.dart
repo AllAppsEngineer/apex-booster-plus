@@ -1583,4 +1583,72 @@ void main() {
       expect(allChipsPtBr, isNot(contains('boost real')));
     });
   });
+
+  // ─── Apex Ritual Cinematográfico steps (PREMIUM-U2) ──────────────────────────
+
+  group('AppStrings — Apex Ritual steps (PREMIUM-U2)', () {
+    test('boostSubtitle is non-empty for all languages', () {
+      expect(ptBr.boostSubtitle, isNotEmpty, reason: 'ptBr.boostSubtitle');
+      expect(en.boostSubtitle, isNotEmpty, reason: 'en.boostSubtitle');
+      expect(es.boostSubtitle, isNotEmpty, reason: 'es.boostSubtitle');
+    });
+
+    test('boostChipProfileLoaded is non-empty for all languages', () {
+      expect(ptBr.boostChipProfileLoaded, isNotEmpty);
+      expect(en.boostChipProfileLoaded, isNotEmpty);
+      expect(es.boostChipProfileLoaded, isNotEmpty);
+    });
+
+    test('ritualStepGameLock is non-empty and differs ptBr vs en', () {
+      expect(ptBr.ritualStepGameLock, isNotEmpty);
+      expect(en.ritualStepGameLock, isNotEmpty);
+      expect(es.ritualStepGameLock, isNotEmpty);
+      expect(ptBr.ritualStepGameLock, isNot(equals(en.ritualStepGameLock)));
+    });
+
+    test('ritualStepProfileLoad interpolates label in all languages', () {
+      const label = 'Equilibrado';
+      expect(ptBr.ritualStepProfileLoad(label), contains(label));
+      expect(en.ritualStepProfileLoad(label), contains(label));
+      expect(es.ritualStepProfileLoad(label), contains(label));
+      expect(
+        ptBr.ritualStepProfileLoad(label),
+        isNot(equals(en.ritualStepProfileLoad(label))),
+      );
+    });
+
+    test('ritualStepProfileReady is non-empty and differs ptBr vs en', () {
+      expect(ptBr.ritualStepProfileReady, isNotEmpty);
+      expect(en.ritualStepProfileReady, isNotEmpty);
+      expect(es.ritualStepProfileReady, isNotEmpty);
+      expect(ptBr.ritualStepProfileReady, isNot(equals(en.ritualStepProfileReady)));
+    });
+
+    test('ritualStepFocusPrep is non-empty and differs ptBr vs en', () {
+      expect(ptBr.ritualStepFocusPrep, isNotEmpty);
+      expect(en.ritualStepFocusPrep, isNotEmpty);
+      expect(es.ritualStepFocusPrep, isNotEmpty);
+      expect(ptBr.ritualStepFocusPrep, isNot(equals(en.ritualStepFocusPrep)));
+    });
+
+    test('ritualStepApexScan is identical across all three languages', () {
+      expect(ptBr.ritualStepApexScan, equals(en.ritualStepApexScan));
+      expect(ptBr.ritualStepApexScan, equals(es.ritualStepApexScan));
+      expect(ptBr.ritualStepApexScan, contains('Apex Scan'));
+    });
+
+    test('ritualStepVisualSync is non-empty and differs ptBr vs en', () {
+      expect(ptBr.ritualStepVisualSync, isNotEmpty);
+      expect(en.ritualStepVisualSync, isNotEmpty);
+      expect(es.ritualStepVisualSync, isNotEmpty);
+      expect(ptBr.ritualStepVisualSync, isNot(equals(en.ritualStepVisualSync)));
+    });
+
+    test('ritualStepReadyState is non-empty and differs ptBr vs en', () {
+      expect(ptBr.ritualStepReadyState, isNotEmpty);
+      expect(en.ritualStepReadyState, isNotEmpty);
+      expect(es.ritualStepReadyState, isNotEmpty);
+      expect(ptBr.ritualStepReadyState, isNot(equals(en.ritualStepReadyState)));
+    });
+  });
 }
