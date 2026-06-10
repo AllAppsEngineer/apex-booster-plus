@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:apex_booster_plus/core/accessibility/low_distraction_service.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
 import 'package:apex_booster_plus/core/i18n/app_language.dart';
 import 'package:apex_booster_plus/core/i18n/app_strings.dart';
@@ -1182,10 +1183,12 @@ class _PrepLaunchSheetState extends State<_PrepLaunchSheet> {
   int _visibleCount = 1;
   bool _showChips = false;
   late final List<_Step> _steps;
+  late final bool _lowDistraction;
 
   @override
   void initState() {
     super.initState();
+    _lowDistraction = lowDistractionNotifier.value;
     final s = AppStrings(languageNotifier.value);
     final resolvedBoostProfile = GfxProfile.fromLabel(widget.profileName);
     final profileLabel = resolvedBoostProfile != null
@@ -1203,17 +1206,21 @@ class _PrepLaunchSheetState extends State<_PrepLaunchSheet> {
   }
 
   Future<void> _runSequence() async {
+    final stepDelay =
+        _lowDistraction ? const Duration(milliseconds: 160) : _kStepDelay;
     for (int i = 1; i < _steps.length; i++) {
-      await Future.delayed(_kStepDelay);
+      await Future.delayed(stepDelay);
       if (!mounted) return;
       setState(() {
         _visibleCount = i + 1;
         if (i == _steps.length - 1) _showChips = true;
       });
-      if (i == 1) unawaited(HapticFeedback.lightImpact());
-      if (i == _steps.length - 1) unawaited(HapticFeedback.mediumImpact());
+      if (!_lowDistraction) {
+        if (i == 1) unawaited(HapticFeedback.lightImpact());
+        if (i == _steps.length - 1) unawaited(HapticFeedback.mediumImpact());
+      }
     }
-    await Future.delayed(_kStepDelay);
+    await Future.delayed(stepDelay);
     if (!mounted) return;
     try {
       await InstalledAppsDatasource().launchApp(widget.packageName);
@@ -1273,6 +1280,7 @@ class _PrepLaunchSheetState extends State<_PrepLaunchSheet> {
               Center(
                 child: _BoostRingIndicator(
                   progress: _visibleCount / _steps.length,
+                  reducedMotion: _lowDistraction,
                 ),
               ).animate().fadeIn(duration: 350.ms),
               const SizedBox(height: 20),
@@ -1442,14 +1450,20 @@ class _BoostRingPainter extends CustomPainter {
 
 class _BoostRingIndicator extends StatelessWidget {
   final double progress;
+  final bool reducedMotion;
 
-  const _BoostRingIndicator({required this.progress});
+  const _BoostRingIndicator({
+    required this.progress,
+    this.reducedMotion = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0.0, end: progress),
-      duration: const Duration(milliseconds: 300),
+      duration: reducedMotion
+          ? const Duration(milliseconds: 100)
+          : const Duration(milliseconds: 300),
       curve: Curves.easeOut,
       builder: (_, value, __) => SizedBox(
         width: 64,
