@@ -6,6 +6,7 @@ import '../../presentation/screens/permissions/permissions_screen.dart';
 import '../../presentation/screens/home/home_screen.dart';
 import '../../presentation/screens/game_detail/game_detail_screen.dart';
 import '../../presentation/screens/gfx_profile/gfx_profile_screen.dart';
+import '../../presentation/screens/configuracoes/honest_booster_mode_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -41,6 +42,10 @@ final appRouter = GoRouter(
       builder: (context, state) => GfxProfileScreen(
         gameId: state.pathParameters['id'] ?? '',
       ),
+    ),
+    GoRoute(
+      path: '/honest-booster-mode',
+      builder: (context, state) => const HonestBoosterModeScreen(),
     ),
   ],
 );

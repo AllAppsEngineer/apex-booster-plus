@@ -12,6 +12,7 @@ import 'package:apex_booster_plus/data/services/focus_mode_service_impl.dart';
 import 'package:apex_booster_plus/domain/services/focus_mode_service.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_badge.dart';
+import 'package:go_router/go_router.dart';
 
 class ConfiguracoesTab extends StatelessWidget {
   const ConfiguracoesTab({super.key});
@@ -36,6 +37,8 @@ class ConfiguracoesTab extends StatelessWidget {
                   _ClearHistoryCard(),
                   const SizedBox(height: 12),
                   _LanguageCard(),
+                  const SizedBox(height: 12),
+                  _HonestBoosterCard(),
                   const SizedBox(height: 12),
                   _AboutCard(),
                 ],
@@ -884,5 +887,98 @@ class _AboutCard extends StatelessWidget {
         .animate()
         .fadeIn(delay: 200.ms, duration: 600.ms)
         .slideY(begin: 0.04, end: 0, duration: 400.ms);
+  }
+}
+
+// ─── Modo Booster Honesto ────────────────────────────────────────────────────
+
+class _HonestBoosterCard extends StatelessWidget {
+  const _HonestBoosterCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.cyberBlue.withValues(alpha: 0.08),
+            AppColors.white.withValues(alpha: 0.03),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.cyberBlue.withValues(alpha: 0.22),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ApexBadge(label: s.honestBoosterCardBadge, color: AppColors.cyberBlue),
+          const SizedBox(height: 14),
+          Text(
+            s.honestBoosterCardTitle,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            s.honestBoosterCardSubtitle,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textGray,
+                  fontSize: 12,
+                ),
+          ),
+          const SizedBox(height: 12),
+          const Divider(color: Color(0xFF2A2A2A), height: 1),
+          const SizedBox(height: 12),
+          Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => context.push('/honest-booster-mode'),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.shield_outlined,
+                      size: 14,
+                      color: AppColors.cyberBlue.withValues(alpha: 0.7),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        s.honestBoosterCardAction,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textGray,
+                              fontSize: 12,
+                            ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 12,
+                      color: AppColors.cyberBlue.withValues(alpha: 0.55),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(delay: 120.ms, duration: 500.ms)
+        .slideY(begin: 0.04, end: 0, duration: 380.ms);
   }
 }

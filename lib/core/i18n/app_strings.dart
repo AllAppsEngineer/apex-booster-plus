@@ -363,6 +363,163 @@ class AppStrings {
     AppLanguage.es   => 'https://allappsengineer.github.io/apex-booster-plus/privacy/es/',
   };
 
+  // ─── Honest Booster Mode — TRUST-U1 ─────────────────────────────────────────
+
+  // Card em ConfiguracoesTab
+  String get honestBoosterCardBadge => switch (lang) {
+    AppLanguage.ptBr => 'CONFIANÇA',
+    AppLanguage.en   => 'TRUST',
+    AppLanguage.es   => 'CONFIANZA',
+  };
+
+  String get honestBoosterCardTitle => switch (lang) {
+    AppLanguage.ptBr => 'Modo Booster Honesto',
+    AppLanguage.en   => 'Honest Booster Mode',
+    AppLanguage.es   => 'Modo Booster Honesto',
+  };
+
+  String get honestBoosterCardSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'O que o Apex faz — e o que ele não promete.',
+    AppLanguage.en   => "What Apex does — and what it doesn't promise.",
+    AppLanguage.es   => 'Lo que Apex hace — y lo que no promete.',
+  };
+
+  String get honestBoosterCardAction => switch (lang) {
+    AppLanguage.ptBr => 'Ver detalhes',
+    AppLanguage.en   => 'See details',
+    AppLanguage.es   => 'Ver detalles',
+  };
+
+  // HonestBoosterModeScreen
+  String get honestBoosterScreenTitle => switch (lang) {
+    AppLanguage.ptBr => 'Modo Booster Honesto',
+    AppLanguage.en   => 'Honest Booster Mode',
+    AppLanguage.es   => 'Modo Booster Honesto',
+  };
+
+  String get honestBoosterIntro => switch (lang) {
+    AppLanguage.ptBr =>
+      'O Apex Booster+ é uma ferramenta de preparação gamer. '
+      'Aqui está o que ele faz — e o que ele não promete.',
+    AppLanguage.en =>
+      'Apex Booster+ is a gaming preparation tool. '
+      "Here's what it does — and what it doesn't promise.",
+    AppLanguage.es =>
+      'Apex Booster+ es una herramienta de preparación gamer. '
+      'Esto es lo que hace — y lo que no promete.',
+  };
+
+  String get honestBoosterQ1 => switch (lang) {
+    AppLanguage.ptBr => 'O app aumenta FPS?',
+    AppLanguage.en   => 'Does the app boost FPS?',
+    AppLanguage.es   => '¿La app aumenta los FPS?',
+  };
+
+  String get honestBoosterA1 => switch (lang) {
+    AppLanguage.ptBr =>
+      'O Apex Booster+ não promete aumento real de FPS. Ele prepara sua sessão '
+      'com organização, perfis, foco, leitura local e experiência visual.',
+    AppLanguage.en =>
+      "Apex Booster+ doesn't promise a real FPS boost. It prepares your session "
+      'with organization, profiles, focus, local readings, and visual experience.',
+    AppLanguage.es =>
+      'Apex Booster+ no promete un aumento real de FPS. Prepara tu sesión con '
+      'organización, perfiles, enfoque, lecturas locales y experiencia visual.',
+  };
+
+  String get honestBoosterQ2 => switch (lang) {
+    AppLanguage.ptBr => 'O app reduz ping?',
+    AppLanguage.en   => 'Does the app reduce ping?',
+    AppLanguage.es   => '¿La app reduce el ping?',
+  };
+
+  String get honestBoosterA2 => switch (lang) {
+    AppLanguage.ptBr =>
+      'Ping depende de rede, rota, servidor e operadora. O app pode exibir '
+      'Latência Apex própria, mas não promete reduzir ping de jogos terceiros.',
+    AppLanguage.en =>
+      'Ping depends on network, routing, server, and carrier. The app can display '
+      "its own Apex Latency reading, but doesn't promise to reduce ping in third-party games.",
+    AppLanguage.es =>
+      'El ping depende de la red, la ruta, el servidor y el operador. La app puede '
+      'mostrar su propia Latencia Apex, pero no promete reducir el ping en juegos de terceros.',
+  };
+
+  String get honestBoosterQ3 => switch (lang) {
+    AppLanguage.ptBr => 'O app limpa RAM?',
+    AppLanguage.en   => 'Does the app clean RAM?',
+    AppLanguage.es   => '¿La app limpia la RAM?',
+  };
+
+  String get honestBoosterA3 => switch (lang) {
+    AppLanguage.ptBr =>
+      'O app pode exibir snapshot de memória quando disponível, '
+      'mas não promete limpeza automática de RAM.',
+    AppLanguage.en =>
+      "The app can display a memory snapshot when available, but doesn't promise "
+      'automatic RAM cleanup.',
+    AppLanguage.es =>
+      'La app puede mostrar un snapshot de memoria cuando está disponible, '
+      'pero no promete limpieza automática de RAM.',
+  };
+
+  String get honestBoosterQ4 => switch (lang) {
+    AppLanguage.ptBr => 'O que o app realmente faz?',
+    AppLanguage.en   => 'What does the app actually do?',
+    AppLanguage.es   => '¿Qué hace realmente la app?',
+  };
+
+  String get honestBoosterA4 => switch (lang) {
+    AppLanguage.ptBr =>
+      'O Apex Booster+ organiza seus jogos, salva preferências locais, exibe '
+      'dados locais, cria um ritual visual de preparação e abre o jogo selecionado.',
+    AppLanguage.en =>
+      'Apex Booster+ organizes your games, saves local preferences, displays local '
+      'data, creates a visual preparation ritual, and launches your selected game.',
+    AppLanguage.es =>
+      'Apex Booster+ organiza tus juegos, guarda preferencias locales, muestra datos '
+      'locales, crea un ritual visual de preparación y abre el juego seleccionado.',
+  };
+
+  String get honestBoosterQ5 => switch (lang) {
+    AppLanguage.ptBr => 'O que o unlock libera?',
+    AppLanguage.en   => 'What does the unlock include?',
+    AppLanguage.es   => '¿Qué incluye el desbloqueo?',
+  };
+
+  String get honestBoosterA5 => switch (lang) {
+    AppLanguage.ptBr =>
+      'O unlock libera a experiência premium: temas, ritual completo, perfis '
+      'avançados, histórico enriquecido, badges, widget, Quick Actions e cards, '
+      'conforme forem implementados.',
+    AppLanguage.en =>
+      'The unlock includes the full premium experience: themes, complete ritual, '
+      'advanced profiles, enriched history, badges, widget, Quick Actions, and cards '
+      '— as they become available.',
+    AppLanguage.es =>
+      'El desbloqueo incluye la experiencia premium completa: temas, ritual completo, '
+      'perfiles avanzados, historial enriquecido, insignias, widget, Quick Actions y '
+      'tarjetas — según se implementen.',
+  };
+
+  String get honestBoosterQ6 => switch (lang) {
+    AppLanguage.ptBr => 'Por que usar antes de jogar?',
+    AppLanguage.en   => 'Why use it before playing?',
+    AppLanguage.es   => '¿Por qué usarla antes de jugar?',
+  };
+
+  String get honestBoosterA6 => switch (lang) {
+    AppLanguage.ptBr =>
+      'Para entrar com biblioteca organizada, perfil carregado, checklist de foco '
+      'e preparação visual.',
+    AppLanguage.en =>
+      'To enter with an organized library, loaded profile, focus checklist, and '
+      'visual preparation.',
+    AppLanguage.es =>
+      'Para entrar con biblioteca organizada, perfil cargado, checklist de enfoque '
+      'y preparación visual.',
+  };
+
   // ─── Home / Início — LANG-U1.3 ───────────────────────────────────────────────
 
   String get homeTitle => switch (lang) {
