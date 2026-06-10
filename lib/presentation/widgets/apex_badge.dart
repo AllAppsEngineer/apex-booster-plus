@@ -14,9 +14,10 @@ class ApexBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 48,
       height: 28,
+      constraints: const BoxConstraints(minWidth: 48),
       alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -42,6 +43,7 @@ class ApexBadge extends StatelessWidget {
       ),
       child: Text(
         label,
+        maxLines: 1,
         style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.bold,
