@@ -10,6 +10,7 @@ import 'package:apex_booster_plus/data/repositories/shared_preferences_session_r
 import 'package:apex_booster_plus/data/services/external_url_service.dart';
 import 'package:apex_booster_plus/data/services/focus_mode_service_impl.dart';
 import 'package:apex_booster_plus/domain/services/focus_mode_service.dart';
+import 'package:apex_booster_plus/core/accessibility/low_distraction_service.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_badge.dart';
 import 'package:go_router/go_router.dart';
@@ -39,6 +40,8 @@ class ConfiguracoesTab extends StatelessWidget {
                   _LanguageCard(),
                   const SizedBox(height: 12),
                   _HonestBoosterCard(),
+                  const SizedBox(height: 12),
+                  _LowDistractionCard(),
                   const SizedBox(height: 12),
                   _AboutCard(),
                 ],
@@ -699,6 +702,110 @@ class _LanguageOption extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// ─── Modo Baixa Distração — ACCESS-U1A ──────────────────────────────────────
+
+class _LowDistractionCard extends StatefulWidget {
+  const _LowDistractionCard();
+
+  @override
+  State<_LowDistractionCard> createState() => _LowDistractionCardState();
+}
+
+class _LowDistractionCardState extends State<_LowDistractionCard> {
+  bool _enabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _enabled = lowDistractionNotifier.value;
+  }
+
+  Future<void> _onToggle(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await LowDistractionService(prefs).save(value);
+    lowDistractionNotifier.value = value;
+    if (!mounted) return;
+    setState(() => _enabled = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.apexGreen.withValues(alpha: 0.08),
+            AppColors.white.withValues(alpha: 0.03),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.apexGreen.withValues(alpha: 0.22),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.apexGreen.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.motion_photos_pause_outlined,
+              color: AppColors.apexGreen.withValues(alpha: 0.85),
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  s.lowDistractionTitle,
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  s.lowDistractionSubtitle,
+                  style: TextStyle(
+                    color: AppColors.textGray.withValues(alpha: 0.8),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Switch(
+            value: _enabled,
+            onChanged: _onToggle,
+            activeThumbColor: AppColors.apexGreen,
+            activeTrackColor: AppColors.apexGreen.withValues(alpha: 0.28),
+            inactiveThumbColor: AppColors.textGray.withValues(alpha: 0.5),
+            inactiveTrackColor: AppColors.white.withValues(alpha: 0.08),
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(delay: 160.ms, duration: 500.ms)
+        .slideY(begin: 0.04, end: 0, duration: 380.ms);
   }
 }
 

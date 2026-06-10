@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'core/accessibility/low_distraction_service.dart';
 import 'core/i18n/app_language.dart';
 import 'core/i18n/language_service.dart';
 import 'core/routing/app_router.dart';
@@ -9,6 +10,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   languageNotifier.value = LanguageService(prefs).load();
+  lowDistractionNotifier.value = LowDistractionService(prefs).load();
   runApp(const ApexBoosterApp());
 }
 

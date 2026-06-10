@@ -520,6 +520,26 @@ class AppStrings {
       'y preparación visual.',
   };
 
+  // ─── Low Distraction Mode — ACCESS-U1A ──────────────────────────────────────
+
+  String get lowDistractionBadge => switch (lang) {
+    AppLanguage.ptBr => 'FOCO',
+    AppLanguage.en   => 'FOCUS',
+    AppLanguage.es   => 'FOCO',
+  };
+
+  String get lowDistractionTitle => switch (lang) {
+    AppLanguage.ptBr => 'Modo Baixa Distração',
+    AppLanguage.en   => 'Low Distraction Mode',
+    AppLanguage.es   => 'Modo de Baja Distracción',
+  };
+
+  String get lowDistractionSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Reduz animações, vibrações e intensidade visual quando disponível.',
+    AppLanguage.en   => 'Reduces animations, haptics, and visual intensity when available.',
+    AppLanguage.es   => 'Reduce animaciones, vibraciones e intensidad visual cuando esté disponible.',
+  };
+
   // ─── Home / Início — LANG-U1.3 ───────────────────────────────────────────────
 
   String get homeTitle => switch (lang) {
