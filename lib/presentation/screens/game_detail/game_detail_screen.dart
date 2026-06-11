@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,6 +24,9 @@ import 'package:apex_booster_plus/data/services/focus_mode_service_impl.dart';
 import 'package:apex_booster_plus/domain/services/focus_mode_service.dart';
 import 'package:apex_booster_plus/domain/entities/session_record.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_session_repository.dart';
+import 'package:apex_booster_plus/presentation/widgets/apex_pulse.dart';
+import 'package:apex_booster_plus/presentation/widgets/apex_ring.dart';
+import 'package:apex_booster_plus/presentation/widgets/status_chip.dart';
 
 class GameDetailScreen extends StatefulWidget {
   final String gameId;
@@ -1182,6 +1184,7 @@ class _PrepLaunchSheet extends StatefulWidget {
 class _PrepLaunchSheetState extends State<_PrepLaunchSheet> {
   int _visibleCount = 1;
   bool _showChips = false;
+  bool _ringComplete = false;
   late final List<_Step> _steps;
   late final bool _lowDistraction;
 
@@ -1195,12 +1198,17 @@ class _PrepLaunchSheetState extends State<_PrepLaunchSheet> {
         ? s.gfxProfileLabel(resolvedBoostProfile)
         : s.detailProfileDefault;
     _steps = [
-      const _Step('Core Apex: OK', isCheck: true),
-      _Step(s.detailBoostStepGame, isCheck: true),
-      _Step(s.detailBoostStepProfile(profileLabel), isCheck: true),
-      _Step(s.detailBoostStepRoute, isCheck: true),
-      _Step(s.detailBoostStepSession, isCheck: true),
-      _Step(s.detailBoostStepOpening, isCheck: false),
+      _Step(s.ritualStepGameLock, isCheck: true),
+      _Step(
+        resolvedBoostProfile != null
+            ? s.ritualStepProfileLoad(profileLabel)
+            : s.ritualStepProfileReady,
+        isCheck: true,
+      ),
+      _Step(s.ritualStepFocusPrep, isCheck: true),
+      _Step(s.ritualStepApexScan, isCheck: true),
+      _Step(s.ritualStepVisualSync, isCheck: true),
+      _Step(s.ritualStepReadyState, isCheck: false),
     ];
     _runSequence();
   }
@@ -1213,7 +1221,10 @@ class _PrepLaunchSheetState extends State<_PrepLaunchSheet> {
       if (!mounted) return;
       setState(() {
         _visibleCount = i + 1;
-        if (i == _steps.length - 1) _showChips = true;
+        if (i == _steps.length - 1) {
+          _showChips = true;
+          _ringComplete = true;
+        }
       });
       if (!_lowDistraction) {
         if (i == 1) unawaited(HapticFeedback.lightImpact());
@@ -1234,6 +1245,7 @@ class _PrepLaunchSheetState extends State<_PrepLaunchSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF111318),
@@ -1267,20 +1279,45 @@ class _PrepLaunchSheetState extends State<_PrepLaunchSheet> {
                     size: 18,
                   ),
                   const SizedBox(width: 10),
-                  Text(
-                    'Apex Boost Mode',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.white,
-                          fontWeight: FontWeight.bold,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Apex Boost Mode',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: AppColors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      Text(
+                        s.boostSubtitle,
+                        style: const TextStyle(
+                          color: AppColors.textGray,
+                          fontSize: 11,
+                          letterSpacing: 0.3,
                         ),
+                      ),
+                    ],
                   ),
                 ],
               ),
               const SizedBox(height: 16),
               Center(
-                child: _BoostRingIndicator(
-                  progress: _visibleCount / _steps.length,
+                child: ApexPulse(
+                  active: _ringComplete,
                   reducedMotion: _lowDistraction,
+                  color: AppColors.apexGreen,
+                  size: 100,
+                  child: ApexRing(
+                    progress: _visibleCount / _steps.length,
+                    size: 80,
+                    reducedMotion: _lowDistraction,
+                    child: const Icon(
+                      Icons.rocket_launch_rounded,
+                      color: AppColors.apexGreen,
+                      size: 22,
+                    ),
+                  ),
                 ),
               ).animate().fadeIn(duration: 350.ms),
               const SizedBox(height: 20),
@@ -1294,7 +1331,22 @@ class _PrepLaunchSheetState extends State<_PrepLaunchSheet> {
                     .slideX(begin: 0.04, end: 0, duration: 230.ms),
               if (_showChips) ...[
                 const SizedBox(height: 12),
-                const _ReadinessChipsRow()
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    StatusChip(
+                      label: s.boostChipSessionReady,
+                      color: AppColors.apexGreen,
+                      icon: Icons.check_circle_rounded,
+                    ),
+                    StatusChip(
+                      label: s.boostChipProfileLoaded,
+                      color: AppColors.cyberBlue,
+                      icon: Icons.tune_rounded,
+                    ),
+                  ],
+                )
                     .animate()
                     .fadeIn(duration: 280.ms)
                     .slideY(begin: 0.04, end: 0, duration: 230.ms),
@@ -1347,137 +1399,6 @@ class _PrepStepRow extends StatelessWidget {
                 ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ─── Readiness chips (UX-P1.5) ───────────────────────────────────────────────
-
-class _ReadinessChipsRow extends StatelessWidget {
-  const _ReadinessChipsRow();
-
-  @override
-  Widget build(BuildContext context) {
-    final s = AppStrings(languageNotifier.value);
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        _ReadinessChip(label: s.boostChipSessionReady),
-        _ReadinessChip(label: s.detailScanStatusReady),
-      ],
-    );
-  }
-}
-
-class _ReadinessChip extends StatelessWidget {
-  final String label;
-
-  const _ReadinessChip({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.apexGreen.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.apexGreen.withValues(alpha: 0.35),
-          width: 1,
-        ),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: AppColors.apexGreen,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.4,
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Boost ring indicator (UX-P1.3) ──────────────────────────────────────────
-
-class _BoostRingPainter extends CustomPainter {
-  final double progress;
-
-  const _BoostRingPainter({required this.progress});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.width - 10) / 2;
-
-    final trackPaint = Paint()
-      ..color = AppColors.white.withValues(alpha: 0.07)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawCircle(center, radius, trackPaint);
-
-    if (progress <= 0) return;
-
-    final sweep = progress * 2 * math.pi;
-    final rect = Rect.fromCircle(center: center, radius: radius);
-
-    final glowPaint = Paint()
-      ..color = AppColors.apexGreen.withValues(alpha: 0.30)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 7
-      ..strokeCap = StrokeCap.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-
-    canvas.drawArc(rect, -math.pi / 2, sweep, false, glowPaint);
-
-    final arcPaint = Paint()
-      ..color = AppColors.apexGreen
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawArc(rect, -math.pi / 2, sweep, false, arcPaint);
-  }
-
-  @override
-  bool shouldRepaint(_BoostRingPainter old) => old.progress != progress;
-}
-
-class _BoostRingIndicator extends StatelessWidget {
-  final double progress;
-  final bool reducedMotion;
-
-  const _BoostRingIndicator({
-    required this.progress,
-    this.reducedMotion = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0.0, end: progress),
-      duration: reducedMotion
-          ? const Duration(milliseconds: 100)
-          : const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-      builder: (_, value, __) => SizedBox(
-        width: 64,
-        height: 64,
-        child: CustomPaint(
-          painter: _BoostRingPainter(progress: value),
-          child: const Center(
-            child: Icon(
-              Icons.rocket_launch_rounded,
-              color: AppColors.apexGreen,
-              size: 20,
-            ),
-          ),
-        ),
       ),
     );
   }
