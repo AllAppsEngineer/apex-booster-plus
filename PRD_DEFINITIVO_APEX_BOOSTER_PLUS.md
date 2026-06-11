@@ -892,3 +892,203 @@ A oportunidade é transformar o botão de abrir jogo em um momento de marca. Em 
 | P2 | Preparar kit de screenshots/vídeo da Play Store | Melhora conversão e percepção profissional. |
 
 ---
+
+---
+
+# ADENDO 2026-06-10 — Apex Social Capture & Share Layer
+
+**Autor do adendo:** Manus AI  
+**Natureza do adendo:** acréscimo complementar ao PRD Definitivo consolidado, sem remoção, reescrita ou invalidação de qualquer seção anterior.  
+**Escopo do adendo:** criar uma camada de captura, composição visual, evolução gamer e compartilhamento social para aumentar aquisição orgânica, retenção e valor percebido do APEX BOOSTER+.  
+**Modelo comercial preservado:** **free install + one-time unlock**.
+
+Este adendo deve ser lido como extensão append-only do PRD. Todo o conteúdo anterior permanece válido. A camada **Apex Social Capture & Share Layer** não altera o posicionamento honesto do produto: o APEX BOOSTER+ continua sendo um app de preparação, organização, personalização visual e experiência gamer, sem prometer aumento real de FPS, redução real de ping, otimização real de CPU/GPU/RAM ou alteração técnica de jogos terceiros.
+
+> **Regra de integração:** a camada social deve transformar a jornada do usuário em conteúdo compartilhável, mas nunca deve capturar, gravar, exportar, publicar ou compartilhar qualquer dado sem ação explícita do usuário.
+
+---
+
+## 29. Apex Social Capture & Share Layer
+
+A **Apex Social Capture & Share Layer** é uma camada de produto dedicada a registrar, compor e exportar momentos da jornada gamer do usuário. Ela deve permitir que o usuário crie conteúdo social a partir de capturas, clipes, cards de evolução, badges, sessões preparadas e identidade visual Apex.
+
+O objetivo estratégico é fazer com que o APEX BOOSTER+ deixe de ser percebido apenas como um utilitário pré-jogo e passe a ser também um **hub de identidade gamer e compartilhamento social**. Essa camada cria um motivo adicional para baixar, testar, manter instalado e desbloquear o app, porque o usuário passa a enxergar o Apex como ferramenta para preparar a sessão e também para mostrar sua evolução.
+
+| Pilar | Descrição | Valor para o usuário | Valor para o produto |
+|---|---|---|---|
+| Captura opcional | Botão flutuante, screenshot, clipe curto ou importação de mídia | Menos atrito para registrar momentos | Mais recorrência e presença durante a sessão |
+| Composição social | Cards, molduras, overlays, badges e legendas | Conteúdo pronto para TikTok, Reels, Shorts e Status | Marketing orgânico e identidade visual viral |
+| Evolução gamer | Timeline, streaks, jogos favoritos e sessões preparadas | Sensação de progresso pessoal | Retenção baseada em histórico local |
+| Exportação segura | Presets 9:16, 1:1 e 16:9 | Publicação simples em redes sociais | Crescimento orgânico por compartilhamento |
+| Privacidade por padrão | Consentimento explícito e revisão antes de exportar | Confiança e controle | Menor risco de loja e reputação |
+
+---
+
+## 30. Requisitos funcionais adicionais da camada social
+
+Os requisitos abaixo devem ser acrescentados ao backlog oficial sem substituir requisitos anteriores. Eles continuam a numeração do PRD consolidado e devem ser tratados como uma nova frente de aquisição, viralidade e retenção premium.
+
+| ID | Módulo | Requisito | Estado inicial | Prioridade |
+|---|---|---|---|---:|
+| RF-31 | Apex Social Capture | Criar a camada Apex Social Capture & Share Layer como módulo oficial do produto | Novo | Alta |
+| RF-32 | Apex Floating Capture Button | Implementar botão flutuante opcional para capturar momento, marcar clipe ou abrir o Share Studio | Novo | Média/Alta |
+| RF-33 | Apex Screenshot Capture | Permitir captura, importação ou seleção de screenshot para composição de card social | Novo | Alta |
+| RF-34 | Apex Short Clip Capture | Permitir gravação curta assistida ou importação de clipes da galeria, conforme viabilidade técnica e permissões Android | Novo | Média/Alta |
+| RF-35 | Apex Clip Marker | Permitir que o usuário marque um momento de gameplay para posterior organização ou composição | Novo | Média |
+| RF-36 | Apex Share Studio | Criar editor simples para molduras, overlays, legendas, badges, temas Apex e exportação social | Novo | Alta |
+| RF-37 | Apex Evolution Card | Criar cards de evolução com sessões preparadas, jogos favoritos, badges, streaks e resumo semanal local | Novo | Alta |
+| RF-38 | Social Export Presets | Exportar cards e clipes em formatos 9:16, 1:1 e 16:9 para TikTok, Instagram Reels, YouTube Shorts e WhatsApp Status | Novo | Alta |
+| RF-39 | Apex Watermark | Permitir selo opcional “Prepared with Apex Booster+” ou variação localizada | Novo | Média |
+| RF-40 | Privacy Guard for Capture | Criar fluxo de consentimento, revisão e alertas para evitar captura acidental de dados sensíveis | Novo | Alta |
+| RF-41 | Social Drafts | Permitir salvar rascunhos locais de cards/clipes antes de exportar | Novo | Média |
+| RF-42 | Safe Share Sheet | Usar compartilhamento nativo do sistema sempre que possível, deixando a publicação final sob controle do usuário | Novo | Alta |
+
+---
+
+## 31. Escopo funcional detalhado
+
+A camada social deve priorizar primeiro os recursos de baixo risco e alto valor visual. Captura direta com sobreposição e gravação de tela deve ser tratada como fase posterior, pois pode exigir permissões sensíveis, variação de comportamento por versão do Android e maior atenção às políticas de loja.
+
+| Recurso | Escopo recomendado | Observações de implementação |
+|---|---|---|
+| Apex Share Studio | Editor interno para cards, molduras, tema, badge, legenda e exportação | Deve ser implementado antes de captura flutuante. |
+| Importação da galeria | Selecionar screenshot ou vídeo já existente | Reduz risco técnico e evita permissão de overlay no primeiro ciclo. |
+| Evolution Card | Card automático com dados locais do Apex | Não depende de telemetria do jogo. |
+| Presets sociais | 9:16, 1:1 e 16:9 | Priorizar TikTok/Reels/Shorts/Status. |
+| Floating Capture Button | Overlay opcional ativado manualmente | Exige consentimento explícito e tela educativa. |
+| Short Clip Capture | Gravação curta assistida | Implementar somente após validar permissões e estabilidade. |
+| Clip Marker | Marcação de momento | Pode ser simples no início, sem gravação contínua. |
+
+---
+
+## 32. Apex Floating Capture Button
+
+O **Apex Floating Capture Button** deve ser uma função opcional, ativada pelo usuário, para facilitar captura ou marcação de momento durante a sessão. Ele deve ser posicionado como recurso premium de conveniência social, não como vantagem competitiva em jogo.
+
+| Aspecto | Diretriz |
+|---|---|
+| Ativação | Deve ser opt-in, com explicação clara antes de solicitar permissão. |
+| Visibilidade | Deve permitir ocultar, mover, minimizar ou desativar rapidamente. |
+| Ação principal | Capturar momento, abrir Share Studio, marcar clipe ou iniciar captura curta autorizada. |
+| Segurança | Não pode gravar tela, áudio, microfone ou notificações sem consentimento explícito. |
+| Performance | Deve ser leve, com modo de baixa distração e sem bloquear gameplay. |
+| Transparência | Deve explicar que o botão serve para registro e compartilhamento, não para boost real. |
+
+---
+
+## 33. Apex Share Studio
+
+O **Apex Share Studio** deve ser o centro da camada social. Ele transforma capturas, clipes e dados locais em peças prontas para compartilhamento. A publicação final deve ocorrer pelo compartilhamento nativo do sistema ou por exportação local, deixando o usuário escolher o aplicativo de destino.
+
+| Elemento | Descrição | Disponibilidade sugerida |
+|---|---|---|
+| Molduras Apex | Frames com identidade visual do app | Unlock |
+| Legendas rápidas | Textos editáveis para posts sociais | Free e Unlock |
+| Badges locais | Conquistas, streaks e uso semanal | Unlock |
+| Tema do jogo/perfil | Visual contextual baseado no perfil da sessão | Unlock |
+| Watermark Apex | “Prepared with Apex Booster+” | Free opcional; controle avançado no Unlock |
+| Exportação 9:16 | TikTok, Reels, Shorts e Status | Free básico; estilos premium no Unlock |
+| Exportação 1:1 | Feed e comunidades | Free básico; estilos premium no Unlock |
+| Exportação 16:9 | Shorts horizontais, YouTube e compartilhamentos gerais | Unlock |
+| Rascunhos locais | Salvar composições para editar depois | Unlock |
+
+---
+
+## 34. Apex Evolution Card
+
+O **Apex Evolution Card** deve comunicar progresso pessoal de forma segura, sem depender de métricas internas dos jogos. Ele deve usar apenas dados que o APEX BOOSTER+ conhece legitimamente: sessões preparadas, jogos adicionados, favoritos, perfis usados, badges e streaks locais.
+
+| Campo | Origem | Permitido? | Observação |
+|---|---|---|---|
+| Sessões preparadas | Histórico local do Apex | Sim | Representa uso do app, não desempenho no jogo. |
+| Jogos favoritos | Biblioteca local | Sim | Pode ser usado para card de identidade gamer. |
+| Streaks | Histórico local | Sim | Deve ser informativo, não punitivo. |
+| Badges | Eventos locais | Sim | Deve evitar gatilhos abusivos. |
+| Perfil usado | Session Profiles/GFX local | Sim | Linguagem de preferência, não boost real. |
+| FPS | Telemetria externa ou inventada | Não | Proibido como claim de melhoria. |
+| Ping | Rede/jogo terceiros | Não | Proibido como claim de redução. |
+| Rank competitivo | Jogo terceiro | Não, salvo integração oficial futura | Não coletar nem inventar. |
+| Dados do dispositivo | Sistema | Não por padrão | Evitar exposição desnecessária. |
+
+---
+
+## 35. Presets de exportação social
+
+A camada social deve facilitar a exportação de conteúdo para redes sociais sem fazer postagem automática. O app deve preparar o arquivo local e abrir a folha de compartilhamento do sistema, preservando o controle do usuário.
+
+| Preset | Formato | Uso recomendado | Critério de aceite |
+|---|---|---|---|
+| TikTok/Reels/Shorts | 9:16 | Clipes curtos e evolução gamer | Exportar vertical sem cortar texto principal. |
+| Feed social | 1:1 | Cards e conquistas | Layout legível em quadrado. |
+| Story/Status | 9:16 | Resumo semanal e card de sessão | Margens seguras para interface das redes. |
+| Comunidade/YouTube | 16:9 | Card horizontal ou thumbnail | Não distorcer imagem ou ícones. |
+
+---
+
+## 36. Privacidade, permissões e política de loja
+
+A camada social deve ser construída com privacidade por padrão. Qualquer captura de tela, gravação curta, overlay, acesso à galeria ou exportação deve ser precedido de consentimento claro e de uma explicação objetiva de finalidade.
+
+| Área | Regra obrigatória |
+|---|---|
+| Overlay | Solicitar apenas se o Floating Capture Button for ativado pelo usuário. |
+| Captura de tela | Nunca iniciar sem ação explícita do usuário. |
+| Microfone | Desativado por padrão; solicitar somente se houver recurso claro de narração. |
+| Notificações | Não capturar notificações visíveis em tela sem alerta prévio. |
+| Galeria | Acessar apenas arquivos escolhidos pelo usuário ou por seletor seguro. |
+| Compartilhamento | Nunca postar automaticamente em TikTok, Instagram, YouTube ou WhatsApp. |
+| Dados sensíveis | Não incluir identificadores, lista de apps, conversas, notificações, modelo do dispositivo ou dados pessoais por padrão. |
+| Crianças e menores | Evitar mecânicas de pressão social; manter linguagem neutra e controle do usuário. |
+
+---
+
+## 37. Matriz Free versus One-time Unlock atualizada com camada social
+
+A camada social reforça o modelo **free install + one-time unlock** porque permite demonstrar valor imediatamente e reservar a experiência visual completa para o desbloqueio único.
+
+| Área social | Free install | One-time unlock |
+|---|---|---|
+| Share Studio | Criar card básico com uma moldura padrão | Molduras premium, temas Apex, estilos contextuais e rascunhos locais. |
+| Evolution Card | Card simples com sessões e jogo favorito | Badges, streaks, resumo semanal visual e variações premium. |
+| Exportação | 9:16 básico com watermark opcional | Presets avançados 9:16, 1:1, 16:9 e controle refinado de watermark. |
+| Importação de mídia | Selecionar imagem ou clipe da galeria | Templates avançados e composição com múltiplas cenas. |
+| Floating Capture Button | Prévia ou recurso limitado, conforme decisão de produto | Botão flutuante completo, personalização e atalhos premium. |
+| Temas sociais | Tema padrão Apex | Temas contextuais por jogo, perfil e badge. |
+| Privacidade | Sempre disponível | Sempre disponível; privacidade não deve ser paywall. |
+
+---
+
+## 38. Roadmap recomendado da camada social
+
+A implantação deve começar desde já, mas em ordem conservadora. O primeiro ciclo deve entregar valor social sem depender de permissões sensíveis. O segundo ciclo pode ampliar captura. O terceiro ciclo pode transformar a camada em motor de aquisição orgânica.
+
+| Fase | Entrega | Objetivo | Risco |
+|---:|---|---|---|
+| 1 | Apex Share Studio + Evolution Card + exportação 9:16 | Criar valor viral com menor complexidade | Baixo |
+| 2 | Importação de screenshots e clipes da galeria | Permitir uso com mídia real do usuário | Baixo/Médio |
+| 3 | Templates premium, badges visuais e rascunhos locais | Ampliar valor do unlock | Baixo |
+| 4 | Apex Floating Capture Button opt-in | Reduzir atrito de captura durante gameplay | Médio/Alto |
+| 5 | Short Clip Capture assistido | Captura mais direta e social | Alto |
+| 6 | Iteração por métricas locais e feedback | Refinar UX, conversão e retenção | Médio |
+
+---
+
+## 39. Critérios de aceite da camada social
+
+| Entrega | Critério de aceite |
+|---|---|
+| Apex Social Capture & Share Layer | Módulo visível no produto sem quebrar Biblioteca, Preparar, Histórico, GFX, Premium e Honest Booster Mode. |
+| Apex Share Studio | Permite compor card social com tema, legenda, badge e exportação local. |
+| Evolution Card | Usa somente dados locais do Apex e não inventa métricas de performance. |
+| Presets sociais | Exporta 9:16, 1:1 e 16:9 com leitura adequada e sem cortes críticos. |
+| Floating Capture Button | Só aparece após opt-in, pode ser movido/desativado e não interfere no gameplay. |
+| Privacy Guard | Exibe consentimento claro antes de overlay, captura, galeria, microfone ou compartilhamento. |
+| Safe Share Sheet | Usuário escolhe manualmente o destino de compartilhamento. |
+| Copy | Não usa linguagem de boost real, vantagem competitiva, FPS, ping ou otimização técnica. |
+| Monetização | Mantém **free install + one-time unlock**, sem assinatura, anúncios ou plano Pro/Elite. |
+
+---
+
+## 40. Conclusão do adendo social
+
+A **Apex Social Capture & Share Layer** deve ser incorporada como uma das frentes mais importantes de diferenciação do APEX BOOSTER+. Ela aumenta o desejo de download porque entrega algo que o usuário entende imediatamente: preparar a sessão, registrar momentos, criar conteúdo bonito e compartilhar sua evolução gamer. Ao mesmo tempo, mantém a honestidade técnica do produto, pois todo valor social é baseado em captura, composição visual, histórico local e escolha explícita do usuário.
