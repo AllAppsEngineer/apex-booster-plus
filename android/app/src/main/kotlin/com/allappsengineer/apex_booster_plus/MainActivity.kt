@@ -238,5 +238,31 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "apex/overlay"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "bringToForeground" -> {
+                    try {
+                        // FLAG_ACTIVITY_NEW_TASK is required on Android 12+
+                        // when startActivity() is called while the Activity is
+                        // not in the foreground. Without it the intent is
+                        // silently dropped on API 31+ in some OEM builds.
+                        val intent = Intent(this, MainActivity::class.java)
+                        intent.addFlags(
+                            Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                            Intent.FLAG_ACTIVITY_NEW_TASK
+                        )
+                        startActivity(intent)
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.success(null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
     }
 }

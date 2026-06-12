@@ -38,7 +38,9 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
   @override
   void initState() {
     super.initState();
+    debugPrint('[PERF-STARTUP] BibliotecaTab init started');
     _loadGames();
+    debugPrint('[PERF-STARTUP] BibliotecaTab init ended');
   }
 
   @override
@@ -50,17 +52,21 @@ class _BibliotecaTabState extends State<BibliotecaTab> {
   }
 
   Future<void> _loadGames() async {
+    debugPrint('[PERF-STARTUP] BibliotecaTab library load started');
     final prefs = await SharedPreferences.getInstance();
     _controller = GameLibraryController(
       SharedPreferencesGameLibraryRepository(prefs),
     );
     await _controller.loadGames();
+    debugPrint('[PERF-STARTUP] BibliotecaTab library load ended: ${_controller.state.games.length} games');
     if (mounted) setState(() => _gamesLoaded = true);
   }
 
   Future<void> _loadInstalledApps() async {
+    debugPrint('[PERF-STARTUP] BibliotecaTab installed apps load started');
     try {
       final apps = await InstalledAppsDatasource().getInstalledApps();
+      debugPrint('[PERF-STARTUP] BibliotecaTab installed apps load ended: ${apps.length} apps');
       if (mounted) {
         setState(() {
           _notVerifiedPkgs = buildNotVerifiedSet(apps);

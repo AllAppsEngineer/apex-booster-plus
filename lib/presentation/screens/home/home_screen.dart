@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/i18n/app_language.dart';
 import '../../../core/i18n/app_strings.dart';
-import '../../../data/datasources/installed_apps_datasource.dart';
-import '../../../domain/entities/installed_app.dart';
 import 'tabs/inicio_tab.dart';
 import 'tabs/biblioteca_tab.dart';
 import 'tabs/preparar_tab.dart';
@@ -22,26 +20,24 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   DateTime? _lastBackPress;
 
+  // Tab 0 (Início) is the only tab visited on startup.
+  // All others are built lazily on first user tap.
+  final List<bool> _tabVisited = [true, false, false, false, false];
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await Future.delayed(const Duration(milliseconds: 1000));
-      if (!mounted) return;
-      InstalledAppsDatasource().getInstalledApps().catchError((Object e) {
-        debugPrint('[PERF-BIBLIO] warm-up erro: $e');
-        return const <InstalledApp>[];
-      });
-    });
+    debugPrint('[PERF-STARTUP] HomeScreen init started');
+    debugPrint('[PERF-STARTUP] HomeScreen init ended');
   }
 
-  List<Widget> get _tabs => [
-    InicioTab(isActive: _selectedIndex == 0),
-    BibliotecaTab(isActive: _selectedIndex == 1),
-    PrepararTab(isActive: _selectedIndex == 2),
-    HistoricoTab(isActive: _selectedIndex == 3),
-    const ConfiguracoesTab(),
-  ];
+  Widget _buildTab(int index) => switch (index) {
+    0 => InicioTab(isActive: _selectedIndex == 0),
+    1 => BibliotecaTab(isActive: _selectedIndex == 1),
+    2 => PrepararTab(isActive: _selectedIndex == 2),
+    3 => HistoricoTab(isActive: _selectedIndex == 3),
+    _ => const ConfiguracoesTab(),
+  };
 
   Future<bool> _onPopInvoked() async {
     if (_selectedIndex != 0) {
@@ -80,7 +76,10 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: AppColors.background,
         body: IndexedStack(
           index: _selectedIndex,
-          children: _tabs,
+          children: List.generate(5, (i) {
+            if (!_tabVisited[i]) return const SizedBox.shrink();
+            return _buildTab(i);
+          }),
         ),
         bottomNavigationBar: _buildBottomNav(),
       ),
@@ -128,7 +127,10 @@ class _HomeScreenState extends State<HomeScreen> {
             selectedItemColor: AppColors.apexGreen,
             unselectedItemColor: AppColors.textGray,
             currentIndex: _selectedIndex,
-            onTap: (i) => setState(() => _selectedIndex = i),
+            onTap: (i) {
+              _tabVisited[i] = true;
+              setState(() => _selectedIndex = i);
+            },
             selectedFontSize: 11,
             unselectedFontSize: 11,
             elevation: 0,

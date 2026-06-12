@@ -2151,4 +2151,393 @@ class AppStrings {
         return check.message;
     }
   }
+
+  // ─── Social — Share Studio (SOCIAL-U1) ──────────────────────────────────────
+
+  String get socialStudioTitle => 'Apex Studio';
+
+  String get socialStudioSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Crie seu card gamer',
+    AppLanguage.en   => 'Create your gamer card',
+    AppLanguage.es   => 'Crea tu tarjeta gamer',
+  };
+
+  String get socialStudioCaption => switch (lang) {
+    AppLanguage.ptBr => 'Legenda',
+    AppLanguage.en   => 'Caption',
+    AppLanguage.es   => 'Leyenda',
+  };
+
+  String get socialStudioCaptionHint => switch (lang) {
+    AppLanguage.ptBr => 'Escreva sobre sua sessão...',
+    AppLanguage.en   => 'Write about your session...',
+    AppLanguage.es   => 'Escribe sobre tu sesión...',
+  };
+
+  String get socialStudioTemplate => switch (lang) {
+    AppLanguage.ptBr => 'Tema',
+    AppLanguage.en   => 'Theme',
+    AppLanguage.es   => 'Tema',
+  };
+
+  String get socialStudioExport => switch (lang) {
+    AppLanguage.ptBr => 'Exportar',
+    AppLanguage.en   => 'Export',
+    AppLanguage.es   => 'Exportar',
+  };
+
+  String get socialStudioPreview => switch (lang) {
+    AppLanguage.ptBr => 'Prévia',
+    AppLanguage.en   => 'Preview',
+    AppLanguage.es   => 'Vista previa',
+  };
+
+  String get socialStudioWatermark => 'Prepared with Apex Booster+';
+
+  String get socialStudioBadgeSection => switch (lang) {
+    AppLanguage.ptBr => 'Badges',
+    AppLanguage.en   => 'Badges',
+    AppLanguage.es   => 'Insignias',
+  };
+
+  String get socialStudioNoBadge => switch (lang) {
+    AppLanguage.ptBr => 'Sem badge',
+    AppLanguage.en   => 'No badge',
+    AppLanguage.es   => 'Sin insignia',
+  };
+
+  String get socialStudioCreateCard => switch (lang) {
+    AppLanguage.ptBr => 'Criar card',
+    AppLanguage.en   => 'Create card',
+    AppLanguage.es   => 'Crear tarjeta',
+  };
+
+  String get socialStudioCreateCardHint => switch (lang) {
+    AppLanguage.ptBr => 'Compartilhe sua evolução gamer',
+    AppLanguage.en   => 'Share your gamer evolution',
+    AppLanguage.es   => 'Comparte tu evolución gamer',
+  };
+
+  String get socialStudioSessionReady => switch (lang) {
+    AppLanguage.ptBr => 'Sessão preparada',
+    AppLanguage.en   => 'Session ready',
+    AppLanguage.es   => 'Sesión lista',
+  };
+
+  // ─── Social — Apex Studio media (SOCIAL-U1B) ─────────────────────────────────
+
+  String get apexStudioMediaSection => switch (lang) {
+    AppLanguage.ptBr => 'Mídia',
+    AppLanguage.en   => 'Media',
+    AppLanguage.es   => 'Media',
+  };
+
+  String get apexStudioAddMedia => switch (lang) {
+    AppLanguage.ptBr => 'Adicionar print ou vídeo',
+    AppLanguage.en   => 'Add screenshot or video',
+    AppLanguage.es   => 'Agregar captura o video',
+  };
+
+  String get apexStudioPickImage => switch (lang) {
+    AppLanguage.ptBr => 'Selecionar imagem',
+    AppLanguage.en   => 'Select image',
+    AppLanguage.es   => 'Seleccionar imagen',
+  };
+
+  String get apexStudioPickVideo => switch (lang) {
+    AppLanguage.ptBr => 'Selecionar vídeo',
+    AppLanguage.en   => 'Select video',
+    AppLanguage.es   => 'Seleccionar video',
+  };
+
+  String get apexStudioImageSelected => switch (lang) {
+    AppLanguage.ptBr => 'Imagem selecionada',
+    AppLanguage.en   => 'Image selected',
+    AppLanguage.es   => 'Imagen seleccionada',
+  };
+
+  String get apexStudioVideoSelected => switch (lang) {
+    AppLanguage.ptBr => 'Vídeo selecionado',
+    AppLanguage.en   => 'Video selected',
+    AppLanguage.es   => 'Video seleccionado',
+  };
+
+  String get apexStudioChangeMedia => switch (lang) {
+    AppLanguage.ptBr => 'Trocar mídia',
+    AppLanguage.en   => 'Change media',
+    AppLanguage.es   => 'Cambiar media',
+  };
+
+  String get apexStudioRemoveMedia => switch (lang) {
+    AppLanguage.ptBr => 'Remover',
+    AppLanguage.en   => 'Remove',
+    AppLanguage.es   => 'Quitar',
+  };
+
+  String get apexStudioNoMediaHint => switch (lang) {
+    AppLanguage.ptBr => 'Adicione um print ou vídeo para exportar',
+    AppLanguage.en   => 'Add a screenshot or video to export',
+    AppLanguage.es   => 'Agrega una imagen o video para exportar',
+  };
+
+  String get apexStudioVideoExportNotice => switch (lang) {
+    AppLanguage.ptBr => 'Exportação de vídeo será ativada na próxima etapa.',
+    AppLanguage.en   => 'Video export will be available in the next step.',
+    AppLanguage.es   => 'La exportación de video estará disponible en el siguiente paso.',
+  };
+
+  String get apexStudioMediaError => switch (lang) {
+    AppLanguage.ptBr => 'Não foi possível acessar a galeria neste dispositivo.',
+    AppLanguage.en   => 'Could not access the gallery on this device.',
+    AppLanguage.es   => 'No se pudo acceder a la galería en este dispositivo.',
+  };
+
+  // ─── Social — Export Presets ─────────────────────────────────────────────────
+
+  String get socialPresetPortrait => switch (lang) {
+    AppLanguage.ptBr => '9:16 · TikTok / Reels',
+    AppLanguage.en   => '9:16 · TikTok / Reels',
+    AppLanguage.es   => '9:16 · TikTok / Reels',
+  };
+
+  String get socialPresetSquare => switch (lang) {
+    AppLanguage.ptBr => '1:1 · Feed',
+    AppLanguage.en   => '1:1 · Feed',
+    AppLanguage.es   => '1:1 · Feed',
+  };
+
+  String get socialPresetLandscape => switch (lang) {
+    AppLanguage.ptBr => '16:9 · YouTube',
+    AppLanguage.en   => '16:9 · YouTube',
+    AppLanguage.es   => '16:9 · YouTube',
+  };
+
+  // ─── Social — Privacy Guard ──────────────────────────────────────────────────
+
+  String get privacyGuardTitle => switch (lang) {
+    AppLanguage.ptBr => 'Revisar antes de compartilhar',
+    AppLanguage.en   => 'Review before sharing',
+    AppLanguage.es   => 'Revisar antes de compartir',
+  };
+
+  String get privacyGuardBody => switch (lang) {
+    AppLanguage.ptBr => 'Você revisa e escolhe onde compartilhar.',
+    AppLanguage.en   => 'You review and choose where to share.',
+    AppLanguage.es   => 'Revisas y eliges dónde compartir.',
+  };
+
+  String get privacyGuardNoAutoPost => switch (lang) {
+    AppLanguage.ptBr => 'O Apex nunca posta por você.',
+    AppLanguage.en   => 'Apex never posts for you.',
+    AppLanguage.es   => 'Apex nunca publica por ti.',
+  };
+
+  String get privacyGuardConfirm => switch (lang) {
+    AppLanguage.ptBr => 'Exportar',
+    AppLanguage.en   => 'Export',
+    AppLanguage.es   => 'Exportar',
+  };
+
+  String get privacyGuardCancel => switch (lang) {
+    AppLanguage.ptBr => 'Cancelar',
+    AppLanguage.en   => 'Cancel',
+    AppLanguage.es   => 'Cancelar',
+  };
+
+  // ─── Social — Evolution Card (SOCIAL-U2) ────────────────────────────────────
+
+  String get evolutionCardTitle => switch (lang) {
+    AppLanguage.ptBr => 'Sua jornada no Apex',
+    AppLanguage.en   => 'Your Apex Journey',
+    AppLanguage.es   => 'Tu camino en Apex',
+  };
+
+  String get evolutionCardSessions => switch (lang) {
+    AppLanguage.ptBr => 'sessões preparadas',
+    AppLanguage.en   => 'sessions prepared',
+    AppLanguage.es   => 'sesiones preparadas',
+  };
+
+  String get evolutionCardFavorite => switch (lang) {
+    AppLanguage.ptBr => 'Jogo favorito',
+    AppLanguage.en   => 'Favorite game',
+    AppLanguage.es   => 'Juego favorito',
+  };
+
+  String get evolutionCardStreak => switch (lang) {
+    AppLanguage.ptBr => 'sequência atual',
+    AppLanguage.en   => 'current streak',
+    AppLanguage.es   => 'racha actual',
+  };
+
+  String get evolutionCardShare => switch (lang) {
+    AppLanguage.ptBr => 'Compartilhar evolução',
+    AppLanguage.en   => 'Share evolution',
+    AppLanguage.es   => 'Compartir evolución',
+  };
+
+  // ─── Social — Floating Capture Button (SOCIAL-U6) ───────────────────────────
+
+  String get floatingCaptureEnable => switch (lang) {
+    AppLanguage.ptBr => 'Ativar botão de captura',
+    AppLanguage.en   => 'Enable capture button',
+    AppLanguage.es   => 'Activar botón de captura',
+  };
+
+  String get floatingCaptureTitle => switch (lang) {
+    AppLanguage.ptBr => 'Capturar momento',
+    AppLanguage.en   => 'Capture moment',
+    AppLanguage.es   => 'Capturar momento',
+  };
+
+  String get floatingCaptureClip => switch (lang) {
+    AppLanguage.ptBr => 'Marcar clipe',
+    AppLanguage.en   => 'Mark clip',
+    AppLanguage.es   => 'Marcar clip',
+  };
+
+  String get floatingCaptureDisable => switch (lang) {
+    AppLanguage.ptBr => 'Desativar botão',
+    AppLanguage.en   => 'Disable button',
+    AppLanguage.es   => 'Desactivar botón',
+  };
+
+  String get floatingCaptureOptInTitle => switch (lang) {
+    AppLanguage.ptBr => 'Botão flutuante de captura',
+    AppLanguage.en   => 'Floating capture button',
+    AppLanguage.es   => 'Botón flotante de captura',
+  };
+
+  String get floatingCaptureOptInBody => switch (lang) {
+    AppLanguage.ptBr =>
+      'Este botão aparece sobre outros apps quando ativado. '
+      'Você pode desativar a qualquer momento.',
+    AppLanguage.en =>
+      'This button appears over other apps when enabled. '
+      'You can disable it at any time.',
+    AppLanguage.es =>
+      'Este botón aparece sobre otras apps cuando está activado. '
+      'Puedes desactivarlo en cualquier momento.',
+  };
+
+  String get floatingCapturePermission => switch (lang) {
+    AppLanguage.ptBr =>
+      'Para mostrar o botão durante jogos, é preciso permissão de sobreposição.',
+    AppLanguage.en =>
+      'To show the button during games, overlay permission is required.',
+    AppLanguage.es =>
+      'Para mostrar el botón durante juegos, se requiere permiso de superposición.',
+  };
+
+  // ─── Social — Floating Capture (SOCIAL-U2A) ──────────────────────────────────
+
+  // Card em Configurações
+  String get captureFloatBadge => 'SOCIAL';
+
+  String get captureFloatCardTitle => switch (lang) {
+    AppLanguage.ptBr => 'Botão Flutuante',
+    AppLanguage.en   => 'Floating Button',
+    AppLanguage.es   => 'Botón Flotante',
+  };
+
+  String get captureFloatCardSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Acesse rapidamente suas mídias durante a sessão gamer',
+    AppLanguage.en   => 'Quickly access your media during gaming sessions',
+    AppLanguage.es   => 'Accede rápidamente a tus medios durante la sesión gamer',
+  };
+
+  String get captureFloatCardEnabled => switch (lang) {
+    AppLanguage.ptBr => 'Ativo',
+    AppLanguage.en   => 'Active',
+    AppLanguage.es   => 'Activo',
+  };
+
+  String get captureFloatCardDisabled => switch (lang) {
+    AppLanguage.ptBr => 'Inativo',
+    AppLanguage.en   => 'Inactive',
+    AppLanguage.es   => 'Inactivo',
+  };
+
+  String get captureFloatCardPermRequired => switch (lang) {
+    AppLanguage.ptBr => 'Permissão de sobreposição necessária',
+    AppLanguage.en   => 'Overlay permission required',
+    AppLanguage.es   => 'Permiso de superposición necesario',
+  };
+
+  String get captureFloatCardOpenSettings => switch (lang) {
+    AppLanguage.ptBr => 'Abrir configurações',
+    AppLanguage.en   => 'Open settings',
+    AppLanguage.es   => 'Abrir configuración',
+  };
+
+  String get captureFloatInReviewNote => switch (lang) {
+    AppLanguage.ptBr =>
+        'Botão flutuante em revisão técnica. '
+        'Use o Apex Studio para adicionar print ou vídeo.',
+    AppLanguage.en =>
+        'Floating button under technical review. '
+        'Use Apex Studio to add screenshots or videos.',
+    AppLanguage.es =>
+        'Botón flotante en revisión técnica. '
+        'Usa Apex Studio para agregar capturas o videos.',
+  };
+
+  // Consent sheet
+  String get captureConsentTitle => switch (lang) {
+    AppLanguage.ptBr => 'Captura Flutuante Apex',
+    AppLanguage.en   => 'Apex Floating Capture',
+    AppLanguage.es   => 'Captura Flotante Apex',
+  };
+
+  String get captureConsentBody => switch (lang) {
+    AppLanguage.ptBr =>
+        'Use o botão flutuante para acessar rapidamente suas mídias durante '
+        'a sessão gamer. Você escolhe o print ou vídeo que deseja usar no '
+        'Apex Studio. Nada é capturado ou compartilhado automaticamente.',
+    AppLanguage.en =>
+        'Use the floating button to quickly access your media during gaming '
+        'sessions. You choose the screenshot or video to use in Apex Studio. '
+        'Nothing is captured or shared automatically.',
+    AppLanguage.es =>
+        'Usa el botón flotante para acceder rápidamente a tus medios durante '
+        'la sesión gamer. Tú eliges la captura o el video que quieres usar en '
+        'Apex Studio. Nada se captura ni comparte automáticamente.',
+  };
+
+  String get captureConsentPermNote => switch (lang) {
+    AppLanguage.ptBr =>
+        'Este recurso precisa de permissão para exibir sobre outros apps.',
+    AppLanguage.en =>
+        'This feature needs permission to display over other apps.',
+    AppLanguage.es =>
+        'Esta función necesita permiso para mostrarse sobre otras apps.',
+  };
+
+  String get captureConsentActivate => switch (lang) {
+    AppLanguage.ptBr => 'Ativar',
+    AppLanguage.en   => 'Activate',
+    AppLanguage.es   => 'Activar',
+  };
+
+  String get captureConsentPermDenied => switch (lang) {
+    AppLanguage.ptBr =>
+        'Permissão necessária. Ative em Configurações › Apps › Aparência na tela.',
+    AppLanguage.en =>
+        'Permission required. Enable it in Settings › Apps › Appear on screen.',
+    AppLanguage.es =>
+        'Permiso necesario. Actívalo en Configuración › Apps › Aparecer en pantalla.',
+  };
+
+  // Mini-overlay (cópia espelho; overlay engine usa strings hardcoded por engine separada)
+  String get captureOverlayOpenGallery => switch (lang) {
+    AppLanguage.ptBr => 'Adicionar print ou vídeo',
+    AppLanguage.en   => 'Add screenshot or video',
+    AppLanguage.es   => 'Agregar captura o video',
+  };
+
+  String get captureOverlayOpenStudio => switch (lang) {
+    AppLanguage.ptBr => 'Voltar ao Apex Studio',
+    AppLanguage.en   => 'Back to Apex Studio',
+    AppLanguage.es   => 'Volver a Apex Studio',
+  };
 }

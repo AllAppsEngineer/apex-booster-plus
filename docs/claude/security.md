@@ -97,3 +97,16 @@ Antes de entregar qualquer trecho que toque APIs, Billing, unlock, restore, mét
 | Billing | Apenas com fase aprovada e Play Console pronto. |
 
 Antes da loja: publicar Política de Privacidade em URL pública real e ativar link funcional no app.
+
+---
+
+## S10. SYSTEM_ALERT_WINDOW — Botão Flutuante Apex (SOCIAL-U2A)
+
+- **Finalidade:** exibir botão de acesso rápido sobre outros apps durante sessão gamer.
+- **Solicitação:** apenas após consentimento explícito do usuário em Configurações (`CaptureConsentSheet`). Nunca solicitada automaticamente.
+- **Uso exclusivo:** botão flutuante social. Não utilizado para coleta de dados, anúncios, rastreamento ou qualquer outra finalidade.
+- **Desativação:** toggle em Configurações → `FloatingCaptureService.disable()` + `FlutterOverlayWindow.closeOverlay()`.
+- **Captura automática:** proibida. O botão é um atalho para a galeria do usuário ou para o Apex Studio.
+- **Compartilhamento automático:** proibido. Toda publicação exige ação explícita do usuário no Apex Studio.
+- **Disclosure obrigatória:** deve constar na Política de Privacidade publicada antes do release (seção sobre permissões especiais / overlay).
+- **Fase seguinte (SOCIAL-U2B):** se MediaProjection for implementada, exigirá `FOREGROUND_SERVICE`, disclosure adicional e fase própria aprovada separadamente.

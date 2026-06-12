@@ -35,7 +35,8 @@ class _SplashScreenState extends State<SplashScreen>
     Future.delayed(const Duration(milliseconds: 800), () {
       if (mounted) _ring2.repeat();
     });
-    Future.delayed(const Duration(milliseconds: 2500), () async {
+    Future.delayed(const Duration(milliseconds: 1200), () async {
+      debugPrint('[PERF-STARTUP] splash navigate');
       if (!mounted) return;
       final prefs = await SharedPreferences.getInstance();
       final done = OnboardingService(prefs).isDone();

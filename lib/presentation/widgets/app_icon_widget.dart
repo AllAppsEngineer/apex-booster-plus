@@ -47,7 +47,9 @@ class _AppIconWidgetState extends State<AppIconWidget> {
       if (mounted) setState(() => _loaded = true);
       return;
     }
+    debugPrint('[PERF-STARTUP] icon loading started: $pkg');
     final bytes = await _datasource.getAppIcon(pkg);
+    debugPrint('[PERF-STARTUP] icon loading ended: $pkg (${bytes?.length ?? 0} bytes)');
     if (mounted) {
       setState(() {
         _bytes = bytes;

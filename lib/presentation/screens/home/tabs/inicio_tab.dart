@@ -33,7 +33,9 @@ class _InicioTabState extends State<InicioTab> {
   @override
   void initState() {
     super.initState();
+    debugPrint('[PERF-STARTUP] InicioTab init started');
     _loadData();
+    debugPrint('[PERF-STARTUP] InicioTab init ended');
   }
 
   @override
@@ -45,6 +47,7 @@ class _InicioTabState extends State<InicioTab> {
   }
 
   Future<void> _loadData() async {
+    debugPrint('[PERF-STARTUP] InicioTab data load started');
     final prefs = await SharedPreferences.getInstance();
     final gameRepo = SharedPreferencesGameLibraryRepository(prefs);
     final sessionRepo = SharedPreferencesSessionRepository(prefs);
@@ -62,6 +65,7 @@ class _InicioTabState extends State<InicioTab> {
     }
 
     if (!mounted) return;
+    debugPrint('[PERF-STARTUP] InicioTab data load ended');
     setState(() {
       _gameCount = games.length;
       _sessionCount = sessions.length;

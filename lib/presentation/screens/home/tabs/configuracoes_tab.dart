@@ -43,6 +43,8 @@ class ConfiguracoesTab extends StatelessWidget {
                   const SizedBox(height: 12),
                   _LowDistractionCard(),
                   const SizedBox(height: 12),
+                  _FloatingCaptureCard(),
+                  const SizedBox(height: 12),
                   _AboutCard(),
                 ],
               ),
@@ -108,7 +110,11 @@ class _FocusModeCardState extends State<_FocusModeCard>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _checkPermission();
+    // Defer to after first frame — isPermissionGranted runs on the Android main
+    // thread and would compete with frame rendering if called during initState.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _checkPermission();
+    });
   }
 
   @override
@@ -994,6 +1000,90 @@ class _AboutCard extends StatelessWidget {
         .animate()
         .fadeIn(delay: 200.ms, duration: 600.ms)
         .slideY(begin: 0.04, end: 0, duration: 400.ms);
+  }
+}
+
+// ─── Botão Flutuante — SOCIAL-U2A-RESET ──────────────────────────────────────
+
+class _FloatingCaptureCard extends StatelessWidget {
+  const _FloatingCaptureCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.textGray.withValues(alpha: 0.06),
+            AppColors.white.withValues(alpha: 0.02),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.textGray.withValues(alpha: 0.15),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              ApexBadge(
+                label: s.captureFloatBadge,
+                color: AppColors.textGray,
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.textGray.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: AppColors.textGray.withValues(alpha: 0.22),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  s.captureFloatCardDisabled,
+                  style: TextStyle(
+                    color: AppColors.textGray.withValues(alpha: 0.7),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            s.captureFloatCardTitle,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.textGray,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            s.captureFloatInReviewNote,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textGray.withValues(alpha: 0.7),
+                  fontSize: 13,
+                ),
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(delay: 170.ms, duration: 500.ms)
+        .slideY(begin: 0.04, end: 0, duration: 380.ms);
   }
 }
 

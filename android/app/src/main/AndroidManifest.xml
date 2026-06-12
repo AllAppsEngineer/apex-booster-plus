@@ -40,6 +40,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Required for Modo Foco Gamer (DND control — special permission, not dangerous) -->
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <!-- Required for future native WindowManager overlay (SOCIAL-U2A-NATIVE) — requested only after explicit user opt-in -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>

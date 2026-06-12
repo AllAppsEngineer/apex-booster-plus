@@ -354,6 +354,8 @@ class _GameDetailScreenState extends State<GameDetailScreen>
                   hasPackage: _game!.packageName?.isNotEmpty == true,
                   onTap: _launchGame,
                 ),
+              if (!_loading && _game != null)
+                _CreateCardButton(gameId: widget.gameId),
             ],
           ),
         ),
@@ -1158,6 +1160,93 @@ class _LaunchGameButton extends StatelessWidget {
           color: Colors.white.withValues(alpha: 0.32),
           angle: 0.0,
         );
+  }
+}
+
+// ─── Create card button (Share Studio entry point) ───────────────────────────
+
+class _CreateCardButton extends StatelessWidget {
+  final String gameId;
+  const _CreateCardButton({required this.gameId});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+      child: GestureDetector(
+        onTap: () => context.push('/share-studio/$gameId'),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.apexGreen.withValues(alpha: 0.12),
+                AppColors.cyberBlue.withValues(alpha: 0.06),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.apexGreen.withValues(alpha: 0.30),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.apexGreen.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(9),
+                  border: Border.all(
+                    color: AppColors.apexGreen.withValues(alpha: 0.25),
+                    width: 0.5,
+                  ),
+                ),
+                child: Icon(
+                  Icons.auto_awesome_rounded,
+                  color: AppColors.apexGreen,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.socialStudioCreateCard,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      s.socialStudioCreateCardHint,
+                      style: TextStyle(
+                        color: AppColors.apexGreen.withValues(alpha: 0.65),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: AppColors.apexGreen.withValues(alpha: 0.45),
+                size: 13,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

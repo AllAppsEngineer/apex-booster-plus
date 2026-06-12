@@ -1,0 +1,38 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:apex_booster_plus/core/i18n/app_strings.dart';
+import 'package:apex_booster_plus/core/i18n/app_language.dart';
+
+void main() {
+  final langs = AppLanguage.values;
+
+  group('AppStrings — social section', () {
+    for (final lang in langs) {
+      group('lang=$lang', () {
+        late AppStrings s;
+        setUp(() => s = AppStrings(lang));
+
+        test('socialStudioTitle is non-empty', () => expect(s.socialStudioTitle, isNotEmpty));
+        test('socialStudioSubtitle is non-empty', () => expect(s.socialStudioSubtitle, isNotEmpty));
+        test('socialStudioCaptionHint is non-empty', () => expect(s.socialStudioCaptionHint, isNotEmpty));
+        test('socialStudioExport is non-empty', () => expect(s.socialStudioExport, isNotEmpty));
+        test('socialStudioWatermark is non-empty', () => expect(s.socialStudioWatermark, isNotEmpty));
+        test('socialStudioCreateCard is non-empty', () => expect(s.socialStudioCreateCard, isNotEmpty));
+        test('socialPresetPortrait is non-empty', () => expect(s.socialPresetPortrait, isNotEmpty));
+        test('socialPresetSquare is non-empty', () => expect(s.socialPresetSquare, isNotEmpty));
+        test('socialPresetLandscape is non-empty', () => expect(s.socialPresetLandscape, isNotEmpty));
+        test('privacyGuardTitle is non-empty', () => expect(s.privacyGuardTitle, isNotEmpty));
+        test('privacyGuardBody is non-empty', () => expect(s.privacyGuardBody, isNotEmpty));
+        test('privacyGuardNoAutoPost is non-empty', () => expect(s.privacyGuardNoAutoPost, isNotEmpty));
+        test('privacyGuardConfirm is non-empty', () => expect(s.privacyGuardConfirm, isNotEmpty));
+        test('privacyGuardCancel is non-empty', () => expect(s.privacyGuardCancel, isNotEmpty));
+
+        test('socialStudioWatermark does not contain FPS', () {
+          expect(s.socialStudioWatermark.toLowerCase(), isNot(contains('fps')));
+        });
+        test('socialStudioWatermark does not contain boost real', () {
+          expect(s.socialStudioWatermark.toLowerCase(), isNot(contains('boost real')));
+        });
+      });
+    }
+  });
+}

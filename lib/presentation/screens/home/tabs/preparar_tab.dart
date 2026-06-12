@@ -179,8 +179,14 @@ class _PrepararTabState extends State<PrepararTab> {
   @override
   void initState() {
     super.initState();
+    debugPrint('[PERF-STARTUP] PrepararTab init started');
     _load();
-    _loadMetrics(); // runs concurrently, never blocks game display
+    // Defer metrics to after first frame — getMemoryInfo runs on the Android
+    // main thread and would compete with frame rendering if started immediately.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadMetrics();
+    });
+    debugPrint('[PERF-STARTUP] PrepararTab init ended');
   }
 
   @override

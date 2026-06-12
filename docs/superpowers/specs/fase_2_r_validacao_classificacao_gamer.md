@@ -126,7 +126,7 @@ val isGame = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 **Nota de compatibilidade:**
 - `CATEGORY_GAME` → API 26+ (Android 8.0 Oreo).
 - `FLAG_IS_GAME` → legado, disponível em APIs anteriores, deprecated mas funcional.
-- Samsung S24 Ultra roda API 34 — `CATEGORY_GAME` sempre disponível.
+- Aparelho de validação (Samsung S24 Ultra, Android 16 / API 36) — `CATEGORY_GAME` sempre disponível (requer API 26+).
 
 ---
 
