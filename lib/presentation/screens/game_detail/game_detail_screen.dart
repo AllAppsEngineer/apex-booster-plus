@@ -30,8 +30,9 @@ import 'package:apex_booster_plus/presentation/widgets/status_chip.dart';
 
 class GameDetailScreen extends StatefulWidget {
   final String gameId;
+  final ApexGame? initialGame;
 
-  const GameDetailScreen({super.key, required this.gameId});
+  const GameDetailScreen({super.key, required this.gameId, this.initialGame});
 
   @override
   State<GameDetailScreen> createState() => _GameDetailScreenState();
@@ -49,11 +50,33 @@ class _GameDetailScreenState extends State<GameDetailScreen>
   final _focusService = FocusModeServiceImpl();
   bool _focusWasEnabled = false;
 
+  // Reference point for T+ timing logs.
+  final int _t0 = DateTime.now().millisecondsSinceEpoch;
+
+  int get _tms => DateTime.now().millisecondsSinceEpoch - _t0;
+
   @override
   void initState() {
     super.initState();
+    // When initialGame is provided by the caller (e.g. PrepararTab already has
+    // the object in memory), render content immediately on the first frame
+    // instead of showing a spinner while SharedPreferences loads.
+    if (widget.initialGame != null) {
+      _game = widget.initialGame;
+      _loading = false;
+    }
+    debugPrint('[DETAIL-NAV] T+${_tms}ms detail init (loading=$_loading)');
     WidgetsBinding.instance.addObserver(this);
-    _loadGame();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('[DETAIL-NAV] T+${_tms}ms detail first frame');
+      if (mounted) _loadGame();
+    });
+    if (widget.initialGame != null) {
+      // Log when the first frame with actual content is painted.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        debugPrint('[DETAIL-NAV] T+${_tms}ms first meaningful content rendered');
+      });
+    }
   }
 
   @override
@@ -75,30 +98,41 @@ class _GameDetailScreenState extends State<GameDetailScreen>
   }
 
   Future<void> _loadGame() async {
+    debugPrint('[DETAIL-NAV] T+${_tms}ms data load started');
+    final bool providedInitially = widget.initialGame != null;
     if (widget.gameId.isEmpty) {
-      if (mounted) setState(() => _loading = false);
+      if (!providedInitially && mounted) setState(() => _loading = false);
       return;
     }
 
     final prefs = await SharedPreferences.getInstance();
-
     _repo = SharedPreferencesGameLibraryRepository(prefs);
-
     final game = await _repo!.getGameById(widget.gameId);
-
-    ApexScanResult? scanResult;
-    if (game != null) {
-      scanResult = await _buildScan(game);
-    }
+    debugPrint('[DETAIL-NAV] T+${_tms}ms game loaded: ${game?.name ?? "null"}');
 
     if (mounted) {
       setState(() {
+        // Always update _game so we reflect any change made between tab and detail.
         _game = game;
-        _scanResult = scanResult;
-        _loading = false;
+        // Only toggle _loading when we were the ones that set it to true — i.e.
+        // no initialGame was provided. With initialGame the first frame already
+        // showed content, so we never showed a spinner.
+        if (!providedInitially) _loading = false;
       });
-      if (game != null) _loadMetrics();
+      final resolvedGame = game ?? (providedInitially ? widget.initialGame : null);
+      if (resolvedGame != null) {
+        _loadMetrics();
+        _loadScanAsync(resolvedGame);
+      }
     }
+    debugPrint('[DETAIL-NAV] T+${_tms}ms data load ended');
+  }
+
+  Future<void> _loadScanAsync(ApexGame game) async {
+    debugPrint('[DETAIL-NAV] T+${_tms}ms scan started');
+    final scanResult = await _buildScan(game);
+    debugPrint('[DETAIL-NAV] T+${_tms}ms scan ended');
+    if (mounted) setState(() => _scanResult = scanResult);
   }
 
   Future<void> _loadMetrics() async {
@@ -1174,75 +1208,89 @@ class _CreateCardButton extends StatelessWidget {
     final s = AppStrings(languageNotifier.value);
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-      child: GestureDetector(
-        onTap: () => context.push('/share-studio/$gameId'),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.apexGreen.withValues(alpha: 0.12),
-                AppColors.cyberBlue.withValues(alpha: 0.06),
-              ],
+      child: Material(
+        color: Colors.transparent,
+        clipBehavior: Clip.antiAlias,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          splashColor: AppColors.apexGreen.withValues(alpha: 0.12),
+          highlightColor: AppColors.apexGreen.withValues(alpha: 0.06),
+          onTap: () {
+            debugPrint('[ApexStudio] continue tapped');
+            debugPrint('[ApexStudio] route push started');
+            context.push('/share-studio/$gameId');
+            debugPrint('[ApexStudio] route push completed');
+          },
+          child: Ink(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.apexGreen.withValues(alpha: 0.12),
+                  AppColors.cyberBlue.withValues(alpha: 0.06),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.apexGreen.withValues(alpha: 0.30),
+                width: 1,
+              ),
             ),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: AppColors.apexGreen.withValues(alpha: 0.30),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: AppColors.apexGreen.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(9),
-                  border: Border.all(
-                    color: AppColors.apexGreen.withValues(alpha: 0.25),
-                    width: 0.5,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: AppColors.apexGreen.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(9),
+                      border: Border.all(
+                        color: AppColors.apexGreen.withValues(alpha: 0.25),
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.auto_awesome_rounded,
+                      color: AppColors.apexGreen,
+                      size: 18,
+                    ),
                   ),
-                ),
-                child: Icon(
-                  Icons.auto_awesome_rounded,
-                  color: AppColors.apexGreen,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      s.socialStudioCreateCard,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          s.socialStudioCreateCard,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          s.socialStudioCreateCardHint,
+                          style: TextStyle(
+                            color: AppColors.apexGreen.withValues(alpha: 0.65),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      s.socialStudioCreateCardHint,
-                      style: TextStyle(
-                        color: AppColors.apexGreen.withValues(alpha: 0.65),
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: AppColors.apexGreen.withValues(alpha: 0.45),
+                    size: 13,
+                  ),
+                ],
               ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: AppColors.apexGreen.withValues(alpha: 0.45),
-                size: 13,
-              ),
-            ],
+            ),
           ),
         ),
       ),

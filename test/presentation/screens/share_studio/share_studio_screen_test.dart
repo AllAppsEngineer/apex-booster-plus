@@ -91,4 +91,62 @@ void main() {
     );
     expect(disabledBtn, findsNothing);
   });
+
+  testWidgets('ApexStudioScreen shows fit chips when image is selected', (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: ApexStudioScreen(
+        gameId: 'test-game',
+        initialMediaPath: '/fake/path/screenshot.png',
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Preencher'), findsOneWidget);
+    expect(find.text('Encaixar'), findsOneWidget);
+  });
+
+  testWidgets('ApexStudioScreen does not show fit chips when no media', (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: ApexStudioScreen(gameId: 'test-game'),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Preencher'), findsNothing);
+    expect(find.text('Encaixar'), findsNothing);
+  });
+
+  testWidgets('ApexStudioScreen shows fit chips for video', (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: ApexStudioScreen(
+        gameId: 'test-game',
+        initialMediaPath: '/fake/path/clip.mp4',
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Preencher'), findsOneWidget);
+    expect(find.text('Encaixar'), findsOneWidget);
+  });
+
+  testWidgets('ApexStudioScreen shows play overlay icon for video', (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: ApexStudioScreen(
+        gameId: 'test-game',
+        initialMediaPath: '/fake/path/clip.mp4',
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.play_circle_rounded), findsOneWidget);
+  });
+
+  testWidgets('ApexStudioScreen shows video export notice for video', (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: ApexStudioScreen(
+        gameId: 'test-game',
+        initialMediaPath: '/fake/path/clip.mp4',
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('fase futura'),
+      findsOneWidget,
+    );
+  });
 }

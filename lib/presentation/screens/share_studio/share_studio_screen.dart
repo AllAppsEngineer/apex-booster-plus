@@ -1,9 +1,13 @@
 import 'dart:io';
+import 'dart:math' as math;
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -44,37 +48,70 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
   SharedPreferencesGameLibraryRepository? _repo;
   String? _mediaPath;
   bool _mediaIsVideo = false;
+  BoxFit _imageFit = BoxFit.cover;
+  Uint8List? _videoThumbnail;
 
   @override
   void initState() {
     super.initState();
     _lang = languageNotifier.value;
-    _loadGame();
+    final path = widget.initialMediaPath;
+    const videoExts = {'.mp4', '.mov', '.avi', '.mkv', '.webm', '.3gp', '.3gpp'};
+    final isVideo = path != null &&
+        videoExts.any((ext) => path.toLowerCase().endsWith(ext));
+    _card = SocialCard(
+      id: '${widget.gameId}_${DateTime.now().millisecondsSinceEpoch}',
+      gameId: widget.gameId,
+      gameName: widget.gameId,
+      templateId: _selectedTemplateId,
+      createdAt: DateTime.now(),
+      importedMediaPath: path,
+    );
+    _mediaPath = path;
+    _mediaIsVideo = isVideo;
+    _loaded = true;
+    _loadGameName();
+    if (isVideo) {
+      _generateVideoThumbnail(path);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('[ApexStudio] detail first frame rendered');
+    });
   }
 
-  Future<void> _loadGame() async {
-    final prefs = await SharedPreferences.getInstance();
-    _repo = SharedPreferencesGameLibraryRepository(prefs);
-    final game = await _repo!.getGameById(widget.gameId);
-    if (!mounted) return;
-    final path = widget.initialMediaPath;
-    final isVideo = path != null &&
-        (path.endsWith('.mp4') ||
-            path.endsWith('.mov') ||
-            path.endsWith('.avi'));
-    setState(() {
-      _card = SocialCard(
-        id: '${widget.gameId}_${DateTime.now().millisecondsSinceEpoch}',
-        gameId: widget.gameId,
-        gameName: game?.name ?? widget.gameId,
-        templateId: _selectedTemplateId,
-        createdAt: DateTime.now(),
-        importedMediaPath: path,
+  Future<void> _loadGameName() async {
+    debugPrint('[ApexStudio] media/data load started');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _repo = SharedPreferencesGameLibraryRepository(prefs);
+      final game = await _repo!.getGameById(widget.gameId);
+      debugPrint('[ApexStudio] media/data load ended');
+      if (!mounted || game == null) return;
+      setState(() => _card = _card.copyWith(gameName: game.name));
+    } catch (_) {}
+  }
+
+  Future<void> _showVideoPreview() async {
+    final path = _mediaPath;
+    if (path == null || !_mediaIsVideo) return;
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.85),
+      builder: (_) => _VideoPreviewDialog(filePath: path),
+    );
+  }
+
+  Future<void> _generateVideoThumbnail(String path) async {
+    try {
+      final bytes = await VideoThumbnail.thumbnailData(
+        video: path,
+        imageFormat: ImageFormat.JPEG,
+        maxWidth: 144,
+        quality: 75,
       );
-      _loaded = true;
-      _mediaPath = path;
-      _mediaIsVideo = isVideo;
-    });
+      if (!mounted || bytes == null) return;
+      setState(() => _videoThumbnail = bytes);
+    } catch (_) {}
   }
 
   @override
@@ -116,11 +153,17 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
       }
 
       if (picked == null || !mounted) return;
+      final pickedPath = picked.path;
       setState(() {
-        _mediaPath = picked!.path;
+        _mediaPath = pickedPath;
         _mediaIsVideo = choice == _MediaType.video;
-        _card = _card.copyWith(importedMediaPath: picked.path);
+        _imageFit = BoxFit.cover;
+        _videoThumbnail = null;
+        _card = _card.copyWith(importedMediaPath: pickedPath);
       });
+      if (choice == _MediaType.video) {
+        _generateVideoThumbnail(pickedPath);
+      }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -182,6 +225,8 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
     setState(() {
       _mediaPath = null;
       _mediaIsVideo = false;
+      _imageFit = BoxFit.cover;
+      _videoThumbnail = null;
       _card = SocialCard(
         id: _card.id,
         gameId: _card.gameId,
@@ -236,230 +281,218 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
       );
     }
 
+    final viewBottom = MediaQuery.of(context).viewPadding.bottom;
     return Scaffold(
       backgroundColor: const Color(0xFF050505),
       appBar: _buildAppBar(s),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  // ── Card preview ─────────────────────────────────────────
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: RepaintBoundary(
-                      key: _exportKey,
-                      child: _card.preset == SharePreset.portrait
-                          ? ShareCardPortrait(
-                              card: _card,
-                              template: _activeTemplate,
-                              lang: _lang,
-                            )
-                          : ShareCardSquare(
-                              card: _card,
-                              template: _activeTemplate,
-                              lang: _lang,
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // ── MÍDIA section ─────────────────────────────────────────
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                    child: Text(
-                      s.apexStudioMediaSection.toUpperCase(),
-                      style: const TextStyle(
-                        color: Color(0xFF555555),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
-                  _mediaPath == null
-                      ? _buildAddMediaButton(s)
-                      : _buildMediaPreview(s),
-                  const SizedBox(height: 24),
-                  // ── TEMA section ──────────────────────────────────────────
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                    child: Text(
-                      s.socialStudioTemplate.toUpperCase(),
-                      style: const TextStyle(
-                        color: Color(0xFF555555),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
-                  SocialTemplateSelector(
-                    templates: kSocialTemplates,
-                    selectedId: _selectedTemplateId,
-                    onSelected: _onTemplateSelected,
-                    lang: _lang,
-                  ),
-                  const SizedBox(height: 16),
-                  // ── Format chips ──────────────────────────────────────────
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: SharePreset.values
-                          .where((p) => p != SharePreset.landscape)
-                          .map((p) => Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 4),
-                                  child: ChoiceChip(
-                                    label: Text(p.label),
-                                    selected: _card.preset == p,
-                                    onSelected: (_) => _onPresetChanged(p),
-                                    selectedColor: AppColors.apexGreen
-                                        .withValues(alpha: 0.15),
-                                    labelStyle: TextStyle(
-                                      color: _card.preset == p
-                                          ? AppColors.apexGreen
-                                          : AppColors.textGray,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    backgroundColor:
-                                        const Color(0xFF111111),
-                                    side: BorderSide(
-                                      color: _card.preset == p
-                                          ? AppColors.apexGreen
-                                              .withValues(alpha: 0.4)
-                                          : const Color(0xFF2A2A2A),
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                ),
-                              ))
-                          .toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // ── Caption ───────────────────────────────────────────────
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: TextField(
-                      controller: _captionController,
-                      onChanged: (v) =>
-                          setState(() => _card = _card.copyWith(caption: v)),
-                      maxLength: 120,
-                      style: const TextStyle(
-                          color: Colors.white, fontSize: 14),
-                      decoration: InputDecoration(
-                        hintText: s.socialStudioCaptionHint,
-                        hintStyle: const TextStyle(
-                            color: Color(0xFF555555), fontSize: 14),
-                        counterStyle: const TextStyle(
-                            color: Color(0xFF555555), fontSize: 11),
-                        filled: true,
-                        fillColor: const Color(0xFF111111),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide:
-                              const BorderSide(color: Color(0xFF2A2A2A)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide:
-                              const BorderSide(color: Color(0xFF2A2A2A)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(
-                              color: Color(0xFF22C55E)),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 12),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            ),
+      // Footer anchored in bottomNavigationBar so o Scaffold posiciona
+      // corretamente e viewPadding.bottom garante clearance real sobre a barra
+      // do Android independente de qual ancestral consumiu MediaQuery.padding.
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF050505),
+          border: Border(
+            top: BorderSide(color: Color(0xFF1A1A1A), width: 1),
           ),
-          // ── Sticky export footer ──────────────────────────────────────────
-          SafeArea(
-            top: false,
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFF050505),
-                border: Border(
-                  top: BorderSide(color: Color(0xFF1A1A1A), width: 1),
+        ),
+        padding: EdgeInsets.fromLTRB(16, 12, 16, viewBottom + 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton.icon(
+                onPressed: (_canExport && !_exporting) ? _export : null,
+                icon: _exporting
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.black,
+                        ),
+                      )
+                    : const Icon(Icons.share_rounded, size: 18),
+                label: Text(
+                  s.socialStudioExport,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.apexGreen,
+                  foregroundColor: Colors.black,
+                  disabledBackgroundColor: const Color(0xFF1A1A1A),
+                  disabledForegroundColor: const Color(0xFF444444),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton.icon(
-                      onPressed: (_canExport && !_exporting) ? _export : null,
-                      icon: _exporting
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.black,
-                              ),
-                            )
-                          : const Icon(Icons.share_rounded, size: 18),
-                      label: Text(
-                        s.socialStudioExport,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+            if (_mediaPath == null) ...[
+              const SizedBox(height: 8),
+              Text(
+                s.apexStudioNoMediaHint,
+                style: const TextStyle(
+                  color: Color(0xFF555555),
+                  fontSize: 12,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ],
+        ),
+      ),
+      body: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 20),
+            // ── Card preview ─────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: RepaintBoundary(
+                key: _exportKey,
+                child: _card.preset == SharePreset.portrait
+                    ? ShareCardPortrait(
+                        card: _card,
+                        template: _activeTemplate,
+                        lang: _lang,
+                        mediaFit: _imageFit,
+                        videoThumbnail: _videoThumbnail,
+                      )
+                    : ShareCardSquare(
+                        card: _card,
+                        template: _activeTemplate,
+                        lang: _lang,
+                        mediaFit: _imageFit,
+                        videoThumbnail: _videoThumbnail,
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.apexGreen,
-                        foregroundColor: Colors.black,
-                        disabledBackgroundColor: const Color(0xFF1A1A1A),
-                        disabledForegroundColor: const Color(0xFF444444),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ),
-                  if (_mediaPath == null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      s.apexStudioNoMediaHint,
-                      style: const TextStyle(
-                        color: Color(0xFF555555),
-                        fontSize: 12,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ] else if (_mediaIsVideo) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      s.apexStudioVideoExportNotice,
-                      style: const TextStyle(
-                        color: Color(0xFF555555),
-                        fontSize: 12,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+            // ── MÍDIA section ─────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                s.apexStudioMediaSection.toUpperCase(),
+                style: const TextStyle(
+                  color: Color(0xFF555555),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+            _mediaPath == null
+                ? _buildAddMediaButton(s)
+                : _buildMediaPreview(s),
+            const SizedBox(height: 24),
+            // ── TEMA section ──────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                s.socialStudioTemplate.toUpperCase(),
+                style: const TextStyle(
+                  color: Color(0xFF555555),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+            SocialTemplateSelector(
+              templates: kSocialTemplates,
+              selectedId: _selectedTemplateId,
+              onSelected: _onTemplateSelected,
+              lang: _lang,
+            ),
+            const SizedBox(height: 16),
+            // ── Format chips ──────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: SharePreset.values
+                    .where((p) => p != SharePreset.landscape)
+                    .map((p) => Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4),
+                            child: ChoiceChip(
+                              label: Text(p.label),
+                              selected: _card.preset == p,
+                              onSelected: (_) => _onPresetChanged(p),
+                              selectedColor: AppColors.apexGreen
+                                  .withValues(alpha: 0.15),
+                              labelStyle: TextStyle(
+                                color: _card.preset == p
+                                    ? AppColors.apexGreen
+                                    : AppColors.textGray,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              backgroundColor:
+                                  const Color(0xFF111111),
+                              side: BorderSide(
+                                color: _card.preset == p
+                                    ? AppColors.apexGreen
+                                        .withValues(alpha: 0.4)
+                                    : const Color(0xFF2A2A2A),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ))
+                    .toList(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // ── Caption ───────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _captionController,
+                onChanged: (v) =>
+                    setState(() => _card = _card.copyWith(caption: v)),
+                maxLength: 120,
+                style: const TextStyle(
+                    color: Colors.white, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: s.socialStudioCaptionHint,
+                  hintStyle: const TextStyle(
+                      color: Color(0xFF555555), fontSize: 14),
+                  counterStyle: const TextStyle(
+                      color: Color(0xFF555555), fontSize: 11),
+                  filled: true,
+                  fillColor: const Color(0xFF111111),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide:
+                        const BorderSide(color: Color(0xFF2A2A2A)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide:
+                        const BorderSide(color: Color(0xFF2A2A2A)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                        color: Color(0xFF22C55E)),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
@@ -504,99 +537,231 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
   }
 
   Widget _buildMediaPreview(AppStrings s) {
+    final filename = _mediaPath!.split('/').last.split('\\').last;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF111111),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF2A2A2A)),
-        ),
-        child: Row(
-          children: [
-            // Thumbnail
-            ClipRRect(
-              borderRadius:
-                  const BorderRadius.horizontal(left: Radius.circular(11)),
-              child: SizedBox(
-                width: 72,
-                height: 72,
-                child: _mediaIsVideo
-                    ? _buildVideoThumbnail()
-                    : Image.file(
-                        File(_mediaPath!),
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildVideoThumbnail(),
-                      ),
-              ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF111111),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF2A2A2A)),
             ),
-            const SizedBox(width: 12),
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _mediaIsVideo
-                        ? s.apexStudioVideoSelected
-                        : s.apexStudioImageSelected,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
+            child: Row(
+              children: [
+                // Thumbnail
+                ClipRRect(
+                  borderRadius:
+                      const BorderRadius.horizontal(left: Radius.circular(11)),
+                  child: SizedBox(
+                    width: 72,
+                    height: 72,
+                    child: _mediaIsVideo
+                        ? GestureDetector(
+                            onTap: _showVideoPreview,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                _videoThumbnail != null
+                                    ? Image.memory(
+                                        _videoThumbnail!,
+                                        fit: _imageFit,
+                                        width: 72,
+                                        height: 72,
+                                      )
+                                    : _buildVideoThumbnail(s),
+                                Center(
+                                  child: Container(
+                                    width: 26,
+                                    height: 26,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.black
+                                          .withValues(alpha: 0.55),
+                                    ),
+                                    child: const Icon(
+                                      Icons.play_circle_rounded,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : Image.file(
+                            File(_mediaPath!),
+                            fit: _imageFit,
+                            errorBuilder: (_, __, ___) =>
+                                _buildVideoThumbnail(s),
+                          ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _mediaPath!.split('/').last,
-                    style: const TextStyle(
-                      color: Color(0xFF555555),
-                      fontSize: 11,
+                ),
+                const SizedBox(width: 12),
+                // Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _mediaIsVideo
+                            ? s.apexStudioVideoSelected
+                            : s.apexStudioImageSelected,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        filename,
+                        style: const TextStyle(
+                          color: Color(0xFF555555),
+                          fontSize: 11,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ],
+                  ),
+                ),
+                // Actions
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.swap_horiz_rounded,
+                          color: Color(0xFFA1A1AA), size: 20),
+                      onPressed: _pickMedia,
+                      tooltip: s.apexStudioChangeMedia,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded,
+                          color: Color(0xFFA1A1AA), size: 20),
+                      onPressed: _removeMedia,
+                      tooltip: s.apexStudioRemoveMedia,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _buildFitChip(s.apexStudioFitFill, BoxFit.cover),
+              const SizedBox(width: 6),
+              _buildFitChip(s.apexStudioFitContain, BoxFit.contain),
+            ],
+          ),
+          if (_mediaIsVideo) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D1117),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    color: Color(0xFF3B82F6),
+                    size: 14,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      s.apexStudioVideoExportNotice,
+                      style: const TextStyle(
+                        color: Color(0xFFA1A1AA),
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-            // Actions
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.swap_horiz_rounded,
-                      color: Color(0xFFA1A1AA), size: 20),
-                  onPressed: _pickMedia,
-                  tooltip: s.apexStudioChangeMedia,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded,
-                      color: Color(0xFFA1A1AA), size: 20),
-                  onPressed: _removeMedia,
-                  tooltip: s.apexStudioRemoveMedia,
-                ),
-              ],
-            ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFitChip(String label, BoxFit fit) {
+    final selected = _imageFit == fit;
+    return GestureDetector(
+      onTap: () => setState(() => _imageFit = fit),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.apexGreen.withValues(alpha: 0.12)
+              : const Color(0xFF111111),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: selected
+                ? AppColors.apexGreen.withValues(alpha: 0.40)
+                : const Color(0xFF2A2A2A),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? AppColors.apexGreen : const Color(0xFFA1A1AA),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildVideoThumbnail() {
+  Widget _buildVideoThumbnail(AppStrings s) {
     return Container(
-      color: const Color(0xFF1A1A1A),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF111827), Color(0xFF0A0A0A)],
+        ),
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.videocam_rounded,
-              color: Color(0xFF3B82F6), size: 24),
-          const SizedBox(height: 3),
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF3B82F6).withValues(alpha: 0.12),
+              border: Border.all(
+                color: const Color(0xFF3B82F6).withValues(alpha: 0.35),
+                width: 1,
+              ),
+            ),
+            child: const Icon(
+              Icons.play_arrow_rounded,
+              color: Color(0xFF3B82F6),
+              size: 16,
+            ),
+          ),
+          const SizedBox(height: 4),
           Text(
-            'VIDEO',
+            s.apexStudioVideoLabel,
             style: TextStyle(
-              color: const Color(0xFF3B82F6).withValues(alpha: 0.7),
+              color: const Color(0xFF3B82F6).withValues(alpha: 0.75),
               fontSize: 7,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.0,
@@ -639,3 +804,230 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
 }
 
 enum _MediaType { image, video }
+
+// ─── Video preview dialog ─────────────────────────────────────────────────────
+
+class _VideoPreviewDialog extends StatefulWidget {
+  final String filePath;
+  const _VideoPreviewDialog({required this.filePath});
+
+  @override
+  State<_VideoPreviewDialog> createState() => _VideoPreviewDialogState();
+}
+
+class _VideoPreviewDialogState extends State<_VideoPreviewDialog> {
+  late VideoPlayerController _controller;
+  bool _initialized = false;
+  bool _error = false;
+  // Guard against setState after dispose (async init race condition)
+  bool _disposed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.file(File(widget.filePath));
+    _initController();
+  }
+
+  Future<void> _initController() async {
+    try {
+      await _controller.initialize();
+      if (_disposed || !mounted) return;
+      setState(() => _initialized = true);
+      try {
+        _controller.play();
+      } catch (_) {}
+    } catch (_) {
+      if (_disposed || !mounted) return;
+      setState(() => _error = true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _togglePlay() {
+    if (!mounted) return;
+    if (_controller.value.isPlaying) {
+      _controller.pause();
+    } else {
+      _controller.play();
+    }
+    setState(() {});
+  }
+
+  String _formatDuration(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
+
+    final aspectRatio = (_initialized && _controller.value.aspectRatio > 0)
+        ? _controller.value.aspectRatio
+        : 16.0 / 9.0;
+
+    return Dialog(
+      backgroundColor: Colors.black,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+      // SafeArea garante que o conteúdo nunca fique atrás da barra de sistema.
+      // Flexible + LayoutBuilder eliminam o cálculo explícito de dialogH que
+      // ignorava viewPadding.top/bottom e causava BOTTOM OVERFLOWED BY 72 PIXELS.
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header — altura fixa
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      s.apexStudioVideoPreviewLabel,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded,
+                        color: Colors.white, size: 20),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
+            // Área de vídeo — Flexible absorve a altura disponível sem overflow
+            Flexible(
+              child: LayoutBuilder(
+                builder: (_, constraints) {
+                  final maxW = constraints.maxWidth;
+                  final maxH = constraints.hasBoundedHeight
+                      ? constraints.maxHeight
+                      : maxW / aspectRatio;
+                  double videoW, videoH;
+                  if (maxW / aspectRatio <= maxH) {
+                    videoW = maxW;
+                    videoH = maxW / aspectRatio;
+                  } else {
+                    videoH = maxH;
+                    videoW = maxH * aspectRatio;
+                  }
+                  videoW = math.min(videoW, maxW);
+                  videoH = math.max(80.0, videoH);
+                  return Center(
+                    child: SizedBox(
+                      width: videoW,
+                      height: videoH,
+                      child: _error
+                          ? const Center(
+                              child: Icon(Icons.error_outline_rounded,
+                                  color: Colors.white54, size: 40),
+                            )
+                          : !_initialized
+                              ? const Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFF22C55E),
+                                  ),
+                                )
+                              : GestureDetector(
+                                  onTap: _togglePlay,
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      VideoPlayer(_controller),
+                                      ValueListenableBuilder<VideoPlayerValue>(
+                                        valueListenable: _controller,
+                                        builder: (_, value, __) {
+                                          if (value.isPlaying) {
+                                            return const SizedBox.shrink();
+                                          }
+                                          return Center(
+                                            child: Container(
+                                              width: 52,
+                                              height: 52,
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                color: Colors.black
+                                                    .withValues(alpha: 0.5),
+                                              ),
+                                              child: const Icon(
+                                                Icons.play_arrow_rounded,
+                                                color: Colors.white,
+                                                size: 32,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            // Scrubber — apenas após inicialização, sempre acima das barras do sistema
+            if (_initialized) ...[
+              const SizedBox(height: 4),
+              ValueListenableBuilder<VideoPlayerValue>(
+                valueListenable: _controller,
+                builder: (_, value, __) {
+                  final pos = value.position;
+                  final dur = value.duration;
+                  final progress = (dur.inMilliseconds > 0)
+                      ? (pos.inMilliseconds / dur.inMilliseconds)
+                          .clamp(0.0, 1.0)
+                      : 0.0;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Row(
+                      children: [
+                        Text(
+                          _formatDuration(pos),
+                          style: const TextStyle(
+                              color: Colors.white54, fontSize: 11),
+                        ),
+                        Expanded(
+                          child: Slider(
+                            value: progress,
+                            onChanged: (v) => _controller.seekTo(
+                              Duration(
+                                  milliseconds:
+                                      (v * dur.inMilliseconds).round()),
+                            ),
+                            activeColor: const Color(0xFF22C55E),
+                            inactiveColor: const Color(0xFF333333),
+                          ),
+                        ),
+                        Text(
+                          _formatDuration(dur),
+                          style: const TextStyle(
+                              color: Colors.white54, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}

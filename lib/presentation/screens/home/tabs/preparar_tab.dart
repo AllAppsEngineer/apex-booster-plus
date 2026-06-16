@@ -250,7 +250,14 @@ class _PrepararTabState extends State<PrepararTab> {
 
   Future<void> _navigateToDetails() async {
     if (_selectedGame == null || !mounted) return;
-    await context.push('/game-detail/${_selectedGame!.id}');
+    final t0 = DateTime.now().millisecondsSinceEpoch;
+    debugPrint('[DETAIL-NAV] T+000ms tap received');
+    debugPrint('[DETAIL-NAV] T+${DateTime.now().millisecondsSinceEpoch - t0}ms push called');
+    await context.push(
+      '/game-detail/${_selectedGame!.id}',
+      extra: _selectedGame,
+    );
+    debugPrint('[DETAIL-NAV] T+${DateTime.now().millisecondsSinceEpoch - t0}ms push returned');
     if (!mounted) return;
     await _refreshSelectedGame();
   }

@@ -62,4 +62,47 @@ void main() {
     ));
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('ShareCardSquare accepts mediaFit contain without overflow', (tester) async {
+    final card = SocialCard(
+      id: 'test',
+      gameId: 'g1',
+      gameName: 'Call of Duty',
+      createdAt: DateTime(2026, 6, 11),
+      preset: SharePreset.square,
+      importedMediaPath: '/fake/screenshot.png',
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: SizedBox(
+        width: 300,
+        height: 300,
+        child: ShareCardSquare(
+          card: card,
+          template: template,
+          mediaFit: BoxFit.contain,
+        ),
+      ),
+    ));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('ShareCardSquare with video path shows premium video label', (tester) async {
+    final card = SocialCard(
+      id: 'test',
+      gameId: 'g1',
+      gameName: 'Call of Duty',
+      createdAt: DateTime(2026, 6, 11),
+      preset: SharePreset.square,
+      importedMediaPath: '/fake/clip.mp4',
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: SizedBox(
+        width: 300,
+        height: 300,
+        child: ShareCardSquare(card: card, template: template),
+      ),
+    ));
+    await tester.pump();
+    expect(find.text('PRÉVIA DE VÍDEO'), findsOneWidget);
+  });
 }

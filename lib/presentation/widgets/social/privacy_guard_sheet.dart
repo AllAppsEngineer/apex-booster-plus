@@ -9,6 +9,7 @@ Future<bool> showPrivacyGuardSheet(
   final result = await showModalBottomSheet<bool>(
     context: context,
     backgroundColor: const Color(0xFF111111),
+    useSafeArea: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
@@ -24,8 +25,12 @@ class _PrivacyGuardContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = AppStrings(lang);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+    final navBottom = MediaQuery.of(context).viewPadding.bottom;
+    final bottomGap = (navBottom > 0 ? navBottom : 48.0) + 32.0;
+    return SafeArea(
+      top: false,
+      child: Padding(
+      padding: EdgeInsets.fromLTRB(24, 16, 24, bottomGap),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,6 +102,7 @@ class _PrivacyGuardContent extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }

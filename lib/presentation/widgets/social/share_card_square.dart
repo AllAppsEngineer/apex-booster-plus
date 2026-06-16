@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../../../domain/entities/social_card.dart';
 import '../../../domain/entities/share_preset.dart';
@@ -10,12 +11,16 @@ class ShareCardSquare extends StatelessWidget {
   final SocialCard card;
   final SocialTemplate template;
   final AppLanguage lang;
+  final BoxFit mediaFit;
+  final Uint8List? videoThumbnail;
 
   const ShareCardSquare({
     super.key,
     required this.card,
     required this.template,
     this.lang = AppLanguage.ptBr,
+    this.mediaFit = BoxFit.cover,
+    this.videoThumbnail,
   });
 
   @override
@@ -44,11 +49,9 @@ class ShareCardSquare extends StatelessWidget {
           borderRadius: BorderRadius.circular(15.5),
           child: Stack(
             children: [
-              // Subtle grid overlay
               Positioned.fill(
                 child: CustomPaint(painter: _ApexGridPainter(accent)),
               ),
-              // Glow orb top-right
               Positioned(
                 top: -35,
                 right: -35,
@@ -66,7 +69,6 @@ class ShareCardSquare extends StatelessWidget {
                   ),
                 ),
               ),
-              // Bottom accent line
               Positioned(
                 bottom: 0,
                 left: 0,
@@ -84,13 +86,11 @@ class ShareCardSquare extends StatelessWidget {
                   ),
                 ),
               ),
-              // Main content
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header
                     Row(
                       children: [
                         Container(
@@ -103,8 +103,7 @@ class ShareCardSquare extends StatelessWidget {
                               width: 0.5,
                             ),
                           ),
-                          child: Icon(Icons.bolt_rounded,
-                              color: accent, size: 9),
+                          child: Icon(Icons.bolt_rounded, color: accent, size: 9),
                         ),
                         const SizedBox(width: 5),
                         Expanded(
@@ -142,13 +141,12 @@ class ShareCardSquare extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    // Media slot: imported image/video placeholder
                     if (card.importedMediaPath != null)
-                      _buildMediaSlotSquare(card.importedMediaPath!, accent, s)
+                      _buildMediaSlotSquare(card.importedMediaPath!, accent, s,
+                          fit: mediaFit, videoThumbnail: videoThumbnail)
                     else
                       const Spacer(),
                     const SizedBox(height: 8),
-                    // Game name — large, with glow shadow
                     Text(
                       card.gameName,
                       style: TextStyle(
@@ -180,7 +178,6 @@ class ShareCardSquare extends StatelessWidget {
                       ),
                     ],
                     const SizedBox(height: 10),
-                    // Status chip
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 7, vertical: 3),
@@ -237,38 +234,90 @@ class ShareCardSquare extends StatelessWidget {
   }
 }
 
-Widget _buildMediaSlotSquare(String path, Color accent, AppStrings s) {
+Widget _buildMediaSlotSquare(
+  String path,
+  Color accent,
+  AppStrings s, {
+  BoxFit fit = BoxFit.cover,
+  Uint8List? videoThumbnail,
+}) {
   final isVideo = _isVideoPathSquare(path);
   return Expanded(
     child: ClipRRect(
       borderRadius: BorderRadius.circular(6),
       child: isVideo
-          ? _videoPlaceholderSquare(accent, s)
+          ? (videoThumbnail != null
+              ? Image.memory(
+                  videoThumbnail,
+                  fit: fit,
+                  width: double.infinity,
+                  errorBuilder: (_, __, ___) =>
+                      _videoPremiumPlaceholderSquare(accent, s),
+                )
+              : _videoPremiumPlaceholderSquare(accent, s))
           : Image.file(
               File(path),
-              fit: BoxFit.cover,
+              fit: fit,
               width: double.infinity,
-              errorBuilder: (_, __, ___) => _videoPlaceholderSquare(accent, s),
+              errorBuilder: (_, __, ___) =>
+                  _videoPremiumPlaceholderSquare(accent, s),
             ),
     ),
   );
 }
 
-Widget _videoPlaceholderSquare(Color accent, AppStrings s) {
+Widget _videoPremiumPlaceholderSquare(Color accent, AppStrings s) {
   return Container(
-    color: const Color(0xFF1A1A1A),
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+    width: double.infinity,
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF111827), Color(0xFF0A0A0A)],
+      ),
+    ),
+    child: Stack(
       children: [
-        Icon(Icons.videocam_rounded, color: accent, size: 24),
-        const SizedBox(height: 4),
-        Text(
-          s.apexStudioVideoSelected.toUpperCase(),
-          style: TextStyle(
-            color: accent.withValues(alpha: 0.7),
-            fontSize: 7,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.2,
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: _filmStripRowSquare(accent),
+        ),
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: _filmStripRowSquare(accent),
+        ),
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: accent.withValues(alpha: 0.10),
+                  border: Border.all(
+                    color: accent.withValues(alpha: 0.32),
+                    width: 1,
+                  ),
+                ),
+                child: Icon(Icons.play_arrow_rounded, color: accent, size: 20),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                s.apexStudioVideoPreviewLabel.toUpperCase(),
+                style: TextStyle(
+                  color: accent.withValues(alpha: 0.70),
+                  fontSize: 7,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -276,9 +325,30 @@ Widget _videoPlaceholderSquare(Color accent, AppStrings s) {
   );
 }
 
+Widget _filmStripRowSquare(Color accent) {
+  return Container(
+    height: 9,
+    color: Colors.black.withValues(alpha: 0.55),
+    padding: const EdgeInsets.symmetric(vertical: 1.5),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: List.generate(
+        10,
+        (_) => Container(
+          width: 6,
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.22),
+            borderRadius: BorderRadius.circular(1),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 bool _isVideoPathSquare(String path) {
   final ext = path.split('.').last.toLowerCase();
-  return const {'mp4', 'mov', 'avi', 'mkv', 'webm', '3gp'}.contains(ext);
+  return const {'mp4', 'mov', 'avi', 'mkv', 'webm', '3gp', '3gpp'}.contains(ext);
 }
 
 class _ApexGridPainter extends CustomPainter {

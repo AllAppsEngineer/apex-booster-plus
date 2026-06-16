@@ -94,4 +94,45 @@ void main() {
     ));
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('ShareCardPortrait accepts mediaFit contain without overflow', (tester) async {
+    final card = SocialCard(
+      id: 'test',
+      gameId: 'g1',
+      gameName: 'Free Fire',
+      createdAt: DateTime(2026, 6, 11),
+      importedMediaPath: '/fake/screenshot.png',
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: SizedBox(
+        width: 270,
+        height: 480,
+        child: ShareCardPortrait(
+          card: card,
+          template: template,
+          mediaFit: BoxFit.contain,
+        ),
+      ),
+    ));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('ShareCardPortrait with video path shows premium video label', (tester) async {
+    final card = SocialCard(
+      id: 'test',
+      gameId: 'g1',
+      gameName: 'Free Fire',
+      createdAt: DateTime(2026, 6, 11),
+      importedMediaPath: '/fake/clip.mp4',
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: SizedBox(
+        width: 270,
+        height: 480,
+        child: ShareCardPortrait(card: card, template: template),
+      ),
+    ));
+    await tester.pump();
+    expect(find.text('PRÉVIA DE VÍDEO'), findsOneWidget);
+  });
 }

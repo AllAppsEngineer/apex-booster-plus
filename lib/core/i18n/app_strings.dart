@@ -2250,6 +2250,12 @@ class AppStrings {
     AppLanguage.es   => 'Seleccionar video',
   };
 
+  String get apexStudioVideoLabel => switch (lang) {
+    AppLanguage.ptBr => 'VÍDEO',
+    AppLanguage.en   => 'VIDEO',
+    AppLanguage.es   => 'VIDEO',
+  };
+
   String get apexStudioImageSelected => switch (lang) {
     AppLanguage.ptBr => 'Imagem selecionada',
     AppLanguage.en   => 'Image selected',
@@ -2281,15 +2287,33 @@ class AppStrings {
   };
 
   String get apexStudioVideoExportNotice => switch (lang) {
-    AppLanguage.ptBr => 'Exportação de vídeo será ativada na próxima etapa.',
-    AppLanguage.en   => 'Video export will be available in the next step.',
-    AppLanguage.es   => 'La exportación de video estará disponible en el siguiente paso.',
+    AppLanguage.ptBr => 'Vídeo selecionado. Exportação em vídeo será ativada em fase futura.',
+    AppLanguage.en   => 'Video selected. Video export will be available in a future phase.',
+    AppLanguage.es   => 'Video seleccionado. La exportación de video estará disponible en una fase futura.',
   };
 
   String get apexStudioMediaError => switch (lang) {
     AppLanguage.ptBr => 'Não foi possível acessar a galeria neste dispositivo.',
     AppLanguage.en   => 'Could not access the gallery on this device.',
     AppLanguage.es   => 'No se pudo acceder a la galería en este dispositivo.',
+  };
+
+  String get apexStudioFitFill => switch (lang) {
+    AppLanguage.ptBr => 'Preencher',
+    AppLanguage.en   => 'Fill',
+    AppLanguage.es   => 'Rellenar',
+  };
+
+  String get apexStudioFitContain => switch (lang) {
+    AppLanguage.ptBr => 'Encaixar',
+    AppLanguage.en   => 'Fit',
+    AppLanguage.es   => 'Ajustar',
+  };
+
+  String get apexStudioVideoPreviewLabel => switch (lang) {
+    AppLanguage.ptBr => 'Prévia de vídeo',
+    AppLanguage.en   => 'Video preview',
+    AppLanguage.es   => 'Vista previa de video',
   };
 
   // ─── Social — Export Presets ─────────────────────────────────────────────────

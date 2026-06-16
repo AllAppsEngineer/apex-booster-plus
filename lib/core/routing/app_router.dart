@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import '../../domain/entities/apex_game.dart';
 import '../../presentation/screens/splash/splash_screen.dart';
 import '../../presentation/screens/welcome/welcome_screen.dart';
 import '../../presentation/screens/how_it_works/how_it_works_screen.dart';
@@ -36,6 +37,7 @@ final appRouter = GoRouter(
       path: '/game-detail/:id',
       builder: (context, state) => GameDetailScreen(
         gameId: state.pathParameters['id'] ?? '',
+        initialGame: state.extra is ApexGame ? state.extra as ApexGame : null,
       ),
     ),
     GoRoute(

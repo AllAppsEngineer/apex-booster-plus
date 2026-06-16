@@ -25,6 +25,9 @@ void main() {
         test('privacyGuardNoAutoPost is non-empty', () => expect(s.privacyGuardNoAutoPost, isNotEmpty));
         test('privacyGuardConfirm is non-empty', () => expect(s.privacyGuardConfirm, isNotEmpty));
         test('privacyGuardCancel is non-empty', () => expect(s.privacyGuardCancel, isNotEmpty));
+        test('apexStudioFitFill is non-empty', () => expect(s.apexStudioFitFill, isNotEmpty));
+        test('apexStudioFitContain is non-empty', () => expect(s.apexStudioFitContain, isNotEmpty));
+        test('apexStudioVideoPreviewLabel is non-empty', () => expect(s.apexStudioVideoPreviewLabel, isNotEmpty));
 
         test('socialStudioWatermark does not contain FPS', () {
           expect(s.socialStudioWatermark.toLowerCase(), isNot(contains('fps')));
