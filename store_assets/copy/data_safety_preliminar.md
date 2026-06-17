@@ -28,13 +28,17 @@
 | Dados de localização | Não | — | — |
 | E-mail, nome, telefone | Não | — | — |
 | Dados financeiros | Não (Billing não implementado) | — | Será revisado quando Billing entrar |
-| Fotos / vídeos / áudio | Não | — | — |
+| Fotos / vídeos (Apex Studio) | Sim — seleção voluntária pelo usuário | Não | Processado localmente em memória; nunca enviado a servidores |
 | Identidade do dispositivo (IMEI, etc.) | Não | — | — |
 
 ---
 
-## Observação crítica
+## Observações críticas
 
 Quando o Billing (BILL-U1) for implementado, o Data Safety precisa ser atualizado para
 declarar dados de compras e transações. Não subir Billing sem revisitar e atualizar
 este documento e o formulário correspondente na Play Console.
+
+Quando o recurso de captura flutuante / gravação nativa (fase futura) for implementado,
+o Data Safety precisará ser revisado para cobrir dados de captura de tela e gravação de
+vídeo da sessão gamer.

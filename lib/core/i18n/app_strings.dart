@@ -2351,9 +2351,9 @@ class AppStrings {
   };
 
   String get privacyGuardBody => switch (lang) {
-    AppLanguage.ptBr => 'Você revisa e escolhe onde compartilhar.',
-    AppLanguage.en   => 'You review and choose where to share.',
-    AppLanguage.es   => 'Revisas y eliges dónde compartir.',
+    AppLanguage.ptBr => 'A mídia selecionada fica apenas no seu dispositivo. Você revisa e escolhe onde compartilhar.',
+    AppLanguage.en   => 'Selected media stays on your device only. You review and choose where to share.',
+    AppLanguage.es   => 'El contenido seleccionado queda solo en tu dispositivo. Revisas y eliges dónde compartir.',
   };
 
   String get privacyGuardNoAutoPost => switch (lang) {

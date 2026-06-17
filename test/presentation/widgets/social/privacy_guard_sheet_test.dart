@@ -17,7 +17,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Revisar antes de compartilhar'), findsOneWidget);
-    expect(find.text('Você revisa e escolhe onde compartilhar.'), findsOneWidget);
+    expect(find.text('A mídia selecionada fica apenas no seu dispositivo. Você revisa e escolhe onde compartilhar.'), findsOneWidget);
     expect(find.text('O Apex nunca posta por você.'), findsOneWidget);
   });
 

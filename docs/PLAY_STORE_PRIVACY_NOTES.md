@@ -26,7 +26,7 @@ Este documento é um guia interno para preenchimento da **Política de Privacida
 | Dados pessoais (nome, e-mail) | Não | Não | — |
 | Localização | Não | Não | — |
 | Contatos | Não | Não | — |
-| Fotos e vídeos | Não | Não | — |
+| Fotos e vídeos (Apex Studio) | Sim — voluntário pelo usuário | Não | Seleção via picker nativo; processado localmente; não enviado |
 | Arquivos e documentos | Não | Não | — |
 | Atividade do app | Não enviado externamente | Não | Sessões salvas localmente |
 | Informações do dispositivo | Não enviado externamente | Não | RAM/latência lidas localmente |
@@ -58,6 +58,8 @@ Este documento é um guia interno para preenchimento da **Política de Privacida
 - [ ] Atualizar a data "Última atualização" no arquivo `PRIVACY_POLICY_APEX_BOOSTER_PT_BR.md`.
 - [ ] Revisar se alguma permissão nova foi adicionada desde a última versão da política.
 - [ ] Confirmar que nenhum SDK de anúncios ou analytics foi adicionado.
+- [ ] Confirmar que o Apex Studio usa apenas o seletor nativo do Android (sem permissão `READ_MEDIA_IMAGES` declarada explicitamente para esta fase).
+- [ ] Confirmar que exportação de vídeo ainda não está disponível (declarar como recurso futuro na política).
 - [ ] Testar o link da política de privacidade na Play Store antes de publicar.
 
 ---
