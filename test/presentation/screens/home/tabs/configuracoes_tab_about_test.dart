@@ -48,16 +48,38 @@ void _clearAppsChannel() {
       .setMockMethodCallHandler(_appsChannel, null);
 }
 
+const _overlayChannel = MethodChannel('apex/overlay');
+
+void _mockOverlayChannel() {
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(_overlayChannel, (call) async {
+    switch (call.method) {
+      case 'isOverlayPermissionGranted': return false;
+      case 'isFloatingShowing': return false;
+      case 'hideFloating': return null;
+      case 'openOverlayPermissionSettings': return null;
+      default: return null;
+    }
+  });
+}
+
+void _clearOverlayChannel() {
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(_overlayChannel, null);
+}
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     _mockFocusChannel();
     _mockAppsChannel();
+    _mockOverlayChannel();
   });
 
   tearDown(() {
     _clearFocusChannel();
     _clearAppsChannel();
+    _clearOverlayChannel();
     languageNotifier.value = AppLanguage.ptBr;
   });
 

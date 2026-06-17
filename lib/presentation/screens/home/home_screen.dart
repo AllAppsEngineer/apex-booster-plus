@@ -9,6 +9,10 @@ import 'tabs/preparar_tab.dart';
 import 'tabs/historico_tab.dart';
 import 'tabs/configuracoes_tab.dart';
 
+// Notifier used by overlay tap to request a specific tab without routing overhead.
+// null = no pending request; int = tab index to switch to (consumed on receipt).
+final homeTabNotifier = ValueNotifier<int?>(null);
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -28,7 +32,27 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     debugPrint('[PERF-STARTUP] HomeScreen init started');
+    homeTabNotifier.addListener(_onExternalTabRequest);
+    _consumeExternalTabRequest();
     debugPrint('[PERF-STARTUP] HomeScreen init ended');
+  }
+
+  @override
+  void dispose() {
+    homeTabNotifier.removeListener(_onExternalTabRequest);
+    super.dispose();
+  }
+
+  void _onExternalTabRequest() => _consumeExternalTabRequest();
+
+  void _consumeExternalTabRequest() {
+    final tab = homeTabNotifier.value;
+    if (tab == null || !mounted) return;
+    homeTabNotifier.value = null;
+    setState(() {
+      _selectedIndex = tab;
+      _tabVisited[tab] = true;
+    });
   }
 
   Widget _buildTab(int index) => switch (index) {

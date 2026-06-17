@@ -100,11 +100,28 @@ void _mockMetricsChannel() {
   );
 }
 
+void _mockOverlayChannel() {
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(
+    const MethodChannel('apex/overlay'),
+    (call) async {
+      switch (call.method) {
+        case 'isOverlayPermissionGranted': return false;
+        case 'isFloatingShowing': return false;
+        case 'hideFloating': return null;
+        case 'openOverlayPermissionSettings': return null;
+        default: return null;
+      }
+    },
+  );
+}
+
 void _clearAllChannels() {
   for (final name in const [
     'com.allappsengineer.apex_booster_plus/focus_mode',
     'com.allappsengineer.apex_booster_plus/apps',
     'com.allappsengineer.apex_booster_plus/metrics',
+    'apex/overlay',
   ]) {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(MethodChannel(name), null);
@@ -120,6 +137,7 @@ void main() {
     _mockFocusChannel();
     _mockAppsChannel();
     _mockMetricsChannel();
+    _mockOverlayChannel();
   });
 
   tearDown(() {

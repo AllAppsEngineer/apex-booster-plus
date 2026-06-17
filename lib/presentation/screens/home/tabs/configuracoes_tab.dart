@@ -11,6 +11,8 @@ import 'package:apex_booster_plus/data/services/external_url_service.dart';
 import 'package:apex_booster_plus/data/services/focus_mode_service_impl.dart';
 import 'package:apex_booster_plus/domain/services/focus_mode_service.dart';
 import 'package:apex_booster_plus/core/accessibility/low_distraction_service.dart';
+import 'package:apex_booster_plus/presentation/screens/home/home_screen.dart';
+import 'package:apex_booster_plus/presentation/services/floating_capture_service.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_badge.dart';
 import 'package:go_router/go_router.dart';
@@ -1003,14 +1005,188 @@ class _AboutCard extends StatelessWidget {
   }
 }
 
-// ─── Botão Flutuante — SOCIAL-U2A-RESET ──────────────────────────────────────
+// ─── Botão Flutuante — SOCIAL-U2A-NATIVE ─────────────────────────────────────
 
-class _FloatingCaptureCard extends StatelessWidget {
+enum _FloatPermState { loading, required, granted }
+
+class _FloatingCaptureCard extends StatefulWidget {
   const _FloatingCaptureCard();
+
+  @override
+  State<_FloatingCaptureCard> createState() => _FloatingCaptureCardState();
+}
+
+class _FloatingCaptureCardState extends State<_FloatingCaptureCard>
+    with WidgetsBindingObserver {
+  _FloatPermState _permState = _FloatPermState.loading;
+  bool _overlayOn = false;
+
+  static const _optInKey = 'apex_floating_opted_in';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    FloatingCaptureService.setOverlayTapCallback(_onOverlayTap);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _init());
+  }
+
+  @override
+  void dispose() {
+    FloatingCaptureService.setOverlayTapCallback(null);
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  void _onOverlayTap() {
+    if (!mounted) return;
+    debugPrint('dart route requested: social-create-card');
+    homeTabNotifier.value = 2; // Preparar tab — path to Apex Studio
+    context.go('/home');
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _syncAndMaybeRestore();
+  }
+
+  Future<void> _init() async {
+    final prefs = await SharedPreferences.getInstance();
+    final wantedOn = FloatingCaptureService.isEnabled(prefs);
+    await _syncState();
+    if (wantedOn && _permState == _FloatPermState.granted && !_overlayOn) {
+      final ok = await FloatingCaptureService.enable(prefs);
+      if (mounted) setState(() => _overlayOn = ok);
+    }
+  }
+
+  Future<void> _syncState() async {
+    final granted = await FloatingCaptureService.isPermissionGranted();
+    bool showing = false;
+    if (granted) showing = await FloatingCaptureService.isOverlayShowing();
+    if (!mounted) return;
+    setState(() {
+      _permState =
+          granted ? _FloatPermState.granted : _FloatPermState.required;
+      _overlayOn = showing;
+    });
+  }
+
+  // Chamado no resume: sincroniza via isShowing() e re-habilita se necessário
+  // (sistema pode eliminar o overlay enquanto o app estava em background).
+  Future<void> _syncAndMaybeRestore() async {
+    final granted = await FloatingCaptureService.isPermissionGranted();
+    bool showing = false;
+    if (granted) showing = await FloatingCaptureService.isOverlayShowing();
+    if (!mounted) return;
+    setState(() {
+      _permState =
+          granted ? _FloatPermState.granted : _FloatPermState.required;
+      _overlayOn = showing;
+    });
+    if (granted && !showing) {
+      final prefs = await SharedPreferences.getInstance();
+      if (FloatingCaptureService.isEnabled(prefs)) {
+        final ok = await FloatingCaptureService.enable(prefs);
+        if (mounted) setState(() => _overlayOn = ok);
+      }
+    }
+  }
+
+  Future<void> _onToggle(bool value) =>
+      value ? _enable() : _disable();
+
+  Future<void> _enable() async {
+    if (!mounted) return;
+    final s = AppStrings(languageNotifier.value);
+    final prefs = await SharedPreferences.getInstance();
+    final optedIn = prefs.getBool(_optInKey) ?? false;
+    if (!mounted) return;
+
+    if (!optedIn) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: const Color(0xFF1A1A1A),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: Text(
+            s.floatingCaptureOptInTitle,
+            style: const TextStyle(
+              color: AppColors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 17,
+            ),
+          ),
+          content: Text(
+            s.floatingCaptureOptInBody,
+            style: const TextStyle(
+              color: AppColors.textGray,
+              fontSize: 13,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(
+                s.actionCancel,
+                style: const TextStyle(
+                  color: AppColors.textGray,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(
+                s.floatingCaptureEnable,
+                style: const TextStyle(
+                  color: AppColors.apexGreen,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+      await prefs.setBool(_optInKey, true);
+    }
+
+    if (!mounted) return;
+    final granted = await FloatingCaptureService.isPermissionGranted();
+    if (!mounted) return;
+
+    if (!granted) {
+      setState(() => _permState = _FloatPermState.required);
+      await FloatingCaptureService.requestPermission();
+      return;
+    }
+
+    final ok = await FloatingCaptureService.enable(prefs);
+    if (!mounted) return;
+    setState(() {
+      _overlayOn = ok;
+      _permState = _FloatPermState.granted;
+    });
+  }
+
+  Future<void> _disable() async {
+    final prefs = await SharedPreferences.getInstance();
+    await FloatingCaptureService.disable(prefs);
+    if (!mounted) return;
+    setState(() => _overlayOn = false);
+  }
 
   @override
   Widget build(BuildContext context) {
     final s = AppStrings(languageNotifier.value);
+    final isLoading = _permState == _FloatPermState.loading;
+    final permRequired = _permState == _FloatPermState.required;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -1018,13 +1194,15 @@ class _FloatingCaptureCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.textGray.withValues(alpha: 0.06),
+            (_overlayOn ? AppColors.apexGreen : AppColors.textGray)
+                .withValues(alpha: _overlayOn ? 0.10 : 0.06),
             AppColors.white.withValues(alpha: 0.02),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.textGray.withValues(alpha: 0.15),
+          color: (_overlayOn ? AppColors.apexGreen : AppColors.textGray)
+              .withValues(alpha: _overlayOn ? 0.28 : 0.15),
           width: 1,
         ),
       ),
@@ -1037,53 +1215,156 @@ class _FloatingCaptureCard extends StatelessWidget {
             children: [
               ApexBadge(
                 label: s.captureFloatBadge,
-                color: AppColors.textGray,
+                color: _overlayOn ? AppColors.apexGreen : AppColors.textGray,
               ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppColors.textGray.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: AppColors.textGray.withValues(alpha: 0.22),
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  s.captureFloatCardDisabled,
-                  style: TextStyle(
-                    color: AppColors.textGray.withValues(alpha: 0.7),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
+              _buildStatusChip(s, isLoading, permRequired),
             ],
           ),
           const SizedBox(height: 14),
           Text(
             s.captureFloatCardTitle,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.textGray,
+                  color: permRequired ? AppColors.textGray : AppColors.white,
                   fontWeight: FontWeight.bold,
                 ),
           ),
           const SizedBox(height: 6),
           Text(
-            s.captureFloatInReviewNote,
+            permRequired
+                ? s.floatingCapturePermission
+                : s.captureFloatCardSubtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textGray.withValues(alpha: 0.7),
+                  color: AppColors.textGray.withValues(alpha: 0.8),
                   fontSize: 13,
                 ),
           ),
+          if (!isLoading && !permRequired) ...[
+            const SizedBox(height: 14),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  _overlayOn
+                      ? s.captureFloatCardEnabled
+                      : s.captureFloatCardDisabled,
+                  style: TextStyle(
+                    color: _overlayOn
+                        ? AppColors.apexGreen
+                        : AppColors.textGray,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Switch(
+                  value: _overlayOn,
+                  onChanged: _onToggle,
+                  activeThumbColor: AppColors.apexGreen,
+                  activeTrackColor:
+                      AppColors.apexGreen.withValues(alpha: 0.28),
+                  inactiveThumbColor:
+                      AppColors.textGray.withValues(alpha: 0.5),
+                  inactiveTrackColor:
+                      AppColors.white.withValues(alpha: 0.08),
+                ),
+              ],
+            ),
+          ],
+          if (!isLoading && permRequired) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: ElevatedButton.icon(
+                onPressed: () => FloatingCaptureService.requestPermission(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      AppColors.apexGreen.withValues(alpha: 0.15),
+                  foregroundColor: AppColors.apexGreen,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(
+                      color: AppColors.apexGreen.withValues(alpha: 0.45),
+                      width: 1,
+                    ),
+                  ),
+                  elevation: 0,
+                ),
+                icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                label: Text(
+                  s.captureFloatCardOpenSettings,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     )
         .animate()
         .fadeIn(delay: 170.ms, duration: 500.ms)
         .slideY(begin: 0.04, end: 0, duration: 380.ms);
+  }
+
+  Widget _buildStatusChip(
+      AppStrings s, bool isLoading, bool permRequired) {
+    if (isLoading) {
+      return SizedBox(
+        width: 14,
+        height: 14,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: AppColors.textGray.withValues(alpha: 0.5),
+        ),
+      );
+    }
+    if (permRequired) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: AppColors.energyOrange.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: AppColors.energyOrange.withValues(alpha: 0.35),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          s.captureFloatCardPermRequired,
+          style: TextStyle(
+            color: AppColors.energyOrange,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: (_overlayOn ? AppColors.apexGreen : AppColors.textGray)
+            .withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: (_overlayOn ? AppColors.apexGreen : AppColors.textGray)
+              .withValues(alpha: 0.28),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        _overlayOn ? s.captureFloatCardEnabled : s.captureFloatCardDisabled,
+        style: TextStyle(
+          color: _overlayOn ? AppColors.apexGreen : AppColors.textGray,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
   }
 }
 

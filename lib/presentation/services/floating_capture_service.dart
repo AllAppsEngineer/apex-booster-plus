@@ -1,15 +1,27 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// SOCIAL-U2A-RESET: flutter_overlay_window removed. All overlay methods are
-// stubs until SOCIAL-U2A-NATIVE implements the Kotlin WindowManager approach.
 class FloatingCaptureService {
   static const _key = 'capture_float_enabled';
+  static const _ch = MethodChannel('apex/overlay');
 
   static bool _isOverlayActive = false;
   static bool get isOverlayActive => _isOverlayActive;
 
   static final activeNotifier = ValueNotifier<bool>(false);
+
+  static VoidCallback? _overlayTapCallback;
+
+  static void setOverlayTapCallback(VoidCallback? cb) {
+    _overlayTapCallback = cb;
+    _ch.setMethodCallHandler((call) async {
+      if (call.method == 'onOverlayTapped') {
+        debugPrint('dart onOverlayTapped received');
+        _overlayTapCallback?.call();
+      }
+    });
+  }
 
   static bool isEnabled(SharedPreferences prefs) =>
       prefs.getBool(_key) ?? false;
@@ -17,20 +29,60 @@ class FloatingCaptureService {
   static Future<void> saveEnabled(SharedPreferences prefs, bool value) =>
       prefs.setBool(_key, value);
 
-  static Future<bool> isPermissionGranted() async => false;
+  static Future<bool> isPermissionGranted() async {
+    try {
+      return await _ch.invokeMethod<bool>('isOverlayPermissionGranted') ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
 
-  static Future<void> requestPermission() async {}
+  static Future<void> requestPermission() async {
+    try {
+      await _ch.invokeMethod<void>('openOverlayPermissionSettings');
+    } on PlatformException {
+      // no-op: falha silenciosa — caller não tem estado para tratar
+    }
+  }
 
   static Future<bool> enable(SharedPreferences prefs) async {
-    debugPrint('[FloatingCapture] overlay unavailable (SOCIAL-U2A-RESET)');
-    return false;
+    try {
+      final ok = await _ch.invokeMethod<bool>('showFloating') ?? false;
+      if (ok) {
+        await saveEnabled(prefs, true);
+        _isOverlayActive = true;
+        activeNotifier.value = true;
+      }
+      return ok;
+    } on PlatformException {
+      return false;
+    }
   }
 
   static Future<void> disable(SharedPreferences prefs) async {
+    try {
+      await _ch.invokeMethod<void>('hideFloating');
+    } on PlatformException {
+      // no-op: overlay pode já não existir
+    }
     await saveEnabled(prefs, false);
     _isOverlayActive = false;
     activeNotifier.value = false;
   }
 
-  static Future<void> bringToForeground() async {}
+  static Future<bool> isOverlayShowing() async {
+    try {
+      return await _ch.invokeMethod<bool>('isFloatingShowing') ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  static Future<void> bringToForeground() async {
+    try {
+      await _ch.invokeMethod<void>('bringToForeground');
+    } on PlatformException {
+      // no-op
+    }
+  }
 }

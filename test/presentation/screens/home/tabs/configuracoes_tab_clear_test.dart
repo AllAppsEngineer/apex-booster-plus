@@ -47,13 +47,37 @@ void _clearFocusChannel() {
   );
 }
 
+const _overlayChannel = MethodChannel('apex/overlay');
+
+void _mockOverlayChannel() {
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(_overlayChannel, (call) async {
+    switch (call.method) {
+      case 'isOverlayPermissionGranted': return false;
+      case 'isFloatingShowing': return false;
+      case 'hideFloating': return null;
+      case 'openOverlayPermissionSettings': return null;
+      default: return null;
+    }
+  });
+}
+
+void _clearOverlayChannel() {
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(_overlayChannel, null);
+}
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     _mockFocusChannel();
+    _mockOverlayChannel();
   });
 
-  tearDown(_clearFocusChannel);
+  tearDown(() {
+    _clearFocusChannel();
+    _clearOverlayChannel();
+  });
 
   // ─── ConfiguracoesTab: presença do card ────────────────────────────────────
 

@@ -20,8 +20,50 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
 
 class MainActivity : FlutterActivity() {
+    private val overlayManager get() = FloatingOverlayManager.getInstance(applicationContext)
     private var _previousFilter: Int? = null
     private var _focusModeActivatedByApp: Boolean = false
+    private var overlayChannel: MethodChannel? = null
+    private var _pendingOverlayTap = false
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra("apex_overlay_tap", false)) {
+            android.util.Log.d("OverlayTap", "native tap via intent received")
+            // Defer delivery to onResume() — Flutter may not be resumed yet.
+            _pendingOverlayTap = true
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Register direct callback so foreground taps bypass the Intent path.
+        overlayManager.setDartCallback {
+            android.util.Log.d("OverlayTap", "native dart callback sent")
+            overlayChannel?.invokeMethod("onOverlayTapped", null)
+        }
+        // Deliver any tap that arrived via Intent while Flutter was not ready.
+        deliverPendingOverlayTap()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Clear callback so the next tap falls back to the Intent path.
+        overlayManager.setDartCallback(null)
+    }
+
+    private fun deliverPendingOverlayTap() {
+        if (!_pendingOverlayTap) return
+        _pendingOverlayTap = false
+        android.util.Log.d("OverlayTap", "native dart callback sent (deferred)")
+        overlayChannel?.invokeMethod("onOverlayTapped", null)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (isFinishing) overlayManager.hide()
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -239,17 +281,15 @@ class MainActivity : FlutterActivity() {
             }
         }
 
-        MethodChannel(
+        val apexOverlayCh = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "apex/overlay"
-        ).setMethodCallHandler { call, result ->
+        )
+        overlayChannel = apexOverlayCh
+        apexOverlayCh.setMethodCallHandler { call, result ->
             when (call.method) {
                 "bringToForeground" -> {
                     try {
-                        // FLAG_ACTIVITY_NEW_TASK is required on Android 12+
-                        // when startActivity() is called while the Activity is
-                        // not in the foreground. Without it the intent is
-                        // silently dropped on API 31+ in some OEM builds.
                         val intent = Intent(this, MainActivity::class.java)
                         intent.addFlags(
                             Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
@@ -260,6 +300,32 @@ class MainActivity : FlutterActivity() {
                     } catch (e: Exception) {
                         result.success(null)
                     }
+                }
+                "isOverlayPermissionGranted" -> {
+                    result.success(overlayManager.isPermissionGranted())
+                }
+                "openOverlayPermissionSettings" -> {
+                    try {
+                        val intent = Intent(
+                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            android.net.Uri.parse("package:$packageName")
+                        )
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(intent)
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.success(null)
+                    }
+                }
+                "showFloating" -> {
+                    result.success(overlayManager.show())
+                }
+                "hideFloating" -> {
+                    overlayManager.hide()
+                    result.success(null)
+                }
+                "isFloatingShowing" -> {
+                    result.success(overlayManager.isShowing())
                 }
                 else -> result.notImplemented()
             }
