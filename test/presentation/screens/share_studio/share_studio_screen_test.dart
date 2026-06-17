@@ -120,7 +120,9 @@ void main() {
         initialMediaPath: '/fake/path/clip.mp4',
       ),
     ));
-    await tester.pumpAndSettle();
+    // pump instead of pumpAndSettle: scan line animation repeats infinitely
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Preencher'), findsOneWidget);
     expect(find.text('Encaixar'), findsOneWidget);
   });
@@ -132,7 +134,8 @@ void main() {
         initialMediaPath: '/fake/path/clip.mp4',
       ),
     ));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byIcon(Icons.play_circle_rounded), findsOneWidget);
   });
 
@@ -143,7 +146,8 @@ void main() {
         initialMediaPath: '/fake/path/clip.mp4',
       ),
     ));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(
       find.textContaining('fase futura'),
       findsOneWidget,

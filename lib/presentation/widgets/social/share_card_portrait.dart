@@ -41,8 +41,8 @@ class ShareCardPortrait extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: accent.withValues(alpha: 0.18),
-            width: 0.5,
+            color: accent.withValues(alpha: 0.28),
+            width: 1.0,
           ),
         ),
         child: ClipRRect(
@@ -79,7 +79,7 @@ class ShareCardPortrait extends StatelessWidget {
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        accent.withValues(alpha: 0.06),
+                        accent.withValues(alpha: 0.09),
                         Colors.transparent,
                       ],
                     ),
@@ -91,7 +91,7 @@ class ShareCardPortrait extends StatelessWidget {
                 left: 0,
                 right: 0,
                 child: Container(
-                  height: 1.5,
+                  height: 2.5,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
@@ -157,7 +157,9 @@ class ShareCardPortrait extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
+                    Container(height: 0.5, color: accent.withValues(alpha: 0.12)),
+                    const SizedBox(height: 4),
                     if (card.importedMediaPath != null)
                       _buildMediaSlot(card.importedMediaPath!, accent, s,
                           fit: mediaFit, videoThumbnail: videoThumbnail)
@@ -174,7 +176,7 @@ class ShareCardPortrait extends StatelessWidget {
                         shadows: [
                           Shadow(
                             color: accent.withValues(alpha: 0.45),
-                            blurRadius: 18,
+                            blurRadius: 28,
                           ),
                         ],
                       ),
@@ -268,97 +270,145 @@ Widget _buildMediaSlot(
                   videoThumbnail,
                   fit: fit,
                   width: double.infinity,
-                  errorBuilder: (_, __, ___) => _videoPremiumPlaceholder(accent, s),
+                  errorBuilder: (_, __, ___) => _ScanLinePlaceholder(accent: accent, s: s),
                 )
-              : _videoPremiumPlaceholder(accent, s))
+              : _ScanLinePlaceholder(accent: accent, s: s))
           : Image.file(
               File(path),
               fit: fit,
               width: double.infinity,
-              errorBuilder: (_, __, ___) => _videoPremiumPlaceholder(accent, s),
+              errorBuilder: (_, __, ___) => _ScanLinePlaceholder(accent: accent, s: s),
             ),
     ),
   );
 }
 
-Widget _videoPremiumPlaceholder(Color accent, AppStrings s) {
-  return Container(
-    width: double.infinity,
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFF111827), Color(0xFF0A0A0A)],
-      ),
-    ),
-    child: Stack(
-      children: [
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: _filmStripRow(accent),
-        ),
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: _filmStripRow(accent),
-        ),
-        Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: accent.withValues(alpha: 0.10),
-                  border: Border.all(
-                    color: accent.withValues(alpha: 0.32),
-                    width: 1,
-                  ),
-                ),
-                child: Icon(Icons.play_arrow_rounded, color: accent, size: 24),
+class _ScanLinePlaceholder extends StatefulWidget {
+  final Color accent;
+  final AppStrings s;
+  const _ScanLinePlaceholder({required this.accent, required this.s});
+
+  @override
+  State<_ScanLinePlaceholder> createState() => _ScanLinePlaceholderState();
+}
+
+class _ScanLinePlaceholderState extends State<_ScanLinePlaceholder>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2800),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Widget _filmStrip(Color accent) => Container(
+        height: 10,
+        color: Colors.black.withValues(alpha: 0.55),
+        padding: const EdgeInsets.symmetric(vertical: 1.5),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: List.generate(
+            10,
+            (_) => Container(
+              width: 7,
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.22),
+                borderRadius: BorderRadius.circular(1),
               ),
-              const SizedBox(height: 8),
-              Text(
-                s.apexStudioVideoPreviewLabel.toUpperCase(),
-                style: TextStyle(
-                  color: accent.withValues(alpha: 0.70),
-                  fontSize: 8,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.5,
+            ),
+          ),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = widget.accent;
+    final s = widget.s;
+    return LayoutBuilder(
+      builder: (_, constraints) {
+        final height = constraints.maxHeight;
+        return Container(
+          width: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF111827), Color(0xFF0A0A0A)],
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned(top: 0, left: 0, right: 0, child: _filmStrip(accent)),
+              Positioned(bottom: 0, left: 0, right: 0, child: _filmStrip(accent)),
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: accent.withValues(alpha: 0.10),
+                        border: Border.all(
+                          color: accent.withValues(alpha: 0.32),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(Icons.play_arrow_rounded, color: accent, size: 24),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      s.apexStudioVideoPreviewLabel.toUpperCase(),
+                      style: TextStyle(
+                        color: accent.withValues(alpha: 0.70),
+                        fontSize: 8,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+              AnimatedBuilder(
+                animation: _ctrl,
+                builder: (_, __) {
+                  final top = _ctrl.value * (height > 0 ? height : 100);
+                  return Positioned(
+                    top: top,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      height: 1.5,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.transparent,
+                            accent.withValues(alpha: 0.30),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _filmStripRow(Color accent) {
-  return Container(
-    height: 10,
-    color: Colors.black.withValues(alpha: 0.55),
-    padding: const EdgeInsets.symmetric(vertical: 1.5),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: List.generate(
-        10,
-        (_) => Container(
-          width: 7,
-          decoration: BoxDecoration(
-            color: accent.withValues(alpha: 0.22),
-            borderRadius: BorderRadius.circular(1),
-          ),
-        ),
-      ),
-    ),
-  );
+        );
+      },
+    );
+  }
 }
 
 bool _isVideoPath(String path) {

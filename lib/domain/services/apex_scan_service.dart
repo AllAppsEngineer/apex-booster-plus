@@ -3,9 +3,11 @@ import '../entities/apex_scan_result.dart';
 import '../entities/gfx_profile.dart';
 
 class ApexScanService {
+  /// [isLaunchable] null = local-only mode (no getInstalledApps call);
+  /// true/false = verified via platform channel.
   ApexScanResult scan({
     required ApexGame game,
-    required bool isLaunchable,
+    bool? isLaunchable,
   }) {
     return ApexScanResult(
       checks: [
@@ -19,10 +21,10 @@ class ApexScanService {
     );
   }
 
-  ScanScore _score(ApexGame game, bool isLaunchable) {
+  ScanScore _score(ApexGame game, bool? isLaunchable) {
     final hasPackage =
         game.packageName != null && game.packageName!.isNotEmpty;
-    return (hasPackage && isLaunchable)
+    return (hasPackage && isLaunchable == true)
         ? ScanScore.pronto
         : ScanScore.incompleto;
   }
@@ -40,7 +42,7 @@ class ApexScanService {
     );
   }
 
-  ScanCheck _acesso(ApexGame game, bool isLaunchable) {
+  ScanCheck _acesso(ApexGame game, bool? isLaunchable) {
     final hasPackage =
         game.packageName != null && game.packageName!.isNotEmpty;
     if (!hasPackage) {
@@ -49,6 +51,14 @@ class ApexScanService {
         label: 'Acesso',
         status: ScanCheckStatus.warn,
         message: 'Acesso não verificado — sem packageName',
+      );
+    }
+    if (isLaunchable == null) {
+      return ScanCheck(
+        id: 'acesso',
+        label: 'Acesso',
+        status: ScanCheckStatus.info,
+        message: 'App vinculado: ${game.packageName} registrado',
       );
     }
     return ScanCheck(

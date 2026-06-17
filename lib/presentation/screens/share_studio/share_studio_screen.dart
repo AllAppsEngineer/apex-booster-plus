@@ -353,23 +353,36 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
             // ── Card preview ─────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: RepaintBoundary(
-                key: _exportKey,
-                child: _card.preset == SharePreset.portrait
-                    ? ShareCardPortrait(
-                        card: _card,
-                        template: _activeTemplate,
-                        lang: _lang,
-                        mediaFit: _imageFit,
-                        videoThumbnail: _videoThumbnail,
-                      )
-                    : ShareCardSquare(
-                        card: _card,
-                        template: _activeTemplate,
-                        lang: _lang,
-                        mediaFit: _imageFit,
-                        videoThumbnail: _videoThumbnail,
-                      ),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      blurRadius: 24,
+                      spreadRadius: 0,
+                      color: _activeTemplate.accentColor
+                          .withValues(alpha: 0.15),
+                    ),
+                  ],
+                ),
+                child: RepaintBoundary(
+                  key: _exportKey,
+                  child: _card.preset == SharePreset.portrait
+                      ? ShareCardPortrait(
+                          card: _card,
+                          template: _activeTemplate,
+                          lang: _lang,
+                          mediaFit: _imageFit,
+                          videoThumbnail: _videoThumbnail,
+                        )
+                      : ShareCardSquare(
+                          card: _card,
+                          template: _activeTemplate,
+                          lang: _lang,
+                          mediaFit: _imageFit,
+                          videoThumbnail: _videoThumbnail,
+                        ),
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -503,7 +516,7 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
       child: GestureDetector(
         onTap: _pickMedia,
         child: Container(
-          height: 72,
+          height: 88,
           decoration: BoxDecoration(
             color: const Color(0xFF0D0D0D),
             borderRadius: BorderRadius.circular(12),
@@ -512,21 +525,29 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
               width: 1,
             ),
           ),
-          child: Row(
+          child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 Icons.add_photo_alternate_outlined,
                 color: AppColors.apexGreen,
-                size: 22,
+                size: 32,
               ),
-              const SizedBox(width: 10),
+              const SizedBox(height: 6),
               Text(
                 s.apexStudioAddMedia,
                 style: TextStyle(
                   color: AppColors.apexGreen,
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                s.apexStudioAddMediaSubtitle,
+                style: const TextStyle(
+                  color: Color(0xFF444444),
+                  fontSize: 11,
                 ),
               ),
             ],
@@ -538,6 +559,10 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
 
   Widget _buildMediaPreview(AppStrings s) {
     final filename = _mediaPath!.split('/').last.split('\\').last;
+    final badgeColor = _mediaIsVideo
+        ? const Color(0xFF3B82F6)
+        : AppColors.apexGreen;
+    final badgeLabel = _mediaIsVideo ? 'VÍDEO' : 'FOTO';
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -545,58 +570,74 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF111111),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF0F0F0F), Color(0xFF141414)],
+              ),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFF2A2A2A)),
             ),
             child: Row(
               children: [
                 // Thumbnail
-                ClipRRect(
-                  borderRadius:
-                      const BorderRadius.horizontal(left: Radius.circular(11)),
-                  child: SizedBox(
-                    width: 72,
-                    height: 72,
-                    child: _mediaIsVideo
-                        ? GestureDetector(
-                            onTap: _showVideoPreview,
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                _videoThumbnail != null
-                                    ? Image.memory(
-                                        _videoThumbnail!,
-                                        fit: _imageFit,
-                                        width: 72,
-                                        height: 72,
-                                      )
-                                    : _buildVideoThumbnail(s),
-                                Center(
-                                  child: Container(
-                                    width: 26,
-                                    height: 26,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Colors.black
-                                          .withValues(alpha: 0.55),
-                                    ),
-                                    child: const Icon(
-                                      Icons.play_circle_rounded,
-                                      color: Colors.white,
-                                      size: 20,
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.horizontal(
+                        left: Radius.circular(11)),
+                    border: Border(
+                      right: BorderSide(
+                        color: badgeColor.withValues(alpha: 0.20),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.horizontal(
+                        left: Radius.circular(11)),
+                    child: SizedBox(
+                      width: 72,
+                      height: 72,
+                      child: _mediaIsVideo
+                          ? GestureDetector(
+                              onTap: _showVideoPreview,
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  _videoThumbnail != null
+                                      ? Image.memory(
+                                          _videoThumbnail!,
+                                          fit: _imageFit,
+                                          width: 72,
+                                          height: 72,
+                                        )
+                                      : _buildVideoThumbnail(s),
+                                  Center(
+                                    child: Container(
+                                      width: 26,
+                                      height: 26,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.black
+                                            .withValues(alpha: 0.55),
+                                      ),
+                                      child: const Icon(
+                                        Icons.play_circle_rounded,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
+                            )
+                          : Image.file(
+                              File(_mediaPath!),
+                              fit: _imageFit,
+                              errorBuilder: (_, __, ___) =>
+                                  _buildVideoThumbnail(s),
                             ),
-                          )
-                        : Image.file(
-                            File(_mediaPath!),
-                            fit: _imageFit,
-                            errorBuilder: (_, __, ___) =>
-                                _buildVideoThumbnail(s),
-                          ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -606,21 +647,36 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        _mediaIsVideo
-                            ? s.apexStudioVideoSelected
-                            : s.apexStudioImageSelected,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: badgeColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: badgeColor.withValues(alpha: 0.30),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Text(
+                              badgeLabel,
+                              style: TextStyle(
+                                color: badgeColor,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Text(
                         filename,
                         style: const TextStyle(
-                          color: Color(0xFF555555),
+                          color: Color(0xFF888888),
                           fontSize: 11,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -630,22 +686,29 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
                   ),
                 ),
                 // Actions
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.swap_horiz_rounded,
-                          color: Color(0xFFA1A1AA), size: 20),
-                      onPressed: _pickMedia,
-                      tooltip: s.apexStudioChangeMedia,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded,
-                          color: Color(0xFFA1A1AA), size: 20),
-                      onPressed: _removeMedia,
-                      tooltip: s.apexStudioRemoveMedia,
-                    ),
-                  ],
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A1A),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.swap_horiz_rounded,
+                            color: Color(0xFFA1A1AA), size: 20),
+                        onPressed: _pickMedia,
+                        tooltip: s.apexStudioChangeMedia,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded,
+                            color: Color(0xFFA1A1AA), size: 20),
+                        onPressed: _removeMedia,
+                        tooltip: s.apexStudioRemoveMedia,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -703,13 +766,14 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
     final selected = _imageFit == fit;
     return GestureDetector(
       onTap: () => setState(() => _imageFit = fit),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
           color: selected
               ? AppColors.apexGreen.withValues(alpha: 0.12)
               : const Color(0xFF111111),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: selected
                 ? AppColors.apexGreen.withValues(alpha: 0.40)

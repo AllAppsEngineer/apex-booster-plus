@@ -2238,6 +2238,12 @@ class AppStrings {
     AppLanguage.es   => 'Agregar captura o video',
   };
 
+  String get apexStudioAddMediaSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Foto ou vídeo da galeria',
+    AppLanguage.en   => 'Photo or video from gallery',
+    AppLanguage.es   => 'Foto o video de la galería',
+  };
+
   String get apexStudioPickImage => switch (lang) {
     AppLanguage.ptBr => 'Selecionar imagem',
     AppLanguage.en   => 'Select image',

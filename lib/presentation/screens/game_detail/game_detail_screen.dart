@@ -43,7 +43,6 @@ class _GameDetailScreenState extends State<GameDetailScreen>
   ApexGame? _game;
   bool _loading = true;
   SharedPreferencesGameLibraryRepository? _repo;
-  ApexScanResult? _scanResult;
   DeviceMetrics? _deviceMetrics;
   bool _metricsLoading = false;
   bool _metricsError = false;
@@ -122,17 +121,9 @@ class _GameDetailScreenState extends State<GameDetailScreen>
       final resolvedGame = game ?? (providedInitially ? widget.initialGame : null);
       if (resolvedGame != null) {
         _loadMetrics();
-        _loadScanAsync(resolvedGame);
       }
     }
     debugPrint('[DETAIL-NAV] T+${_tms}ms data load ended');
-  }
-
-  Future<void> _loadScanAsync(ApexGame game) async {
-    debugPrint('[DETAIL-NAV] T+${_tms}ms scan started');
-    final scanResult = await _buildScan(game);
-    debugPrint('[DETAIL-NAV] T+${_tms}ms scan ended');
-    if (mounted) setState(() => _scanResult = scanResult);
   }
 
   Future<void> _loadMetrics() async {
@@ -163,18 +154,6 @@ class _GameDetailScreenState extends State<GameDetailScreen>
         });
       }
     }
-  }
-
-  Future<ApexScanResult> _buildScan(ApexGame game) async {
-    final pkg = game.packageName;
-    bool isLaunchable = false;
-    if (pkg != null && pkg.isNotEmpty) {
-      try {
-        final apps = await InstalledAppsDatasource().getInstalledApps();
-        isLaunchable = apps.any((a) => a.packageName == pkg);
-      } catch (_) {}
-    }
-    return ApexScanService().scan(game: game, isLaunchable: isLaunchable);
   }
 
   Future<void> _openEditDialog() async {
@@ -222,8 +201,7 @@ class _GameDetailScreenState extends State<GameDetailScreen>
     );
 
     await repo.updateGame(updated);
-    final scan = await _buildScan(updated);
-    if (mounted) setState(() { _game = updated; _scanResult = scan; });
+    if (mounted) setState(() { _game = updated; });
   }
 
   Future<void> _launchGame() async {
@@ -377,7 +355,6 @@ class _GameDetailScreenState extends State<GameDetailScreen>
                         : _GameDetailContent(
                             game: _game!,
                             onSelectProfile: _openProfileSelector,
-                            scanResult: _scanResult,
                             deviceMetrics: _deviceMetrics,
                             metricsLoading: _metricsLoading,
                             metricsError: _metricsError,
@@ -521,7 +498,6 @@ class _GameNotFound extends StatelessWidget {
 class _GameDetailContent extends StatelessWidget {
   final ApexGame game;
   final VoidCallback? onSelectProfile;
-  final ApexScanResult? scanResult;
   final DeviceMetrics? deviceMetrics;
   final bool metricsLoading;
   final bool metricsError;
@@ -529,7 +505,6 @@ class _GameDetailContent extends StatelessWidget {
   const _GameDetailContent({
     required this.game,
     this.onSelectProfile,
-    this.scanResult,
     this.deviceMetrics,
     this.metricsLoading = false,
     this.metricsError = false,
@@ -584,21 +559,76 @@ class _GameDetailContent extends StatelessWidget {
             accentColor: AppColors.textGray,
             delay: 320.ms,
           ),
-          if (scanResult != null) ...[
-            const SizedBox(height: 20),
-            _ApexScanCard(
-              result: scanResult!,
-              deviceMetrics: deviceMetrics,
-              metricsLoading: metricsLoading,
-              metricsError: metricsError,
-              profileName: game.localProfileName,
-            ),
-          ],
+          const SizedBox(height: 20),
+          _ScanSection(
+            game: game,
+            deviceMetrics: deviceMetrics,
+            metricsLoading: metricsLoading,
+            metricsError: metricsError,
+          ),
         ],
       ),
     );
   }
 }
+
+// ─── Scan section (self-contained, isolates rebuild from parent) ──────────────
+
+class _ScanSection extends StatefulWidget {
+  final ApexGame game;
+  final DeviceMetrics? deviceMetrics;
+  final bool metricsLoading;
+  final bool metricsError;
+
+  const _ScanSection({
+    required this.game,
+    this.deviceMetrics,
+    this.metricsLoading = false,
+    this.metricsError = false,
+  });
+
+  @override
+  State<_ScanSection> createState() => _ScanSectionState();
+}
+
+class _ScanSectionState extends State<_ScanSection> {
+  late ApexScanResult _result;
+
+  @override
+  void initState() {
+    super.initState();
+    _result = _computeLocalScan(widget.game);
+  }
+
+  @override
+  void didUpdateWidget(_ScanSection old) {
+    super.didUpdateWidget(old);
+    if (old.game.id != widget.game.id ||
+        old.game.packageName != widget.game.packageName ||
+        old.game.localProfileName != widget.game.localProfileName ||
+        old.game.isFavorite != widget.game.isFavorite) {
+      setState(() {
+        _result = _computeLocalScan(widget.game);
+      });
+    }
+  }
+
+  static ApexScanResult _computeLocalScan(ApexGame game) =>
+      ApexScanService().scan(game: game);
+
+  @override
+  Widget build(BuildContext context) {
+    return _ApexScanCard(
+      result: _result,
+      deviceMetrics: widget.deviceMetrics,
+      metricsLoading: widget.metricsLoading,
+      metricsError: widget.metricsError,
+      profileName: widget.game.localProfileName,
+    );
+  }
+}
+
+// ─── Game header card ─────────────────────────────────────────────────────────
 
 class _GameHeaderCard extends StatelessWidget {
   final ApexGame game;
@@ -1208,19 +1238,15 @@ class _CreateCardButton extends StatelessWidget {
     final s = AppStrings(languageNotifier.value);
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-      child: Material(
-        color: Colors.transparent,
-        clipBehavior: Clip.antiAlias,
+      child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           splashColor: AppColors.apexGreen.withValues(alpha: 0.12),
           highlightColor: AppColors.apexGreen.withValues(alpha: 0.06),
           onTap: () {
-            debugPrint('[ApexStudio] continue tapped');
-            debugPrint('[ApexStudio] route push started');
+            debugPrint('[ApexStudio] studio tapped');
             context.push('/share-studio/$gameId');
-            debugPrint('[ApexStudio] route push completed');
           },
           child: Ink(
             decoration: BoxDecoration(

@@ -54,11 +54,11 @@ class SocialTemplateSelector extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 8,
-                    height: 8,
+                    width: 24,
+                    height: 6,
                     decoration: BoxDecoration(
                       color: t.accentColor,
-                      shape: BoxShape.circle,
+                      borderRadius: BorderRadius.circular(3),
                     ),
                   ),
                   const SizedBox(width: 6),
