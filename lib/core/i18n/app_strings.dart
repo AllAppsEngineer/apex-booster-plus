@@ -2343,6 +2343,36 @@ class AppStrings {
         'Aún no hay capturas disponibles. Captura desde la pantalla del juego con el botón flotante A+.',
   };
 
+  String get apexStudioCapturesSheetSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Capturas feitas com o botão A+',
+    AppLanguage.en   => 'Captures taken with the A+ button',
+    AppLanguage.es   => 'Capturas hechas con el botón A+',
+  };
+
+  String get apexStudioCaptureMostRecent => switch (lang) {
+    AppLanguage.ptBr => 'MAIS RECENTE',
+    AppLanguage.en   => 'MOST RECENT',
+    AppLanguage.es   => 'MÁS RECIENTE',
+  };
+
+  String get apexStudioSessionNameSection => switch (lang) {
+    AppLanguage.ptBr => 'Nome',
+    AppLanguage.en   => 'Name',
+    AppLanguage.es   => 'Nombre',
+  };
+
+  String get apexStudioSessionNameHint => switch (lang) {
+    AppLanguage.ptBr => 'Nome do jogo ou da sessão',
+    AppLanguage.en   => 'Game or session name',
+    AppLanguage.es   => 'Nombre del juego o de la sesión',
+  };
+
+  String get apexStudioSessionNameFallback => switch (lang) {
+    AppLanguage.ptBr => 'Sessão gamer',
+    AppLanguage.en   => 'Gamer session',
+    AppLanguage.es   => 'Sesión gamer',
+  };
+
   // ─── Social — Export Presets ─────────────────────────────────────────────────
 
   String get socialPresetPortrait => switch (lang) {

@@ -170,6 +170,48 @@ void main() {
     expect(find.text('Capturas do Apex'), findsOneWidget);
   });
 
+  testWidgets('ApexStudioScreen prefills session name field and card preview with game id',
+      (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: ApexStudioScreen(gameId: 'test-game'),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('test-game'), findsNWidgets(2));
+  });
+
+  testWidgets('ApexStudioScreen updates card preview when session name is edited',
+      (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: ApexStudioScreen(gameId: 'test-game'),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('apex_studio_session_name_field')),
+      'Custom Session',
+    );
+    await tester.pump();
+
+    expect(find.text('Custom Session'), findsNWidgets(2));
+    expect(find.text('test-game'), findsNothing);
+  });
+
+  testWidgets('ApexStudioScreen falls back to default name when session name is cleared',
+      (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: ApexStudioScreen(gameId: 'test-game'),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('apex_studio_session_name_field')),
+      '',
+    );
+    await tester.pump();
+
+    expect(find.text('Sessão gamer'), findsOneWidget);
+  });
+
   testWidgets('ApexStudioScreen shows empty message when no Apex captures exist',
       (tester) async {
     await tester.pumpWidget(MaterialApp(

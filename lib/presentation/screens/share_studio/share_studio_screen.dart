@@ -42,6 +42,8 @@ class ApexStudioScreen extends StatefulWidget {
 class _ApexStudioScreenState extends State<ApexStudioScreen> {
   final _exportKey = GlobalKey();
   final _captionController = TextEditingController();
+  final _gameNameController = TextEditingController();
+  bool _gameNameEdited = false;
   final _imagePicker = ImagePicker();
   late SocialCard _card;
   String _selectedTemplateId = 'default';
@@ -74,6 +76,7 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
     );
     _mediaPath = path;
     _mediaIsVideo = isVideo;
+    _gameNameController.text = widget.gameId;
     _loaded = true;
     _loadGameName();
     if (isVideo) {
@@ -92,8 +95,22 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
       final game = await _repo!.getGameById(widget.gameId);
       debugPrint('[ApexStudio] media/data load ended');
       if (!mounted || game == null) return;
-      setState(() => _card = _card.copyWith(gameName: game.name));
+      setState(() {
+        _card = _card.copyWith(gameName: game.name);
+        if (!_gameNameEdited) _gameNameController.text = game.name;
+      });
     } catch (_) {}
+  }
+
+  void _onGameNameChanged(String value) {
+    _gameNameEdited = true;
+    final s = AppStrings(_lang);
+    final trimmed = value.trim();
+    setState(() {
+      _card = _card.copyWith(
+        gameName: trimmed.isEmpty ? s.apexStudioSessionNameFallback : trimmed,
+      );
+    });
   }
 
   Future<void> _showVideoPreview() async {
@@ -122,6 +139,7 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
   @override
   void dispose() {
     _captionController.dispose();
+    _gameNameController.dispose();
     super.dispose();
   }
 
@@ -190,17 +208,6 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
     final captures = await _galleryService.listCaptures();
     if (!mounted) return;
 
-    if (captures.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(s.apexStudioCapturesEmpty),
-          backgroundColor: const Color(0xFF1A1A1A),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
     final selectedPath = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: const Color(0xFF111111),
@@ -211,6 +218,10 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
       builder: (_) => _ApexCapturesSheet(
         captures: captures,
         title: s.apexStudioCapturesSheetTitle,
+        subtitle: s.apexStudioCapturesSheetSubtitle,
+        emptyMessage: s.apexStudioCapturesEmpty,
+        mostRecentLabel: s.apexStudioCaptureMostRecent,
+        lang: _lang,
       ),
     );
 
@@ -519,6 +530,57 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
                           ),
                         ))
                     .toList(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // ── Nome do jogo/sessão ──────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                s.apexStudioSessionNameSection.toUpperCase(),
+                style: const TextStyle(
+                  color: Color(0xFF555555),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                key: const Key('apex_studio_session_name_field'),
+                controller: _gameNameController,
+                onChanged: _onGameNameChanged,
+                maxLength: 40,
+                style: const TextStyle(
+                    color: Colors.white, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: s.apexStudioSessionNameHint,
+                  hintStyle: const TextStyle(
+                      color: Color(0xFF555555), fontSize: 14),
+                  counterStyle: const TextStyle(
+                      color: Color(0xFF555555), fontSize: 11),
+                  filled: true,
+                  fillColor: const Color(0xFF111111),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide:
+                        const BorderSide(color: Color(0xFF2A2A2A)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide:
+                        const BorderSide(color: Color(0xFF2A2A2A)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                        color: Color(0xFF22C55E)),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 12),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -1156,10 +1218,22 @@ class _VideoPreviewDialogState extends State<_VideoPreviewDialog> {
 class _ApexCapturesSheet extends StatelessWidget {
   final List<CapturedScreenshot> captures;
   final String title;
-  const _ApexCapturesSheet({required this.captures, required this.title});
+  final String subtitle;
+  final String emptyMessage;
+  final String mostRecentLabel;
+  final AppLanguage lang;
+  const _ApexCapturesSheet({
+    required this.captures,
+    required this.title,
+    required this.subtitle,
+    required this.emptyMessage,
+    required this.mostRecentLabel,
+    required this.lang,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings(lang);
     return SafeArea(
       top: false,
       child: Padding(
@@ -1187,37 +1261,130 @@ class _ApexCapturesSheet extends StatelessWidget {
                 fontSize: 16,
               ),
             ),
-            const SizedBox(height: 16),
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.5,
-              ),
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const ClampingScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                ),
-                itemCount: captures.length,
-                itemBuilder: (_, i) {
-                  final capture = captures[i];
-                  return GestureDetector(
-                    onTap: () => Navigator.of(context).pop(capture.path),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.file(
-                        File(capture.path),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  );
-                },
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                color: Color(0xFF666666),
+                fontSize: 12,
               ),
             ),
+            const SizedBox(height: 16),
+            if (captures.isEmpty)
+              _buildEmptyState()
+            else
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.5,
+                ),
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const ClampingScrollPhysics(),
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: captures.length,
+                  itemBuilder: (_, i) {
+                    final capture = captures[i];
+                    return GestureDetector(
+                      onTap: () => Navigator.of(context).pop(capture.path),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.file(
+                              File(capture.path),
+                              fit: BoxFit.cover,
+                            ),
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 4, vertical: 3),
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.transparent,
+                                      Color(0xCC000000),
+                                    ],
+                                  ),
+                                ),
+                                child: Text(
+                                  s.relativeTime(capture.capturedAt),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                            ),
+                            if (i == 0)
+                              Positioned(
+                                top: 4,
+                                left: 4,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.apexGreen,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    mostRecentLabel,
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 7,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.4,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.collections_outlined,
+            color: Color(0xFF444444),
+            size: 40,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            emptyMessage,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFF888888),
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
+        ],
       ),
     );
   }
