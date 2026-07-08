@@ -2493,11 +2493,14 @@ class AppStrings {
 
   String get captureFloatCardSubtitle => switch (lang) {
     AppLanguage.ptBr =>
-        'Ative antes de abrir o jogo para capturar a tela com consentimento.',
+        'Ative antes de abrir o jogo. O botão A+ aparece sobre a tela para '
+        'você capturar quando quiser.',
     AppLanguage.en =>
-        'Turn on before opening the game to capture the screen with consent.',
+        'Turn it on before opening the game. The A+ button appears over the '
+        'screen so you can capture anytime.',
     AppLanguage.es =>
-        'Actívalo antes de abrir el juego para capturar la pantalla con consentimiento.',
+        'Actívalo antes de abrir el juego. El botón A+ aparece sobre la '
+        'pantalla para que captures cuando quieras.',
   };
 
   String get captureFloatCardEnabled => switch (lang) {
@@ -2524,16 +2527,14 @@ class AppStrings {
     AppLanguage.es   => 'Abrir configuración',
   };
 
-  String get captureFloatInReviewNote => switch (lang) {
+  String get captureFloatCardFooterNote => switch (lang) {
     AppLanguage.ptBr =>
-        'Botão flutuante em revisão técnica. '
-        'Use o Apex Studio para adicionar print ou vídeo.',
+        'Ao capturar, a sessão encerra e a imagem vai para o Apex Studio.',
     AppLanguage.en =>
-        'Floating button under technical review. '
-        'Use Apex Studio to add screenshots or videos.',
+        'After you capture, the session ends and the image goes to Apex '
+        'Studio.',
     AppLanguage.es =>
-        'Botón flotante en revisión técnica. '
-        'Usa Apex Studio para agregar capturas o videos.',
+        'Al capturar, la sesión termina y la imagen va al Apex Studio.',
   };
 
   // Consent sheet

@@ -1309,6 +1309,19 @@ class _FloatingCaptureCardState extends State<_FloatingCaptureCard>
               ),
             ),
           ],
+          if (!isLoading && !permRequired) ...[
+            const SizedBox(height: 12),
+            const Divider(color: Color(0xFF2A2A2A), height: 1),
+            const SizedBox(height: 10),
+            Text(
+              s.captureFloatCardFooterNote,
+              style: TextStyle(
+                color: AppColors.textGray.withValues(alpha: 0.7),
+                fontSize: 12,
+                height: 1.4,
+              ),
+            ),
+          ],
         ],
       ),
     )
