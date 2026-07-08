@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:apex_booster_plus/data/services/screen_capture_gallery_service.dart';
 import 'package:apex_booster_plus/presentation/screens/share_studio/share_studio_screen.dart';
 
 void main() {
@@ -150,6 +151,48 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(
       find.textContaining('fase futura'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('ApexStudioScreen media sheet shows Apex captures option', (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: ApexStudioScreen(gameId: 'test-game'),
+    ));
+    await tester.pumpAndSettle();
+
+    final addMediaButton = find.text('Adicionar print ou vídeo');
+    await tester.ensureVisible(addMediaButton);
+    await tester.pumpAndSettle();
+    await tester.tap(addMediaButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Capturas do Apex'), findsOneWidget);
+  });
+
+  testWidgets('ApexStudioScreen shows empty message when no Apex captures exist',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: ApexStudioScreen(
+        gameId: 'test-game',
+        galleryService:
+            ScreenCaptureGalleryService(resolveBaseDir: () async => null),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    final addMediaButton = find.text('Adicionar print ou vídeo');
+    await tester.ensureVisible(addMediaButton);
+    await tester.pumpAndSettle();
+    await tester.tap(addMediaButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Capturas do Apex'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Nenhuma captura disponível ainda. Capture pela tela do jogo com o botão flutuante A+.',
+      ),
       findsOneWidget,
     );
   });

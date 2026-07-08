@@ -11,11 +11,11 @@ import 'package:apex_booster_plus/data/services/external_url_service.dart';
 import 'package:apex_booster_plus/data/services/focus_mode_service_impl.dart';
 import 'package:apex_booster_plus/domain/services/focus_mode_service.dart';
 import 'package:apex_booster_plus/core/accessibility/low_distraction_service.dart';
-import 'package:apex_booster_plus/presentation/screens/home/home_screen.dart';
 import 'package:apex_booster_plus/presentation/services/floating_capture_service.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_badge.dart';
 import 'package:go_router/go_router.dart';
+import 'package:apex_booster_plus/data/services/screen_capture_service.dart';
 
 class ConfiguracoesTab extends StatelessWidget {
   const ConfiguracoesTab({super.key});
@@ -1019,6 +1019,8 @@ class _FloatingCaptureCard extends StatefulWidget {
 class _FloatingCaptureCardState extends State<_FloatingCaptureCard>
     with WidgetsBindingObserver {
   _FloatPermState _permState = _FloatPermState.loading;
+
+  // true somente quando overlay A+ E sessão de captura armada coincidem.
   bool _overlayOn = false;
 
   static const _optInKey = 'apex_floating_opted_in';
@@ -1027,70 +1029,54 @@ class _FloatingCaptureCardState extends State<_FloatingCaptureCard>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    FloatingCaptureService.setOverlayTapCallback(_onOverlayTap);
     WidgetsBinding.instance.addPostFrameCallback((_) => _init());
   }
 
   @override
   void dispose() {
-    FloatingCaptureService.setOverlayTapCallback(null);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  void _onOverlayTap() {
-    if (!mounted) return;
-    debugPrint('dart route requested: social-create-card');
-    homeTabNotifier.value = 2; // Preparar tab — path to Apex Studio
-    context.go('/home');
-  }
-
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _syncAndMaybeRestore();
+    if (state == AppLifecycleState.resumed) _syncState();
   }
 
   Future<void> _init() async {
-    final prefs = await SharedPreferences.getInstance();
-    final wantedOn = FloatingCaptureService.isEnabled(prefs);
+    // Nunca ativa automaticamente ao abrir o app — Modo Captura da Sessão só
+    // arma por toque explícito do usuário no toggle.
     await _syncState();
-    if (wantedOn && _permState == _FloatPermState.granted && !_overlayOn) {
-      final ok = await FloatingCaptureService.enable(prefs);
-      if (mounted) setState(() => _overlayOn = ok);
-    }
   }
 
+  // Consulta o estado real (permissão, overlay, sessão armada) sem ativar
+  // nada. Se overlay e sessão divergirem (ex.: sistema encerrou um dos dois
+  // em background), desliga ambos em vez de tentar restaurar sozinho.
   Future<void> _syncState() async {
     final granted = await FloatingCaptureService.isPermissionGranted();
     bool showing = false;
-    if (granted) showing = await FloatingCaptureService.isOverlayShowing();
-    if (!mounted) return;
-    setState(() {
-      _permState =
-          granted ? _FloatPermState.granted : _FloatPermState.required;
-      _overlayOn = showing;
-    });
-  }
-
-  // Chamado no resume: sincroniza via isShowing() e re-habilita se necessário
-  // (sistema pode eliminar o overlay enquanto o app estava em background).
-  Future<void> _syncAndMaybeRestore() async {
-    final granted = await FloatingCaptureService.isPermissionGranted();
-    bool showing = false;
-    if (granted) showing = await FloatingCaptureService.isOverlayShowing();
-    if (!mounted) return;
-    setState(() {
-      _permState =
-          granted ? _FloatPermState.granted : _FloatPermState.required;
-      _overlayOn = showing;
-    });
-    if (granted && !showing) {
-      final prefs = await SharedPreferences.getInstance();
-      if (FloatingCaptureService.isEnabled(prefs)) {
-        final ok = await FloatingCaptureService.enable(prefs);
-        if (mounted) setState(() => _overlayOn = ok);
-      }
+    bool armed = false;
+    if (granted) {
+      showing = await FloatingCaptureService.isOverlayShowing();
+      armed = await ScreenCaptureService().isSessionArmed();
     }
+    if (showing != armed) {
+      if (showing) {
+        final prefs = await SharedPreferences.getInstance();
+        await FloatingCaptureService.disable(prefs);
+      }
+      if (armed) {
+        await ScreenCaptureService().disarmSession();
+      }
+      showing = false;
+      armed = false;
+    }
+    if (!mounted) return;
+    setState(() {
+      _permState =
+          granted ? _FloatPermState.granted : _FloatPermState.required;
+      _overlayOn = showing && armed;
+    });
   }
 
   Future<void> _onToggle(bool value) =>
@@ -1166,16 +1152,38 @@ class _FloatingCaptureCardState extends State<_FloatingCaptureCard>
       return;
     }
 
-    final ok = await FloatingCaptureService.enable(prefs);
+    // Arma a MediaProjection (Modo Captura da Sessão) ANTES de exibir o
+    // overlay — o botão A+ só deve existir quando a sessão está armada.
+    final armed = await ScreenCaptureService().armSession();
     if (!mounted) return;
+    if (!armed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(s.captureScreenDenied),
+          backgroundColor: const Color(0xFF1A1A1A),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final overlayOk = await FloatingCaptureService.enable(prefs);
+    if (!mounted) return;
+    if (!overlayOk) {
+      await ScreenCaptureService().disarmSession();
+      if (mounted) setState(() => _overlayOn = false);
+      return;
+    }
+
     setState(() {
-      _overlayOn = ok;
+      _overlayOn = true;
       _permState = _FloatPermState.granted;
     });
   }
 
   Future<void> _disable() async {
     final prefs = await SharedPreferences.getInstance();
+    await ScreenCaptureService().disarmSession();
     await FloatingCaptureService.disable(prefs);
     if (!mounted) return;
     setState(() => _overlayOn = false);

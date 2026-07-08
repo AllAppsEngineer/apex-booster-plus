@@ -1,5 +1,6 @@
 package com.allappsengineer.apex_booster_plus
 
+import android.app.Activity
 import android.app.ActivityManager
 import android.app.NotificationManager
 import android.content.ActivityNotFoundException
@@ -11,20 +12,54 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.BitmapDrawable
+import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import io.flutter.embedding.android.FlutterActivity
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
 
-class MainActivity : FlutterActivity() {
+class MainActivity : FlutterFragmentActivity() {
     private val overlayManager get() = FloatingOverlayManager.getInstance(applicationContext)
     private var _previousFilter: Int? = null
     private var _focusModeActivatedByApp: Boolean = false
     private var overlayChannel: MethodChannel? = null
     private var _pendingOverlayTap = false
+
+    // Holds the pending Flutter result while waiting for MediaProjection consent.
+    private var pendingCaptureResult: MethodChannel.Result? = null
+
+    // Activity Result launcher for MediaProjection consent dialog.
+    private lateinit var captureResultLauncher: ActivityResultLauncher<Intent>
+
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+        captureResultLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result: ActivityResult ->
+            if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+                // Arm the session service — it stays idle/armed until captureNow() is
+                // triggered later from the native A+ mini-menu. No capture happens
+                // here, no overlay is hidden, no task is moved to background.
+                val serviceIntent = Intent(this, ScreenCaptureService::class.java).apply {
+                    putExtra(ScreenCaptureService.EXTRA_RESULT_CODE, result.resultCode)
+                    putExtra(ScreenCaptureService.EXTRA_RESULT_DATA, result.data)
+                }
+                startForegroundService(serviceIntent)
+                pendingCaptureResult?.success(true)
+                pendingCaptureResult = null
+            } else {
+                // User denied or cancelled — clean shutdown, no retry.
+                pendingCaptureResult?.success(false)
+                pendingCaptureResult = null
+            }
+        }
+    }
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
@@ -326,6 +361,37 @@ class MainActivity : FlutterActivity() {
                 }
                 "isFloatingShowing" -> {
                     result.success(overlayManager.isShowing())
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "apex/capture"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "armSession" -> {
+                    if (pendingCaptureResult != null) {
+                        result.error("CAPTURE_IN_PROGRESS", "A capture consent request is already in progress", null)
+                        return@setMethodCallHandler
+                    }
+                    if (ScreenCaptureService.instance != null) {
+                        // Already armed from a previous call — no need to re-prompt.
+                        result.success(true)
+                        return@setMethodCallHandler
+                    }
+                    pendingCaptureResult = result
+                    // Resolved in captureResultLauncher once consent is granted or denied.
+                    val mpm = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                    captureResultLauncher.launch(mpm.createScreenCaptureIntent())
+                }
+                "disarmSession" -> {
+                    ScreenCaptureService.instance?.stopSession()
+                    result.success(null)
+                }
+                "isSessionArmed" -> {
+                    result.success(ScreenCaptureService.instance != null)
                 }
                 else -> result.notImplemented()
             }

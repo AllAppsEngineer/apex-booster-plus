@@ -2322,6 +2322,27 @@ class AppStrings {
     AppLanguage.es   => 'Vista previa de video',
   };
 
+  String get apexStudioPickApexCapture => switch (lang) {
+    AppLanguage.ptBr => 'Capturas do Apex',
+    AppLanguage.en   => 'Apex captures',
+    AppLanguage.es   => 'Capturas de Apex',
+  };
+
+  String get apexStudioCapturesSheetTitle => switch (lang) {
+    AppLanguage.ptBr => 'Selecionar captura',
+    AppLanguage.en   => 'Select capture',
+    AppLanguage.es   => 'Seleccionar captura',
+  };
+
+  String get apexStudioCapturesEmpty => switch (lang) {
+    AppLanguage.ptBr =>
+        'Nenhuma captura disponível ainda. Capture pela tela do jogo com o botão flutuante A+.',
+    AppLanguage.en   =>
+        'No captures available yet. Capture from the game screen using the floating A+ button.',
+    AppLanguage.es   =>
+        'Aún no hay capturas disponibles. Captura desde la pantalla del juego con el botón flotante A+.',
+  };
+
   // ─── Social — Export Presets ─────────────────────────────────────────────────
 
   String get socialPresetPortrait => switch (lang) {
@@ -2465,15 +2486,18 @@ class AppStrings {
   String get captureFloatBadge => 'SOCIAL';
 
   String get captureFloatCardTitle => switch (lang) {
-    AppLanguage.ptBr => 'Botão Flutuante',
-    AppLanguage.en   => 'Floating Button',
-    AppLanguage.es   => 'Botón Flotante',
+    AppLanguage.ptBr => 'Modo Captura da Sessão',
+    AppLanguage.en   => 'Session Capture Mode',
+    AppLanguage.es   => 'Modo de Captura de Sesión',
   };
 
   String get captureFloatCardSubtitle => switch (lang) {
-    AppLanguage.ptBr => 'Acesse rapidamente suas mídias durante a sessão gamer',
-    AppLanguage.en   => 'Quickly access your media during gaming sessions',
-    AppLanguage.es   => 'Accede rápidamente a tus medios durante la sesión gamer',
+    AppLanguage.ptBr =>
+        'Ative antes de abrir o jogo para capturar a tela com consentimento.',
+    AppLanguage.en =>
+        'Turn on before opening the game to capture the screen with consent.',
+    AppLanguage.es =>
+        'Actívalo antes de abrir el juego para capturar la pantalla con consentimiento.',
   };
 
   String get captureFloatCardEnabled => switch (lang) {
@@ -2569,5 +2593,64 @@ class AppStrings {
     AppLanguage.ptBr => 'Voltar ao Apex Studio',
     AppLanguage.en   => 'Back to Apex Studio',
     AppLanguage.es   => 'Volver a Apex Studio',
+  };
+
+  // ─── Screen capture (SOCIAL-U2B) ─────────────────────────────────────────────
+
+  String get captureScreenTitle => switch (lang) {
+    AppLanguage.ptBr => 'Capturar tela agora?',
+    AppLanguage.en   => 'Capture screen now?',
+    AppLanguage.es   => '¿Capturar pantalla ahora?',
+  };
+
+  String get captureScreenSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Um print será salvo localmente. Nada é enviado automaticamente.',
+    AppLanguage.en   => 'A screenshot will be saved locally. Nothing is sent automatically.',
+    AppLanguage.es   => 'Se guardará una captura localmente. Nada se envía automáticamente.',
+  };
+
+  String get captureScreenButton => switch (lang) {
+    AppLanguage.ptBr => 'CAPTURAR',
+    AppLanguage.en   => 'CAPTURE',
+    AppLanguage.es   => 'CAPTURAR',
+  };
+
+  String get captureScreenResultTitle => switch (lang) {
+    AppLanguage.ptBr => 'Print capturado',
+    AppLanguage.en   => 'Screenshot captured',
+    AppLanguage.es   => 'Captura guardada',
+  };
+
+  String get captureScreenShareButton => switch (lang) {
+    AppLanguage.ptBr => 'COMPARTILHAR',
+    AppLanguage.en   => 'SHARE',
+    AppLanguage.es   => 'COMPARTIR',
+  };
+
+  String get captureScreenDiscardButton => switch (lang) {
+    AppLanguage.ptBr => 'DESCARTAR',
+    AppLanguage.en   => 'DISCARD',
+    AppLanguage.es   => 'DESCARTAR',
+  };
+
+  String get captureScreenDenied => switch (lang) {
+    AppLanguage.ptBr => 'Permissão de captura negada.',
+    AppLanguage.en   => 'Capture permission denied.',
+    AppLanguage.es   => 'Permiso de captura denegado.',
+  };
+
+  String get captureScreenError => switch (lang) {
+    AppLanguage.ptBr => 'Erro ao capturar tela.',
+    AppLanguage.en   => 'Error capturing screen.',
+    AppLanguage.es   => 'Error al capturar pantalla.',
+  };
+
+  String get captureScreenSystemNote => switch (lang) {
+    AppLanguage.ptBr =>
+        'O sistema Android solicitará sua confirmação antes de capturar.',
+    AppLanguage.en   =>
+        'Android will ask for your confirmation before capturing.',
+    AppLanguage.es   =>
+        'Android solicitará tu confirmación antes de capturar.',
   };
 }

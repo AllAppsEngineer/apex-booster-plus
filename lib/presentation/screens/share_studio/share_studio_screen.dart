@@ -15,6 +15,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/i18n/app_language.dart';
 import '../../../core/i18n/app_strings.dart';
 import '../../../data/repositories/shared_preferences_game_library_repository.dart';
+import '../../../data/services/screen_capture_gallery_service.dart';
 import '../../../domain/entities/share_preset.dart';
 import '../../../domain/entities/social_card.dart';
 import '../../../domain/entities/social_template.dart';
@@ -26,10 +27,12 @@ import '../../widgets/social/social_template_selector.dart';
 class ApexStudioScreen extends StatefulWidget {
   final String gameId;
   final String? initialMediaPath;
+  final ScreenCaptureGalleryService? galleryService;
   const ApexStudioScreen({
     super.key,
     required this.gameId,
     this.initialMediaPath,
+    this.galleryService,
   });
 
   @override
@@ -50,10 +53,12 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
   bool _mediaIsVideo = false;
   BoxFit _imageFit = BoxFit.cover;
   Uint8List? _videoThumbnail;
+  late final ScreenCaptureGalleryService _galleryService;
 
   @override
   void initState() {
     super.initState();
+    _galleryService = widget.galleryService ?? ScreenCaptureGalleryService();
     _lang = languageNotifier.value;
     final path = widget.initialMediaPath;
     const videoExts = {'.mp4', '.mov', '.avi', '.mkv', '.webm', '.3gp', '.3gpp'};
@@ -141,6 +146,11 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
       final choice = await _showMediaTypeSheet(s);
       if (choice == null || !mounted) return;
 
+      if (choice == _MediaType.apexCapture) {
+        await _pickApexCapture(s);
+        return;
+      }
+
       XFile? picked;
       if (choice == _MediaType.image) {
         picked = await _imagePicker.pickImage(
@@ -174,6 +184,44 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
         ),
       );
     }
+  }
+
+  Future<void> _pickApexCapture(AppStrings s) async {
+    final captures = await _galleryService.listCaptures();
+    if (!mounted) return;
+
+    if (captures.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(s.apexStudioCapturesEmpty),
+          backgroundColor: const Color(0xFF1A1A1A),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final selectedPath = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: const Color(0xFF111111),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => _ApexCapturesSheet(
+        captures: captures,
+        title: s.apexStudioCapturesSheetTitle,
+      ),
+    );
+
+    if (selectedPath == null || !mounted) return;
+    setState(() {
+      _mediaPath = selectedPath;
+      _mediaIsVideo = false;
+      _imageFit = BoxFit.cover;
+      _videoThumbnail = null;
+      _card = _card.copyWith(importedMediaPath: selectedPath);
+    });
   }
 
   Future<_MediaType?> _showMediaTypeSheet(AppStrings s) {
@@ -213,6 +261,15 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
                 style: const TextStyle(color: Colors.white, fontSize: 15),
               ),
               onTap: () => Navigator.pop(context, _MediaType.video),
+            ),
+            ListTile(
+              leading:
+                  const Icon(Icons.collections_outlined, color: Colors.white),
+              title: Text(
+                s.apexStudioPickApexCapture,
+                style: const TextStyle(color: Colors.white, fontSize: 15),
+              ),
+              onTap: () => Navigator.pop(context, _MediaType.apexCapture),
             ),
             const SizedBox(height: 8),
           ],
@@ -867,7 +924,7 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
       );
 }
 
-enum _MediaType { image, video }
+enum _MediaType { image, video, apexCapture }
 
 // ─── Video preview dialog ─────────────────────────────────────────────────────
 
@@ -1089,6 +1146,76 @@ class _VideoPreviewDialogState extends State<_VideoPreviewDialog> {
               ),
             ],
             const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ApexCapturesSheet extends StatelessWidget {
+  final List<CapturedScreenshot> captures;
+  final String title;
+  const _ApexCapturesSheet({required this.captures, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF333333),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.5,
+              ),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const ClampingScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                itemCount: captures.length,
+                itemBuilder: (_, i) {
+                  final capture = captures[i];
+                  return GestureDetector(
+                    onTap: () => Navigator.of(context).pop(capture.path),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        File(capture.path),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),

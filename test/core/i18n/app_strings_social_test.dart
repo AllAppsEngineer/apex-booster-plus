@@ -28,6 +28,9 @@ void main() {
         test('apexStudioFitFill is non-empty', () => expect(s.apexStudioFitFill, isNotEmpty));
         test('apexStudioFitContain is non-empty', () => expect(s.apexStudioFitContain, isNotEmpty));
         test('apexStudioVideoPreviewLabel is non-empty', () => expect(s.apexStudioVideoPreviewLabel, isNotEmpty));
+        test('apexStudioPickApexCapture is non-empty', () => expect(s.apexStudioPickApexCapture, isNotEmpty));
+        test('apexStudioCapturesSheetTitle is non-empty', () => expect(s.apexStudioCapturesSheetTitle, isNotEmpty));
+        test('apexStudioCapturesEmpty is non-empty', () => expect(s.apexStudioCapturesEmpty, isNotEmpty));
 
         test('socialStudioWatermark does not contain FPS', () {
           expect(s.socialStudioWatermark.toLowerCase(), isNot(contains('fps')));
