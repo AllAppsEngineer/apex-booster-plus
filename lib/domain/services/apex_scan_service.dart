@@ -24,9 +24,10 @@ class ApexScanService {
   ScanScore _score(ApexGame game, bool? isLaunchable) {
     final hasPackage =
         game.packageName != null && game.packageName!.isNotEmpty;
-    return (hasPackage && isLaunchable == true)
-        ? ScanScore.pronto
-        : ScanScore.incompleto;
+    if (!hasPackage) return ScanScore.incompleto;
+    if (isLaunchable == true) return ScanScore.pronto;
+    if (isLaunchable == false) return ScanScore.incompleto;
+    return ScanScore.naoVerificado;
   }
 
   ScanCheck _vinculo(ApexGame game) {

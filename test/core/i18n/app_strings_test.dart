@@ -1247,6 +1247,7 @@ void main() {
     expectNonEmptyAll((s) => s.detailScanStatusReady, 'detailScanStatusReady');
     expectNonEmptyAll((s) => s.detailScanStatusAppNotFound, 'detailScanStatusAppNotFound');
     expectNonEmptyAll((s) => s.detailScanStatusIncomplete, 'detailScanStatusIncomplete');
+    expectNonEmptyAll((s) => s.detailScanStatusUnverified, 'detailScanStatusUnverified');
     expectNonEmptyAll((s) => s.detailModulesTitle, 'detailModulesTitle');
     expectNonEmptyAll((s) => s.detailModuleOptimization, 'detailModuleOptimization');
     expectNonEmptyAll((s) => s.detailModuleBoostApplied, 'detailModuleBoostApplied');
@@ -1276,6 +1277,7 @@ void main() {
     expectDiffers((s) => s.detailScanSubtitle, 'detailScanSubtitle');
     expectDiffers((s) => s.detailScanStatusReady, 'detailScanStatusReady');
     expectDiffers((s) => s.detailScanStatusIncomplete, 'detailScanStatusIncomplete');
+    expectDiffers((s) => s.detailScanStatusUnverified, 'detailScanStatusUnverified');
     expectDiffers((s) => s.detailModulesTitle, 'detailModulesTitle');
     expectDiffers((s) => s.detailModuleOptimization, 'detailModuleOptimization');
     expectDiffers((s) => s.detailModulePerfImproved, 'detailModulePerfImproved');

@@ -1585,19 +1585,29 @@ class _ApexScanCard extends StatelessWidget {
   });
 
   String _statusLabel(AppStrings s) {
-    if (result.score == ScanScore.pronto) return s.detailScanStatusReady;
-    final acesso = result.checks.where((c) => c.id == 'acesso').firstOrNull;
-    if (acesso?.status == ScanCheckStatus.fail) return s.detailScanStatusAppNotFound;
-    return s.detailScanStatusIncomplete;
+    switch (result.score) {
+      case ScanScore.pronto:
+        return s.detailScanStatusReady;
+      case ScanScore.naoVerificado:
+        return s.detailScanStatusUnverified;
+      case ScanScore.incompleto:
+        final acesso = result.checks.where((c) => c.id == 'acesso').firstOrNull;
+        if (acesso?.status == ScanCheckStatus.fail) return s.detailScanStatusAppNotFound;
+        return s.detailScanStatusIncomplete;
+    }
   }
 
-  Color _statusColor() => result.score == ScanScore.pronto
-      ? AppColors.apexGreen
-      : AppColors.energyOrange;
+  Color _statusColor() => switch (result.score) {
+        ScanScore.pronto => AppColors.apexGreen,
+        ScanScore.naoVerificado => AppColors.cyberBlue,
+        ScanScore.incompleto => AppColors.energyOrange,
+      };
 
-  IconData _statusIcon() => result.score == ScanScore.pronto
-      ? Icons.verified_rounded
-      : Icons.warning_amber_rounded;
+  IconData _statusIcon() => switch (result.score) {
+        ScanScore.pronto => Icons.verified_rounded,
+        ScanScore.naoVerificado => Icons.help_outline_rounded,
+        ScanScore.incompleto => Icons.warning_amber_rounded,
+      };
 
   @override
   Widget build(BuildContext context) {

@@ -70,6 +70,16 @@ void main() {
       );
       expect(result.score, ScanScore.pronto);
     });
+
+    test('naoVerificado when packageName present and isLaunchable is null (default local-only mode)', () {
+      final result = service.scan(game: makeGame(packageName: 'com.example.game'));
+      expect(result.score, ScanScore.naoVerificado);
+    });
+
+    test('incompleto (not naoVerificado) when packageName is null and isLaunchable is null', () {
+      final result = service.scan(game: makeGame());
+      expect(result.score, ScanScore.incompleto);
+    });
   });
 
   // --- Always 5 checks ---

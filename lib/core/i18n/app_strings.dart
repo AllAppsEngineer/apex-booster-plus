@@ -1995,6 +1995,12 @@ class AppStrings {
     AppLanguage.es   => 'Perfil incompleto',
   };
 
+  String get detailScanStatusUnverified => switch (lang) {
+    AppLanguage.ptBr => 'Não verificado',
+    AppLanguage.en   => 'Not verified',
+    AppLanguage.es   => 'No verificado',
+  };
+
   // Preparation panel section (UX-P1.1 — honest visual prep indicators)
   String get detailModulesTitle => switch (lang) {
     AppLanguage.ptBr => 'PAINEL DE PREPARAÇÃO',

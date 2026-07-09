@@ -1,6 +1,6 @@
 enum ScanCheckStatus { ok, warn, fail, info }
 
-enum ScanScore { pronto, incompleto }
+enum ScanScore { pronto, incompleto, naoVerificado }
 
 class ScanCheck {
   final String id;
