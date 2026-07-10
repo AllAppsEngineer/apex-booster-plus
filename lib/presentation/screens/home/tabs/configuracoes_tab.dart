@@ -1158,9 +1158,22 @@ class _FloatingCaptureCardState extends State<_FloatingCaptureCard>
     final mode = await _pickCaptureMode();
     if (!mounted || mode == null) return;
 
+    // SOCIAL-U7B: no modo vídeo, a duração também é escolhida antes do
+    // consentimento — cancelar a escolha de duração cancela o fluxo inteiro,
+    // mesmo comportamento de cancelar a escolha de modo.
+    var durationSeconds = kVideoDurationOptionsSeconds.first;
+    if (mode == CaptureMode.video) {
+      final chosen = await _pickVideoDuration();
+      if (!mounted || chosen == null) return;
+      durationSeconds = chosen;
+    }
+
     // Arma a MediaProjection (Modo Captura da Sessão) ANTES de exibir o
     // overlay — o botão A+ só deve existir quando a sessão está armada.
-    final armed = await ScreenCaptureService().armSession(mode: mode);
+    final armed = await ScreenCaptureService().armSession(
+      mode: mode,
+      durationSeconds: durationSeconds,
+    );
     if (!mounted) return;
     if (!armed) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1220,6 +1233,52 @@ class _FloatingCaptureCardState extends State<_FloatingCaptureCard>
               color: AppColors.cyberBlue,
               onTap: () => Navigator.of(ctx).pop(CaptureMode.video),
             ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              s.actionCancel,
+              style: const TextStyle(
+                color: AppColors.textGray,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // SOCIAL-U7B: duração escolhida antes do consentimento, junto com o modo.
+  Future<int?> _pickVideoDuration() async {
+    final s = AppStrings(languageNotifier.value);
+    return showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text(
+          s.videoDurationDialogTitle,
+          style: const TextStyle(
+            color: AppColors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 17,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final seconds in kVideoDurationOptionsSeconds) ...[
+              if (seconds != kVideoDurationOptionsSeconds.first)
+                const SizedBox(height: 10),
+              _DurationOption(
+                label: s.videoDurationOptionLabel(seconds),
+                onTap: () => Navigator.of(ctx).pop(seconds),
+              ),
+            ],
           ],
         ),
         actions: [
@@ -1590,6 +1649,42 @@ class _CaptureModeOption extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DurationOption extends StatelessWidget {
+  const _DurationOption({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.cyberBlue.withValues(alpha: 0.3)),
+            color: AppColors.cyberBlue.withValues(alpha: 0.06),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppColors.cyberBlue,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
           ),
         ),
       ),

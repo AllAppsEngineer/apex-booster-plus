@@ -2599,9 +2599,22 @@ class AppStrings {
   };
 
   String get captureModeVideoSubtitle => switch (lang) {
-    AppLanguage.ptBr => 'Grava até 10s, sem áudio.',
-    AppLanguage.en   => 'Records up to 10s, no audio.',
-    AppLanguage.es   => 'Graba hasta 10s, sin audio.',
+    AppLanguage.ptBr => 'Escolha a duração e grave sem áudio.',
+    AppLanguage.en   => 'Choose the duration and record without audio.',
+    AppLanguage.es   => 'Elige la duración y graba sin audio.',
+  };
+
+  // SOCIAL-U7B: duração configurável do vídeo curto.
+  String get videoDurationDialogTitle => switch (lang) {
+    AppLanguage.ptBr => 'Escolha a duração do vídeo',
+    AppLanguage.en   => 'Choose the video duration',
+    AppLanguage.es   => 'Elige la duración del video',
+  };
+
+  String videoDurationOptionLabel(int seconds) => switch (lang) {
+    AppLanguage.ptBr => '$seconds segundos',
+    AppLanguage.en   => '$seconds seconds',
+    AppLanguage.es   => '$seconds segundos',
   };
 
   // Consent sheet

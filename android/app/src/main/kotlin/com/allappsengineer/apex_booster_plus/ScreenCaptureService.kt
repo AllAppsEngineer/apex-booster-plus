@@ -47,6 +47,7 @@ class ScreenCaptureService : Service() {
         const val EXTRA_RESULT_CODE = "result_code"
         const val EXTRA_RESULT_DATA = "result_data"
         const val EXTRA_SESSION_MODE = "session_mode"
+        const val EXTRA_VIDEO_DURATION_MS = "video_duration_ms"
 
         // SOCIAL-U7A (Opção B): a sessão é print OU vídeo, nunca ambos — cada
         // MediaProjection só pode gerar um único VirtualDisplay em API 34+.
@@ -59,8 +60,11 @@ class ScreenCaptureService : Service() {
         private const val CAPTURE_RETRY_DELAY_MS = 150L
         private const val MAX_INDEX_ENTRIES = 60
 
-        // SOCIAL-U7A: short/manual clip recording — fixed cap, no audio.
-        private const val VIDEO_DURATION_MS = 10_000L
+        // SOCIAL-U7B: short/manual clip recording, no audio, user-selectable
+        // duration. EXTRA_VIDEO_DURATION_MS is re-validated against this
+        // exact list so an unexpected value can never set an out-of-range cap.
+        val ALLOWED_VIDEO_DURATIONS_MS = longArrayOf(10_000L, 15_000L, 30_000L, 60_000L)
+        const val DEFAULT_VIDEO_DURATION_MS = 10_000L
         private const val VIDEO_BITRATE = 6_000_000
         private const val VIDEO_FRAME_RATE = 30
         private const val MAX_VIDEO_DIMENSION = 1280
@@ -97,6 +101,11 @@ class ScreenCaptureService : Service() {
     private var recordingFile: File? = null
     private var mainHandler: Handler? = null
     private var stopRecordingRunnable: Runnable? = null
+
+    // SOCIAL-U7B: recording cap for the current/next video session,
+    // validated against ALLOWED_VIDEO_DURATIONS_MS in onStartCommand.
+    @Volatile
+    private var videoDurationMs: Long = DEFAULT_VIDEO_DURATION_MS
 
     @Volatile
     private var recording = false
@@ -147,6 +156,18 @@ class ScreenCaptureService : Service() {
             ?.takeIf { it == MODE_VIDEO }
             ?: MODE_SCREENSHOT
         sessionMode = mode
+
+        // SOCIAL-U7B: re-validate the requested duration server-side (in the
+        // service, not just MainActivity) — defense in depth against a
+        // malformed/out-of-range Intent extra.
+        val requestedDurationMs =
+            intent?.getLongExtra(EXTRA_VIDEO_DURATION_MS, DEFAULT_VIDEO_DURATION_MS)
+                ?: DEFAULT_VIDEO_DURATION_MS
+        videoDurationMs = if (ALLOWED_VIDEO_DURATIONS_MS.contains(requestedDurationMs)) {
+            requestedDurationMs
+        } else {
+            DEFAULT_VIDEO_DURATION_MS
+        }
 
         if (resultData == null) {
             Log.e(TAG, "Missing result data; aborting.")
@@ -384,7 +405,7 @@ class ScreenCaptureService : Service() {
 
         val runnable = Runnable { stopVideoRecording(discard = false) }
         stopRecordingRunnable = runnable
-        mainHandler?.postDelayed(runnable, VIDEO_DURATION_MS)
+        mainHandler?.postDelayed(runnable, videoDurationMs)
     }
 
     /**
@@ -421,7 +442,12 @@ class ScreenCaptureService : Service() {
 
         if (success && file != null && file.exists() && file.length() > 0L) {
             registerClip(file)
-            notifyToast(getString(R.string.capture_video_saved_text))
+            // videoDurationMs reflects the cap actually used for this
+            // recording — stopVideoRecording(discard = false) is only
+            // reached from the auto-stop timer (no manual stop in this
+            // phase), so it always matches the recorded length.
+            val seconds = (videoDurationMs / 1_000L).toInt()
+            notifyToast(getString(R.string.capture_video_saved_with_duration, seconds))
         } else {
             file?.let { runCatching { it.delete() } }
             notifyToast(getString(R.string.capture_video_error_text))
