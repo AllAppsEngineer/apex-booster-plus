@@ -10,6 +10,34 @@
 
 ---
 
+## Decisão atual (2026-07-09)
+
+- **Gravação de vídeo não será implementada neste ciclo.** Este documento permanece como planejamento aprovado; nenhuma linha de código (`.kt`, `.dart`, `AndroidManifest.xml`) deve ser escrita a partir dele sem uma nova aprovação explícita.
+- **Captura de tela (SOCIAL-U2B) permanece como feature ativa**, implementada, validada e commitada — esta decisão não afeta o fluxo de screenshot existente.
+- **Vídeo exige uma nova fase própria** (ex.: `SOCIAL-U7` de execução, distinta desta fase de planejamento), com escopo, arquivos e testes declarados antes de qualquer implementação.
+- **Qualquer implementação futura de gravação de vídeo precisa de aprovação humana explícita**, mesmo que este plano já exista e já tenha sido lido.
+- **Requisitos mínimos já fixados para quando essa fase for aprovada** (detalhados nas seções 3–4 abaixo, repetidos aqui como checklist de bloqueio):
+  - limite de duração curto e fixo (10–15s, sem configuração pelo usuário nesta primeira fase);
+  - sem áudio (`RECORD_AUDIO` proibido);
+  - consentimento explícito e específico para vídeo (copy própria, não reaproveitada do screenshot);
+  - notificação persistente durante toda a gravação;
+  - botão/caminho de parada explícito que não dependa só da bolha flutuante;
+  - limpeza segura do arquivo em caso de kill do processo (nunca entregar `.mp4` corrompido como válido);
+  - `.mp4` salvo localmente, sem permissão de storage adicional;
+  - integração no Apex Studio só depois de o clipe estar salvo com sucesso (nunca como placeholder "em andamento").
+
+**Motivo da decisão:**
+
+| Risco | Razão |
+|---|---|
+| Bateria/aquecimento | Gravação contínua de vídeo consome bateria e gera calor de forma muito mais agressiva que uma captura de frame único (ver R-05, seção 5). |
+| Arquivo grande | `.mp4` mesmo curto é ordens de grandeza maior que um PNG de screenshot, com impacto direto em armazenamento do usuário. |
+| Serviço persistente | Vídeo exige foreground service ativo durante toda a janela de gravação (não mais ~1-2s), aumentando a superfície de falha e o risco de encerramento agressivo pelo sistema/fabricante (ver R-04, seção 5). |
+| Play Store/privacidade | Captura de tela contínua tende a acionar revisão mais detalhada e exige Política de Privacidade publicada citando vídeo explicitamente antes da submissão (ver R-07/R-08, seção 6). |
+| Complexidade maior que a captura de tela | Vídeo exige pipeline de encoder (`MediaRecorder`/`MediaCodec`+`MediaMuxer`), gestão de ciclo de vida de sessão contínua e finalização segura de arquivo — muito além de "ler um frame e desarmar" (ver seção 2 completa). |
+
+---
+
 ## Global Constraints
 
 - Package: `com.allappsengineer.apex_booster_plus` — não alterar.
