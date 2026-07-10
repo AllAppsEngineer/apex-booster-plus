@@ -208,7 +208,7 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
     final captures = await _galleryService.listCaptures();
     if (!mounted) return;
 
-    final selectedPath = await showModalBottomSheet<String>(
+    final selected = await showModalBottomSheet<CapturedScreenshot>(
       context: context,
       backgroundColor: const Color(0xFF111111),
       isScrollControlled: true,
@@ -225,14 +225,17 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
       ),
     );
 
-    if (selectedPath == null || !mounted) return;
+    if (selected == null || !mounted) return;
     setState(() {
-      _mediaPath = selectedPath;
-      _mediaIsVideo = false;
+      _mediaPath = selected.path;
+      _mediaIsVideo = selected.isVideo;
       _imageFit = BoxFit.cover;
       _videoThumbnail = null;
-      _card = _card.copyWith(importedMediaPath: selectedPath);
+      _card = _card.copyWith(importedMediaPath: selected.path);
     });
+    if (selected.isVideo) {
+      _generateVideoThumbnail(selected.path);
+    }
   }
 
   Future<_MediaType?> _showMediaTypeSheet(AppStrings s) {
@@ -1290,16 +1293,27 @@ class _ApexCapturesSheet extends StatelessWidget {
                   itemBuilder: (_, i) {
                     final capture = captures[i];
                     return GestureDetector(
-                      onTap: () => Navigator.of(context).pop(capture.path),
+                      onTap: () => Navigator.of(context).pop(capture),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            Image.file(
-                              File(capture.path),
-                              fit: BoxFit.cover,
-                            ),
+                            capture.isVideo
+                                ? Container(
+                                    color: const Color(0xFF111827),
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.play_circle_fill_rounded,
+                                        color: Color(0xFF3B82F6),
+                                        size: 28,
+                                      ),
+                                    ),
+                                  )
+                                : Image.file(
+                                    File(capture.path),
+                                    fit: BoxFit.cover,
+                                  ),
                             Positioned(
                               left: 0,
                               right: 0,

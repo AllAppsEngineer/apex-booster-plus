@@ -2573,6 +2573,37 @@ class AppStrings {
         'Al capturar, la sesión termina y la imagen va al Apex Studio.',
   };
 
+  // SOCIAL-U7A (Opção B): seletor de modo antes de armar a sessão.
+  String get captureModeDialogTitle => switch (lang) {
+    AppLanguage.ptBr => 'Escolha o modo de captura',
+    AppLanguage.en   => 'Choose capture mode',
+    AppLanguage.es   => 'Elige el modo de captura',
+  };
+
+  String get captureModeScreenshotOption => switch (lang) {
+    AppLanguage.ptBr => 'Print da tela',
+    AppLanguage.en   => 'Screenshot',
+    AppLanguage.es   => 'Captura de pantalla',
+  };
+
+  String get captureModeScreenshotSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Captura uma imagem por toque.',
+    AppLanguage.en   => 'Captures one image per tap.',
+    AppLanguage.es   => 'Captura una imagen por toque.',
+  };
+
+  String get captureModeVideoOption => switch (lang) {
+    AppLanguage.ptBr => 'Vídeo curto',
+    AppLanguage.en   => 'Short video',
+    AppLanguage.es   => 'Video corto',
+  };
+
+  String get captureModeVideoSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Grava até 10s, sem áudio.',
+    AppLanguage.en   => 'Records up to 10s, no audio.',
+    AppLanguage.es   => 'Graba hasta 10s, sin audio.',
+  };
+
   // Consent sheet
   String get captureConsentTitle => switch (lang) {
     AppLanguage.ptBr => 'Captura Flutuante Apex',

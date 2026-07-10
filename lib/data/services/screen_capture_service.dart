@@ -1,5 +1,10 @@
 import 'package:flutter/services.dart';
 
+/// Modo Captura da Sessão is print XOR video, chosen before arming
+/// (SOCIAL-U7A, Opção B) — a single MediaProjection instance can only back
+/// one VirtualDisplay for its whole lifetime on Android 14+.
+enum CaptureMode { screenshot, video }
+
 /// Controls Modo Captura da Sessão (SOCIAL-U2B): requests MediaProjection
 /// once and arms a native foreground service that stays idle until the A+
 /// mini-menu triggers an on-demand capture. No path is returned to Flutter —
@@ -8,11 +13,14 @@ class ScreenCaptureService {
   static const _channel = MethodChannel('apex/capture');
 
   /// Requests MediaProjection consent (Android system dialog) and arms the
-  /// session capture service. Returns true if armed, false if denied,
-  /// cancelled or a request is already in progress.
-  Future<bool> armSession() async {
+  /// session capture service in the given [mode]. Returns true if armed,
+  /// false if denied, cancelled or a request is already in progress.
+  Future<bool> armSession({required CaptureMode mode}) async {
     try {
-      return await _channel.invokeMethod<bool>('armSession') ?? false;
+      return await _channel.invokeMethod<bool>('armSession', {
+            'mode': mode.name,
+          }) ??
+          false;
     } on PlatformException {
       return false;
     }

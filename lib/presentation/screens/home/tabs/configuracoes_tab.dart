@@ -1152,9 +1152,15 @@ class _FloatingCaptureCardState extends State<_FloatingCaptureCard>
       return;
     }
 
+    // SOCIAL-U7A (Opção B): a sessão é print XOR vídeo — o usuário escolhe
+    // antes do consentimento, pois cada MediaProjection só sustenta um único
+    // VirtualDisplay durante toda a sessão.
+    final mode = await _pickCaptureMode();
+    if (!mounted || mode == null) return;
+
     // Arma a MediaProjection (Modo Captura da Sessão) ANTES de exibir o
     // overlay — o botão A+ só deve existir quando a sessão está armada.
-    final armed = await ScreenCaptureService().armSession();
+    final armed = await ScreenCaptureService().armSession(mode: mode);
     if (!mounted) return;
     if (!armed) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1179,6 +1185,58 @@ class _FloatingCaptureCardState extends State<_FloatingCaptureCard>
       _overlayOn = true;
       _permState = _FloatPermState.granted;
     });
+  }
+
+  // SOCIAL-U7A (Opção B): print e vídeo nunca coexistem na mesma sessão
+  // armada — o usuário escolhe um dos dois antes do consentimento nativo.
+  Future<CaptureMode?> _pickCaptureMode() async {
+    final s = AppStrings(languageNotifier.value);
+    return showDialog<CaptureMode>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text(
+          s.captureModeDialogTitle,
+          style: const TextStyle(
+            color: AppColors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 17,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _CaptureModeOption(
+              title: s.captureModeScreenshotOption,
+              subtitle: s.captureModeScreenshotSubtitle,
+              color: AppColors.apexGreen,
+              onTap: () => Navigator.of(ctx).pop(CaptureMode.screenshot),
+            ),
+            const SizedBox(height: 10),
+            _CaptureModeOption(
+              title: s.captureModeVideoOption,
+              subtitle: s.captureModeVideoSubtitle,
+              color: AppColors.cyberBlue,
+              onTap: () => Navigator.of(ctx).pop(CaptureMode.video),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              s.actionCancel,
+              style: const TextStyle(
+                color: AppColors.textGray,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _disable() async {
@@ -1479,5 +1537,62 @@ class _HonestBoosterCard extends StatelessWidget {
         .animate()
         .fadeIn(delay: 120.ms, duration: 500.ms)
         .slideY(begin: 0.04, end: 0, duration: 380.ms);
+  }
+}
+
+// ─── Seletor de modo — SOCIAL-U7A (Opção B) ──────────────────────────────────
+
+class _CaptureModeOption extends StatelessWidget {
+  const _CaptureModeOption({
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
+            color: color.withValues(alpha: 0.06),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: AppColors.textGray,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -34,6 +34,11 @@ class MainActivity : FlutterFragmentActivity() {
     // Holds the pending Flutter result while waiting for MediaProjection consent.
     private var pendingCaptureResult: MethodChannel.Result? = null
 
+    // Mode requested via armSession — screenshot or video — carried across
+    // the consent round-trip so captureResultLauncher's callback can forward
+    // it to ScreenCaptureService. Defaults to screenshot for safety.
+    private var pendingSessionMode: String = ScreenCaptureService.MODE_SCREENSHOT
+
     // Activity Result launcher for MediaProjection consent dialog.
     private lateinit var captureResultLauncher: ActivityResultLauncher<Intent>
 
@@ -49,6 +54,7 @@ class MainActivity : FlutterFragmentActivity() {
                 val serviceIntent = Intent(this, ScreenCaptureService::class.java).apply {
                     putExtra(ScreenCaptureService.EXTRA_RESULT_CODE, result.resultCode)
                     putExtra(ScreenCaptureService.EXTRA_RESULT_DATA, result.data)
+                    putExtra(ScreenCaptureService.EXTRA_SESSION_MODE, pendingSessionMode)
                 }
                 startForegroundService(serviceIntent)
                 pendingCaptureResult?.success(true)
@@ -381,6 +387,9 @@ class MainActivity : FlutterFragmentActivity() {
                         result.success(true)
                         return@setMethodCallHandler
                     }
+                    pendingSessionMode = (call.argument<String>("mode"))
+                        ?.takeIf { it == ScreenCaptureService.MODE_VIDEO }
+                        ?: ScreenCaptureService.MODE_SCREENSHOT
                     pendingCaptureResult = result
                     // Resolved in captureResultLauncher once consent is granted or denied.
                     val mpm = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager

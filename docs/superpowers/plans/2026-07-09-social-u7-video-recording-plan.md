@@ -10,9 +10,14 @@
 
 ---
 
-## Decisão atual (2026-07-09)
+## Atualização de decisão (2026-07-09, mesma data — override explícito)
 
-- **Gravação de vídeo não será implementada neste ciclo.** Este documento permanece como planejamento aprovado; nenhuma linha de código (`.kt`, `.dart`, `AndroidManifest.xml`) deve ser escrita a partir dele sem uma nova aprovação explícita.
+- **Revertido.** O usuário aprovou explicitamente iniciar a implementação da Abordagem A (gravação curta/manual) ainda neste ciclo, em sessão separada após o bloqueio abaixo ter sido commitado. Escopo fechado: SOCIAL-U7A, gravação de 10s fixos, sem áudio, salvamento local, sem alterar `_canExport`/composição no card social.
+- Implementação ocorre em branch dedicada (`feature/social-u7a-video-recording`), não em `main`. Commit continua exigindo aprovação humana explícita separada.
+
+## Decisão anterior (2026-07-09, registrada às 21:37 — superada pela atualização acima)
+
+- ~~**Gravação de vídeo não será implementada neste ciclo.**~~ Este documento permanece como planejamento aprovado; nenhuma linha de código (`.kt`, `.dart`, `AndroidManifest.xml`) deve ser escrita a partir dele sem uma nova aprovação explícita.
 - **Captura de tela (SOCIAL-U2B) permanece como feature ativa**, implementada, validada e commitada — esta decisão não afeta o fluxo de screenshot existente.
 - **Vídeo exige uma nova fase própria** (ex.: `SOCIAL-U7` de execução, distinta desta fase de planejamento), com escopo, arquivos e testes declarados antes de qualquer implementação.
 - **Qualquer implementação futura de gravação de vídeo precisa de aprovação humana explícita**, mesmo que este plano já exista e já tenha sido lido.
