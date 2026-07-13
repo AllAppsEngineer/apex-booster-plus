@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/data/services/screen_capture_gallery_service.dart';
 import 'package:apex_booster_plus/presentation/screens/share_studio/share_studio_screen.dart';
+import 'package:apex_booster_plus/presentation/widgets/social/share_card_portrait.dart';
 
 void main() {
   setUp(() {
@@ -170,13 +171,21 @@ void main() {
     expect(find.text('Capturas do Apex'), findsOneWidget);
   });
 
-  testWidgets('ApexStudioScreen prefills session name field and card preview with game id',
+  testWidgets(
+      'ApexStudioScreen starts with empty session name field and no name on card preview',
       (tester) async {
     await tester.pumpWidget(const MaterialApp(
       home: ApexStudioScreen(gameId: 'test-game'),
     ));
     await tester.pumpAndSettle();
-    expect(find.text('test-game'), findsNWidgets(2));
+
+    expect(find.text('test-game'), findsNothing);
+    final field = tester.widget<TextField>(
+      find.byKey(const Key('apex_studio_session_name_field')),
+    );
+    expect(field.controller!.text, isEmpty);
+    final card = tester.widget<ShareCardPortrait>(find.byType(ShareCardPortrait));
+    expect(card.card.gameName, isEmpty);
   });
 
   testWidgets('ApexStudioScreen updates card preview when session name is edited',
@@ -193,10 +202,11 @@ void main() {
     await tester.pump();
 
     expect(find.text('Custom Session'), findsNWidgets(2));
-    expect(find.text('test-game'), findsNothing);
+    final card = tester.widget<ShareCardPortrait>(find.byType(ShareCardPortrait));
+    expect(card.card.gameName, 'Custom Session');
   });
 
-  testWidgets('ApexStudioScreen falls back to default name when session name is cleared',
+  testWidgets('ApexStudioScreen removes name from card preview when session name is cleared',
       (tester) async {
     await tester.pumpWidget(const MaterialApp(
       home: ApexStudioScreen(gameId: 'test-game'),
@@ -205,11 +215,20 @@ void main() {
 
     await tester.enterText(
       find.byKey(const Key('apex_studio_session_name_field')),
+      'Custom Session',
+    );
+    await tester.pump();
+
+    await tester.enterText(
+      find.byKey(const Key('apex_studio_session_name_field')),
       '',
     );
     await tester.pump();
 
-    expect(find.text('Sessão gamer'), findsOneWidget);
+    expect(find.text('Sessão gamer'), findsNothing);
+    expect(find.text('Custom Session'), findsNothing);
+    final card = tester.widget<ShareCardPortrait>(find.byType(ShareCardPortrait));
+    expect(card.card.gameName, isEmpty);
   });
 
   testWidgets('ApexStudioScreen shows empty message when no Apex captures exist',

@@ -10,11 +10,9 @@ import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/i18n/app_language.dart';
 import '../../../core/i18n/app_strings.dart';
-import '../../../data/repositories/shared_preferences_game_library_repository.dart';
 import '../../../data/services/screen_capture_gallery_service.dart';
 import '../../../domain/entities/share_preset.dart';
 import '../../../domain/entities/social_card.dart';
@@ -43,14 +41,12 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
   final _exportKey = GlobalKey();
   final _captionController = TextEditingController();
   final _gameNameController = TextEditingController();
-  bool _gameNameEdited = false;
   final _imagePicker = ImagePicker();
   late SocialCard _card;
   String _selectedTemplateId = 'default';
   bool _exporting = false;
   bool _loaded = false;
   AppLanguage _lang = AppLanguage.ptBr;
-  SharedPreferencesGameLibraryRepository? _repo;
   String? _mediaPath;
   bool _mediaIsVideo = false;
   BoxFit _imageFit = BoxFit.cover;
@@ -69,16 +65,14 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
     _card = SocialCard(
       id: '${widget.gameId}_${DateTime.now().millisecondsSinceEpoch}',
       gameId: widget.gameId,
-      gameName: widget.gameId,
+      gameName: '',
       templateId: _selectedTemplateId,
       createdAt: DateTime.now(),
       importedMediaPath: path,
     );
     _mediaPath = path;
     _mediaIsVideo = isVideo;
-    _gameNameController.text = widget.gameId;
     _loaded = true;
-    _loadGameName();
     if (isVideo) {
       _generateVideoThumbnail(path);
     }
@@ -87,29 +81,9 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
     });
   }
 
-  Future<void> _loadGameName() async {
-    debugPrint('[ApexStudio] media/data load started');
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      _repo = SharedPreferencesGameLibraryRepository(prefs);
-      final game = await _repo!.getGameById(widget.gameId);
-      debugPrint('[ApexStudio] media/data load ended');
-      if (!mounted || game == null) return;
-      setState(() {
-        _card = _card.copyWith(gameName: game.name);
-        if (!_gameNameEdited) _gameNameController.text = game.name;
-      });
-    } catch (_) {}
-  }
-
   void _onGameNameChanged(String value) {
-    _gameNameEdited = true;
-    final s = AppStrings(_lang);
-    final trimmed = value.trim();
     setState(() {
-      _card = _card.copyWith(
-        gameName: trimmed.isEmpty ? s.apexStudioSessionNameFallback : trimmed,
-      );
+      _card = _card.copyWith(gameName: value.trim());
     });
   }
 

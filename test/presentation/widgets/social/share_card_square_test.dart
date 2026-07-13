@@ -86,6 +86,48 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('ShareCardSquare hides name when gameName is empty', (tester) async {
+    final card = SocialCard(
+      id: 'test',
+      gameId: 'g1',
+      gameName: '',
+      createdAt: DateTime(2026, 6, 11),
+      preset: SharePreset.square,
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: SizedBox(
+        width: 300,
+        height: 300,
+        child: ShareCardSquare(card: card, template: template),
+      ),
+    ));
+    expect(
+      find.byWidgetPredicate((w) => w is Text && w.data == ''),
+      findsNothing,
+    );
+  });
+
+  testWidgets('ShareCardSquare hides name when gameName is whitespace only', (tester) async {
+    final card = SocialCard(
+      id: 'test',
+      gameId: 'g1',
+      gameName: '   ',
+      createdAt: DateTime(2026, 6, 11),
+      preset: SharePreset.square,
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: SizedBox(
+        width: 300,
+        height: 300,
+        child: ShareCardSquare(card: card, template: template),
+      ),
+    ));
+    expect(
+      find.byWidgetPredicate((w) => w is Text && w.data == '   '),
+      findsNothing,
+    );
+  });
+
   testWidgets('ShareCardSquare with video path shows premium video label', (tester) async {
     final card = SocialCard(
       id: 'test',
