@@ -47,6 +47,42 @@ class ScreenCaptureGalleryService {
     }
   }
 
+  /// Deletes the physical file and its index.json entry for [capture].
+  /// Only touches files under the Apex-owned capture/clip directories.
+  Future<bool> deleteCapture(CapturedScreenshot capture) async {
+    try {
+      final base = await _resolveBaseDir();
+      if (base == null) return false;
+
+      final indexFile = capture.isVideo
+          ? File('${base.path}/Movies/apex_clips/index.json')
+          : File('${base.path}/Pictures/apex_captures/index.json');
+
+      final file = File(capture.path);
+      if (await file.exists()) {
+        await file.delete();
+      }
+
+      await _removeFromIndex(indexFile, capture.path);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _removeFromIndex(File indexFile, String path) async {
+    if (!await indexFile.exists()) return;
+
+    final decoded = jsonDecode(await indexFile.readAsString());
+    if (decoded is! List) return;
+
+    final updated = decoded
+        .whereType<Map>()
+        .where((item) => item['path'] != path)
+        .toList();
+    await indexFile.writeAsString(jsonEncode(updated));
+  }
+
   Future<List<CapturedScreenshot>> _readIndex(File indexFile) async {
     try {
       if (!await indexFile.exists()) return [];

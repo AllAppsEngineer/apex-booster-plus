@@ -191,11 +191,13 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
       ),
       builder: (_) => _ApexCapturesSheet(
         captures: captures,
+        galleryService: _galleryService,
         title: s.apexStudioCapturesSheetTitle,
         subtitle: s.apexStudioCapturesSheetSubtitle,
         emptyMessage: s.apexStudioCapturesEmpty,
         mostRecentLabel: s.apexStudioCaptureMostRecent,
         lang: _lang,
+        onCaptureDeleted: _onApexCaptureDeleted,
       ),
     );
 
@@ -264,6 +266,12 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
         ),
       ),
     );
+  }
+
+  void _onApexCaptureDeleted(CapturedScreenshot deleted) {
+    if (_mediaPath == deleted.path) {
+      _removeMedia();
+    }
   }
 
   void _removeMedia() {
@@ -1192,25 +1200,111 @@ class _VideoPreviewDialogState extends State<_VideoPreviewDialog> {
   }
 }
 
-class _ApexCapturesSheet extends StatelessWidget {
+class _ApexCapturesSheet extends StatefulWidget {
   final List<CapturedScreenshot> captures;
+  final ScreenCaptureGalleryService galleryService;
   final String title;
   final String subtitle;
   final String emptyMessage;
   final String mostRecentLabel;
   final AppLanguage lang;
+  final void Function(CapturedScreenshot) onCaptureDeleted;
   const _ApexCapturesSheet({
     required this.captures,
+    required this.galleryService,
     required this.title,
     required this.subtitle,
     required this.emptyMessage,
     required this.mostRecentLabel,
     required this.lang,
+    required this.onCaptureDeleted,
   });
 
   @override
+  State<_ApexCapturesSheet> createState() => _ApexCapturesSheetState();
+}
+
+class _ApexCapturesSheetState extends State<_ApexCapturesSheet> {
+  final List<CapturedScreenshot> _captures = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _captures.addAll(widget.captures);
+  }
+
+  Future<void> _confirmDelete(CapturedScreenshot capture) async {
+    final s = AppStrings(widget.lang);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text(
+          capture.isVideo
+              ? s.apexStudioDeleteVideoTitle
+              : s.apexStudioDeleteCaptureTitle,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 17,
+          ),
+        ),
+        content: Text(
+          s.apexStudioDeleteDialogContent,
+          style: const TextStyle(
+            color: Color(0xFFA1A1AA),
+            fontSize: 13,
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              s.actionCancel,
+              style: const TextStyle(color: Color(0xFFA1A1AA)),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              s.apexStudioDeleteConfirm,
+              style: const TextStyle(
+                color: Color(0xFFF97316),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final ok = await widget.galleryService.deleteCapture(capture);
+    if (!mounted) return;
+
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(s.apexStudioDeleteError),
+          backgroundColor: const Color(0xFF1A1A1A),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _captures.remove(capture));
+    widget.onCaptureDeleted(capture);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final s = AppStrings(lang);
+    final s = AppStrings(widget.lang);
+    final captures = _captures;
     return SafeArea(
       top: false,
       child: Padding(
@@ -1231,7 +1325,7 @@ class _ApexCapturesSheet extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              title,
+              widget.title,
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -1240,7 +1334,7 @@ class _ApexCapturesSheet extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              subtitle,
+              widget.subtitle,
               style: const TextStyle(
                 color: Color(0xFF666666),
                 fontSize: 12,
@@ -1267,6 +1361,7 @@ class _ApexCapturesSheet extends StatelessWidget {
                   itemBuilder: (_, i) {
                     final capture = captures[i];
                     return GestureDetector(
+                      key: Key('apex_capture_tile_$i'),
                       onTap: () => Navigator.of(context).pop(capture),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
@@ -1329,7 +1424,7 @@ class _ApexCapturesSheet extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
-                                    mostRecentLabel,
+                                    widget.mostRecentLabel,
                                     style: const TextStyle(
                                       color: Colors.black,
                                       fontSize: 7,
@@ -1339,6 +1434,37 @@ class _ApexCapturesSheet extends StatelessWidget {
                                   ),
                                 ),
                               ),
+                            Positioned(
+                              top: 2,
+                              right: 2,
+                              child: Material(
+                                type: MaterialType.transparency,
+                                child: IconButton(
+                                  key: Key('apex_capture_delete_$i'),
+                                  onPressed: () => _confirmDelete(capture),
+                                  tooltip: s.apexStudioDeleteTooltip,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 26,
+                                    minHeight: 26,
+                                  ),
+                                  icon: Container(
+                                    width: 22,
+                                    height: 22,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color:
+                                          Colors.black.withValues(alpha: 0.55),
+                                    ),
+                                    child: const Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -1364,7 +1490,7 @@ class _ApexCapturesSheet extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            emptyMessage,
+            widget.emptyMessage,
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Color(0xFF888888),

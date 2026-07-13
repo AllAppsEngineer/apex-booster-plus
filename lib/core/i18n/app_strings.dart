@@ -2361,6 +2361,42 @@ class AppStrings {
     AppLanguage.es   => 'MÁS RECIENTE',
   };
 
+  String get apexStudioDeleteCaptureTitle => switch (lang) {
+    AppLanguage.ptBr => 'Excluir captura?',
+    AppLanguage.en   => 'Delete screenshot?',
+    AppLanguage.es   => '¿Eliminar captura?',
+  };
+
+  String get apexStudioDeleteVideoTitle => switch (lang) {
+    AppLanguage.ptBr => 'Excluir vídeo?',
+    AppLanguage.en   => 'Delete video?',
+    AppLanguage.es   => '¿Eliminar video?',
+  };
+
+  String get apexStudioDeleteDialogContent => switch (lang) {
+    AppLanguage.ptBr => 'Esta ação não pode ser desfeita.',
+    AppLanguage.en   => 'This action cannot be undone.',
+    AppLanguage.es   => 'Esta acción no se puede deshacer.',
+  };
+
+  String get apexStudioDeleteConfirm => switch (lang) {
+    AppLanguage.ptBr => 'EXCLUIR',
+    AppLanguage.en   => 'DELETE',
+    AppLanguage.es   => 'ELIMINAR',
+  };
+
+  String get apexStudioDeleteTooltip => switch (lang) {
+    AppLanguage.ptBr => 'Excluir',
+    AppLanguage.en   => 'Delete',
+    AppLanguage.es   => 'Eliminar',
+  };
+
+  String get apexStudioDeleteError => switch (lang) {
+    AppLanguage.ptBr => 'Não foi possível excluir. Tente novamente.',
+    AppLanguage.en   => 'Could not delete. Please try again.',
+    AppLanguage.es   => 'No se pudo eliminar. Inténtalo de nuevo.',
+  };
+
   String get apexStudioSessionNameSection => switch (lang) {
     AppLanguage.ptBr => 'Nome',
     AppLanguage.en   => 'Name',
