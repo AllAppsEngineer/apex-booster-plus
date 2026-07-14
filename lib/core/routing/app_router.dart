@@ -8,7 +8,9 @@ import '../../presentation/screens/home/home_screen.dart';
 import '../../presentation/screens/game_detail/game_detail_screen.dart';
 import '../../presentation/screens/gfx_profile/gfx_profile_screen.dart';
 import '../../presentation/screens/configuracoes/honest_booster_mode_screen.dart';
+import '../../presentation/screens/result_card/result_card_screen.dart';
 import '../../presentation/screens/share_studio/share_studio_screen.dart';
+import '../../domain/entities/session_record.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -55,6 +57,12 @@ final appRouter = GoRouter(
       builder: (context, state) => ApexStudioScreen(
         gameId: state.pathParameters['gameId'] ?? '',
         initialMediaPath: state.extra as String?,
+      ),
+    ),
+    GoRoute(
+      path: '/result-card',
+      builder: (context, state) => ResultCardScreen(
+        session: state.extra is SessionRecord ? state.extra as SessionRecord : null,
       ),
     ),
   ],

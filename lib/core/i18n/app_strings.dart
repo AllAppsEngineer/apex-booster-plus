@@ -2796,4 +2796,66 @@ class AppStrings {
     AppLanguage.es   =>
         'Android solicitará tu confirmación antes de capturar.',
   };
+
+  // ─── Apex Result Card (PREMIUM-U3A) ───────────────────────────────────────
+
+  String get resultCardHeaderLabel => switch (lang) {
+    AppLanguage.ptBr => 'RESULTADO DA SESSÃO',
+    AppLanguage.en   => 'SESSION RESULT',
+    AppLanguage.es   => 'RESULTADO DE LA SESIÓN',
+  };
+
+  String get resultCardSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Sessão preparada localmente.',
+    AppLanguage.en   => 'Session prepared locally.',
+    AppLanguage.es   => 'Sesión preparada localmente.',
+  };
+
+  String get resultCardSectionPreparation => switch (lang) {
+    AppLanguage.ptBr => 'PREPARAÇÃO APEX',
+    AppLanguage.en   => 'APEX PREPARATION',
+    AppLanguage.es   => 'PREPARACIÓN APEX',
+  };
+
+  String get resultCardProfileLabel => switch (lang) {
+    AppLanguage.ptBr => 'Perfil aplicado',
+    AppLanguage.en   => 'Profile applied',
+    AppLanguage.es   => 'Perfil aplicado',
+  };
+
+  String get resultCardMetricsUnavailable => switch (lang) {
+    AppLanguage.ptBr => 'Métricas não disponíveis nesta sessão.',
+    AppLanguage.en   => 'Metrics not available for this session.',
+    AppLanguage.es   => 'Métricas no disponibles en esta sesión.',
+  };
+
+  String get resultCardTimestampPrefix => switch (lang) {
+    AppLanguage.ptBr => 'Preparado em',
+    AppLanguage.en   => 'Prepared on',
+    AppLanguage.es   => 'Preparado el',
+  };
+
+  String get resultCardCtaReopen => switch (lang) {
+    AppLanguage.ptBr => 'Abrir jogo novamente',
+    AppLanguage.en   => 'Open game again',
+    AppLanguage.es   => 'Abrir juego de nuevo',
+  };
+
+  String get resultCardCtaShare => switch (lang) {
+    AppLanguage.ptBr => 'Criar card social',
+    AppLanguage.en   => 'Create social card',
+    AppLanguage.es   => 'Crear card social',
+  };
+
+  String get resultCardErrorTitle => switch (lang) {
+    AppLanguage.ptBr => 'Sessão não encontrada',
+    AppLanguage.en   => 'Session not found',
+    AppLanguage.es   => 'Sesión no encontrada',
+  };
+
+  String get resultCardErrorDesc => switch (lang) {
+    AppLanguage.ptBr => 'Não encontramos os dados dessa sessão.',
+    AppLanguage.en   => 'We could not find data for this session.',
+    AppLanguage.es   => 'No encontramos los datos de esta sesión.',
+  };
 }
