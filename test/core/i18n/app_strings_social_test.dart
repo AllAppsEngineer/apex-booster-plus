@@ -17,6 +17,11 @@ void main() {
         test('socialStudioExport is non-empty', () => expect(s.socialStudioExport, isNotEmpty));
         test('socialStudioWatermark is non-empty', () => expect(s.socialStudioWatermark, isNotEmpty));
         test('socialStudioCreateCard is non-empty', () => expect(s.socialStudioCreateCard, isNotEmpty));
+        test('navSocial is non-empty', () => expect(s.navSocial, isNotEmpty));
+        test('socialTabTitle is non-empty', () => expect(s.socialTabTitle, isNotEmpty));
+        test('socialTabSubtitle is non-empty', () => expect(s.socialTabSubtitle, isNotEmpty));
+        test('socialTabCreateBadge is non-empty', () => expect(s.socialTabCreateBadge, isNotEmpty));
+        test('socialTabPickGameEmpty is non-empty', () => expect(s.socialTabPickGameEmpty, isNotEmpty));
         test('socialPresetPortrait is non-empty', () => expect(s.socialPresetPortrait, isNotEmpty));
         test('socialPresetSquare is non-empty', () => expect(s.socialPresetSquare, isNotEmpty));
         test('socialPresetLandscape is non-empty', () => expect(s.socialPresetLandscape, isNotEmpty));

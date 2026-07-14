@@ -164,6 +164,12 @@ class AppStrings {
     AppLanguage.es   => 'Config.',
   };
 
+  String get navSocial => switch (lang) {
+    AppLanguage.ptBr => 'Studio',
+    AppLanguage.en   => 'Studio',
+    AppLanguage.es   => 'Studio',
+  };
+
   String get navExitSnackBar => switch (lang) {
     AppLanguage.ptBr => 'Pressione voltar novamente para sair.',
     AppLanguage.en   => 'Press back again to exit.',
@@ -2228,6 +2234,26 @@ class AppStrings {
     AppLanguage.ptBr => 'Sessão preparada',
     AppLanguage.en   => 'Session ready',
     AppLanguage.es   => 'Sesión lista',
+  };
+
+  String get socialTabTitle => switch (lang) {
+    AppLanguage.ptBr => 'Apex Studio',
+    AppLanguage.en   => 'Apex Studio',
+    AppLanguage.es   => 'Apex Studio',
+  };
+
+  String get socialTabSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Capture, crie e compartilhe sua evolução gamer.',
+    AppLanguage.en   => 'Capture, create, and share your gamer progress.',
+    AppLanguage.es   => 'Captura, crea y comparte tu evolución gamer.',
+  };
+
+  String get socialTabCreateBadge => 'STUDIO';
+
+  String get socialTabPickGameEmpty => switch (lang) {
+    AppLanguage.ptBr => 'Adicione um jogo na Biblioteca para criar um card.',
+    AppLanguage.en   => 'Add a game in Library to create a card.',
+    AppLanguage.es   => 'Agrega un juego en la Biblioteca para crear una tarjeta.',
   };
 
   // ─── Social — Apex Studio media (SOCIAL-U1B) ─────────────────────────────────

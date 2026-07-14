@@ -6,6 +6,7 @@ import '../../../core/i18n/app_strings.dart';
 import 'tabs/inicio_tab.dart';
 import 'tabs/biblioteca_tab.dart';
 import 'tabs/preparar_tab.dart';
+import 'tabs/social_tab.dart';
 import 'tabs/historico_tab.dart';
 import 'tabs/configuracoes_tab.dart';
 
@@ -26,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Tab 0 (Início) is the only tab visited on startup.
   // All others are built lazily on first user tap.
-  final List<bool> _tabVisited = [true, false, false, false, false];
+  final List<bool> _tabVisited = [true, false, false, false, false, false];
 
   @override
   void initState() {
@@ -59,7 +60,8 @@ class _HomeScreenState extends State<HomeScreen> {
     0 => InicioTab(isActive: _selectedIndex == 0),
     1 => BibliotecaTab(isActive: _selectedIndex == 1),
     2 => PrepararTab(isActive: _selectedIndex == 2),
-    3 => HistoricoTab(isActive: _selectedIndex == 3),
+    3 => SocialTab(isActive: _selectedIndex == 3),
+    4 => HistoricoTab(isActive: _selectedIndex == 4),
     _ => const ConfiguracoesTab(),
   };
 
@@ -100,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: AppColors.background,
         body: IndexedStack(
           index: _selectedIndex,
-          children: List.generate(5, (i) {
+          children: List.generate(6, (i) {
             if (!_tabVisited[i]) return const SizedBox.shrink();
             return _buildTab(i);
           }),
@@ -173,6 +175,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: const Icon(Icons.flash_on_outlined),
                 activeIcon: const Icon(Icons.flash_on),
                 label: s.navPrepare,
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.auto_awesome_outlined),
+                activeIcon: const Icon(Icons.auto_awesome),
+                label: s.navSocial,
               ),
               BottomNavigationBarItem(
                 icon: const Icon(Icons.history_outlined),
