@@ -1,16 +1,45 @@
-# apex_booster_plus
+# Apex Booster+ — Site Público
 
-A new Flutter project.
+Site estático institucional do **Apex Booster+**, hospedado via GitHub Pages.
 
-## Getting Started
+URL pública: https://allappsengineer.github.io/apex-booster-plus/
 
-This project is a starting point for a Flutter application.
+## Conteúdo
 
-A few resources to get you started if this is your first Flutter project:
+- `index.html` — página inicial com apresentação breve do app e link para a Política de Privacidade.
+- `privacy/index.html` — Política de Privacidade do Apex Booster+ (PT-BR).
+  URL: https://allappsengineer.github.io/apex-booster-plus/privacy/
+- `privacy/en/index.html` — Privacy Policy (EN).
+  URL: https://allappsengineer.github.io/apex-booster-plus/privacy/en/
+- `privacy/es/index.html` — Política de Privacidad (ES).
+  URL: https://allappsengineer.github.io/apex-booster-plus/privacy/es/
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Sobre
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- **Nome público:** Apex Booster+
+- **Desenvolvedor:** AllAppsEngineer
+- **Tagline:** Prepare. Analise. Jogue.
+- **Contato:** alessandro.lopes.adm@gmail.com
+
+## Tecnologia
+
+Site 100% estático: apenas HTML e CSS embutido, sem frameworks, sem build,
+sem dependências externas, sem scripts de terceiros, sem cookies e sem
+rastreamento/analytics.
+
+## Como ativar o GitHub Pages
+
+1. Acesse o repositório no GitHub.
+2. Vá em **Settings → Pages**.
+3. Em **Build and deployment**, selecione **Deploy from a branch**.
+4. Escolha a branch **main** e a pasta **/ (root)**.
+5. Salve. A URL pública ficará disponível em alguns minutos:
+   `https://allappsengineer.github.io/apex-booster-plus/`
+
+## Como publicar alterações
+
+```bash
+git add .
+git commit -m "Atualiza site público"
+git push origin main
+```
