@@ -2581,7 +2581,7 @@ class AppStrings {
   // ─── Social — Floating Capture (SOCIAL-U2A) ──────────────────────────────────
 
   // Card em Configurações
-  String get captureFloatBadge => 'SOCIAL';
+  String get captureFloatBadge => 'STUDIO';
 
   String get captureFloatCardTitle => switch (lang) {
     AppLanguage.ptBr => 'Modo Captura da Sessão',

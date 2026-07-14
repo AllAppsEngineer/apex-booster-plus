@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="capture_notification_text">Modo de Captura de Sesión activo</string>
+    <string name="capture_capturing_text">Capturando...</string>
+    <string name="capture_saved_text">Captura guardada</string>
+    <string name="capture_error_text">Error al capturar pantalla.</string>
+    <string name="capture_notification_recording_text">Grabando video de la sesión...</string>
+    <string name="capture_recording_text">Grabando...</string>
     <string name="capture_video_saved_with_duration">Video de %1$d segundos completado</string>
+    <string name="capture_video_error_text">Error al grabar video.</string>
 </resources>

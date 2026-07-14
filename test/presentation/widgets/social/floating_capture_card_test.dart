@@ -48,7 +48,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Modo Captura da Sessão'), findsOneWidget);
-    expect(find.text('SOCIAL'), findsOneWidget);
+    expect(find.text('STUDIO'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
