@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
 import 'package:apex_booster_plus/core/i18n/app_language.dart';
@@ -350,7 +351,9 @@ class _SessionCard extends StatelessWidget {
     final hasGfxProfile = resolvedGfxProfile != null;
     final hasExtras = hasRam || hasLatency || focusLabel != null || hasGfxProfile;
 
-    return Container(
+    final cardRadius = BorderRadius.circular(12);
+
+    final card = Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -360,7 +363,7 @@ class _SessionCard extends StatelessWidget {
             AppColors.white.withValues(alpha: 0.03),
           ],
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: cardRadius,
         border: Border.all(
           color: status.color.withValues(alpha: 0.20),
           width: 1,
@@ -451,6 +454,16 @@ class _SessionCard extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: cardRadius,
+      child: InkWell(
+        borderRadius: cardRadius,
+        onTap: () => context.push('/result-card', extra: session),
+        child: card,
       ),
     )
         .animate(delay: delay)

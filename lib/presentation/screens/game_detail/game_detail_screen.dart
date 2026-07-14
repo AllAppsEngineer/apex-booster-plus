@@ -238,7 +238,10 @@ class _GameDetailScreenState extends State<GameDetailScreen>
     );
     if (record != null) unawaited(_saveSessionRecord(record));
 
-    if (error == null) return;
+    if (error == null) {
+      if (record != null) _showSessionReadySnack(record);
+      return;
+    }
 
     final s = AppStrings(languageNotifier.value);
     final message = error is PlatformException && error.code == 'APP_NOT_FOUND'
@@ -250,6 +253,22 @@ class _GameDetailScreenState extends State<GameDetailScreen>
         content: Text(message),
         backgroundColor: AppColors.energyOrange,
         behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showSessionReadySnack(SessionRecord record) {
+    final s = AppStrings(languageNotifier.value);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(s.sessionReadySnackMessage),
+        backgroundColor: AppColors.apexGreen,
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: s.sessionReadySnackAction,
+          textColor: Colors.white,
+          onPressed: () => context.push('/result-card', extra: record),
+        ),
       ),
     );
   }

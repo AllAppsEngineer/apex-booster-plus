@@ -2858,4 +2858,16 @@ class AppStrings {
     AppLanguage.en   => 'We could not find data for this session.',
     AppLanguage.es   => 'No encontramos los datos de esta sesión.',
   };
+
+  String get sessionReadySnackMessage => switch (lang) {
+    AppLanguage.ptBr => 'Sessão preparada.',
+    AppLanguage.en   => 'Session prepared.',
+    AppLanguage.es   => 'Sesión preparada.',
+  };
+
+  String get sessionReadySnackAction => switch (lang) {
+    AppLanguage.ptBr => 'Ver card',
+    AppLanguage.en   => 'View card',
+    AppLanguage.es   => 'Ver tarjeta',
+  };
 }
