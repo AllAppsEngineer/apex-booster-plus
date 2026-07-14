@@ -597,7 +597,8 @@ class _ScanSectionState extends State<_ScanSection> {
   @override
   void initState() {
     super.initState();
-    _result = _computeLocalScan(widget.game);
+    _result = _computeLocalScan(widget.game, null);
+    _verifyLaunchable();
   }
 
   @override
@@ -608,13 +609,37 @@ class _ScanSectionState extends State<_ScanSection> {
         old.game.localProfileName != widget.game.localProfileName ||
         old.game.isFavorite != widget.game.isFavorite) {
       setState(() {
-        _result = _computeLocalScan(widget.game);
+        _result = _computeLocalScan(widget.game, null);
       });
+      _verifyLaunchable();
     }
   }
 
-  static ApexScanResult _computeLocalScan(ApexGame game) =>
-      ApexScanService().scan(game: game);
+  /// Resolves whether [widget.game.packageName] is actually installed and
+  /// re-scores the result. Leaves the score as "não verificado" (isLaunchable
+  /// stays null) if there's no packageName yet or the lookup fails — never
+  /// reports a false "incompleto" from a read error.
+  Future<void> _verifyLaunchable() async {
+    final pkg = widget.game.packageName;
+    if (pkg == null || pkg.isEmpty) return;
+
+    final requestedGameId = widget.game.id;
+    bool? isLaunchable;
+    try {
+      final apps = await InstalledAppsDatasource().getInstalledApps();
+      isLaunchable = apps.any((a) => a.packageName == pkg);
+    } catch (_) {
+      return;
+    }
+
+    if (!mounted || widget.game.id != requestedGameId) return;
+    setState(() {
+      _result = _computeLocalScan(widget.game, isLaunchable);
+    });
+  }
+
+  static ApexScanResult _computeLocalScan(ApexGame game, bool? isLaunchable) =>
+      ApexScanService().scan(game: game, isLaunchable: isLaunchable);
 
   @override
   Widget build(BuildContext context) {
