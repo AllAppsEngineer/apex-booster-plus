@@ -117,6 +117,46 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('ShareCardPortrait hides name when gameName is empty', (tester) async {
+    final card = SocialCard(
+      id: 'test',
+      gameId: 'g1',
+      gameName: '',
+      createdAt: DateTime(2026, 6, 11),
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: SizedBox(
+        width: 270,
+        height: 480,
+        child: ShareCardPortrait(card: card, template: template),
+      ),
+    ));
+    expect(
+      find.byWidgetPredicate((w) => w is Text && w.data == ''),
+      findsNothing,
+    );
+  });
+
+  testWidgets('ShareCardPortrait hides name when gameName is whitespace only', (tester) async {
+    final card = SocialCard(
+      id: 'test',
+      gameId: 'g1',
+      gameName: '   ',
+      createdAt: DateTime(2026, 6, 11),
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: SizedBox(
+        width: 270,
+        height: 480,
+        child: ShareCardPortrait(card: card, template: template),
+      ),
+    ));
+    expect(
+      find.byWidgetPredicate((w) => w is Text && w.data == '   '),
+      findsNothing,
+    );
+  });
+
   testWidgets('ShareCardPortrait with video path shows premium video label', (tester) async {
     final card = SocialCard(
       id: 'test',

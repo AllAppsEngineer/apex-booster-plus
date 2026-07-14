@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="capture_video_saved_with_duration">Video de %1$d segundos completado</string>
+</resources>

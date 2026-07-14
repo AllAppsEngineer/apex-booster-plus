@@ -44,6 +44,10 @@ Widget _wrapBottomNavLabels() => ListenableBuilder(
                   label: s.navPrepare,
                 ),
                 BottomNavigationBarItem(
+                  icon: const Icon(Icons.auto_awesome_outlined),
+                  label: s.navSocial,
+                ),
+                BottomNavigationBarItem(
                   icon: const Icon(Icons.history_outlined),
                   label: s.navHistory,
                 ),
@@ -335,7 +339,7 @@ void main() {
 
   // ── 13. BottomNav PT-BR ───────────────────────────────────────────────────
 
-  testWidgets('BottomNav exibe Inicio Biblioteca Preparar Historico Config em PT-BR',
+  testWidgets('BottomNav exibe Inicio Biblioteca Preparar Studio Historico Config em PT-BR',
       (tester) async {
     await tester.pumpWidget(_wrapBottomNavLabels());
     await tester.pumpAndSettle();
@@ -343,6 +347,7 @@ void main() {
     expect(find.text('Início'), findsOneWidget);
     expect(find.text('Biblioteca'), findsOneWidget);
     expect(find.text('Preparar'), findsOneWidget);
+    expect(find.text('Studio'), findsOneWidget);
     expect(find.text('Histórico'), findsOneWidget);
     expect(find.text('Config.'), findsOneWidget);
   });
@@ -358,6 +363,7 @@ void main() {
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Library'), findsOneWidget);
     expect(find.text('Prepare'), findsOneWidget);
+    expect(find.text('Studio'), findsOneWidget);
     expect(find.text('History'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
   });
@@ -372,6 +378,7 @@ void main() {
 
     expect(find.text('Inicio'), findsOneWidget);
     expect(find.text('Preparar'), findsOneWidget);
+    expect(find.text('Studio'), findsOneWidget);
     expect(find.text('Historial'), findsOneWidget);
   });
 

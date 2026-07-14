@@ -149,23 +149,24 @@ class ShareCardSquare extends StatelessWidget {
                     else
                       const Spacer(),
                     const SizedBox(height: 8),
-                    Text(
-                      card.gameName,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        height: 1.1,
-                        shadows: [
-                          Shadow(
-                            color: accent.withValues(alpha: 0.45),
-                            blurRadius: 24,
-                          ),
-                        ],
+                    if (card.gameName.trim().isNotEmpty)
+                      Text(
+                        card.gameName,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          height: 1.1,
+                          shadows: [
+                            Shadow(
+                              color: accent.withValues(alpha: 0.45),
+                              blurRadius: 24,
+                            ),
+                          ],
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
                     if (card.caption.isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Text(

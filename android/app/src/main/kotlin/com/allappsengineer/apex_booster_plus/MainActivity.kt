@@ -34,6 +34,17 @@ class MainActivity : FlutterFragmentActivity() {
     // Holds the pending Flutter result while waiting for MediaProjection consent.
     private var pendingCaptureResult: MethodChannel.Result? = null
 
+    // Mode requested via armSession — screenshot or video — carried across
+    // the consent round-trip so captureResultLauncher's callback can forward
+    // it to ScreenCaptureService. Defaults to screenshot for safety.
+    private var pendingSessionMode: String = ScreenCaptureService.MODE_SCREENSHOT
+
+    // SOCIAL-U7B: video recording cap requested via armSession, carried
+    // across the same consent round-trip as pendingSessionMode. Only used
+    // when pendingSessionMode == MODE_VIDEO; defaults to the service's
+    // default duration for safety.
+    private var pendingVideoDurationMs: Long = ScreenCaptureService.DEFAULT_VIDEO_DURATION_MS
+
     // Activity Result launcher for MediaProjection consent dialog.
     private lateinit var captureResultLauncher: ActivityResultLauncher<Intent>
 
@@ -49,6 +60,8 @@ class MainActivity : FlutterFragmentActivity() {
                 val serviceIntent = Intent(this, ScreenCaptureService::class.java).apply {
                     putExtra(ScreenCaptureService.EXTRA_RESULT_CODE, result.resultCode)
                     putExtra(ScreenCaptureService.EXTRA_RESULT_DATA, result.data)
+                    putExtra(ScreenCaptureService.EXTRA_SESSION_MODE, pendingSessionMode)
+                    putExtra(ScreenCaptureService.EXTRA_VIDEO_DURATION_MS, pendingVideoDurationMs)
                 }
                 startForegroundService(serviceIntent)
                 pendingCaptureResult?.success(true)
@@ -381,6 +394,17 @@ class MainActivity : FlutterFragmentActivity() {
                         result.success(true)
                         return@setMethodCallHandler
                     }
+                    pendingSessionMode = (call.argument<String>("mode"))
+                        ?.takeIf { it == ScreenCaptureService.MODE_VIDEO }
+                        ?: ScreenCaptureService.MODE_SCREENSHOT
+                    // SOCIAL-U7B: durationSeconds only matters for video mode;
+                    // allow-listed against ALLOWED_VIDEO_DURATIONS_MS so an
+                    // unexpected value from Flutter can never set an
+                    // out-of-range recording cap.
+                    val requestedMs = (call.argument<Int>("durationSeconds") ?: 10) * 1_000L
+                    pendingVideoDurationMs = ScreenCaptureService.ALLOWED_VIDEO_DURATIONS_MS
+                        .firstOrNull { it == requestedMs }
+                        ?: ScreenCaptureService.DEFAULT_VIDEO_DURATION_MS
                     pendingCaptureResult = result
                     // Resolved in captureResultLauncher once consent is granted or denied.
                     val mpm = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager

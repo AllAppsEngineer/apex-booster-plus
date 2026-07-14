@@ -5,4 +5,8 @@
     <string name="capture_capturing_text">Capturando...</string>
     <string name="capture_saved_text">Captura salva</string>
     <string name="capture_error_text">Erro ao capturar tela.</string>
+    <string name="capture_notification_recording_text">Gravando vídeo da sessão...</string>
+    <string name="capture_recording_text">Gravando...</string>
+    <string name="capture_video_saved_with_duration">Vídeo de %1$d segundos concluído</string>
+    <string name="capture_video_error_text">Erro ao gravar vídeo.</string>
 </resources>

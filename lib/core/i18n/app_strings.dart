@@ -164,6 +164,12 @@ class AppStrings {
     AppLanguage.es   => 'Config.',
   };
 
+  String get navSocial => switch (lang) {
+    AppLanguage.ptBr => 'Studio',
+    AppLanguage.en   => 'Studio',
+    AppLanguage.es   => 'Studio',
+  };
+
   String get navExitSnackBar => switch (lang) {
     AppLanguage.ptBr => 'Pressione voltar novamente para sair.',
     AppLanguage.en   => 'Press back again to exit.',
@@ -2230,6 +2236,26 @@ class AppStrings {
     AppLanguage.es   => 'Sesión lista',
   };
 
+  String get socialTabTitle => switch (lang) {
+    AppLanguage.ptBr => 'Apex Studio',
+    AppLanguage.en   => 'Apex Studio',
+    AppLanguage.es   => 'Apex Studio',
+  };
+
+  String get socialTabSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Capture, crie e compartilhe sua evolução gamer.',
+    AppLanguage.en   => 'Capture, create, and share your gamer progress.',
+    AppLanguage.es   => 'Captura, crea y comparte tu evolución gamer.',
+  };
+
+  String get socialTabCreateBadge => 'STUDIO';
+
+  String get socialTabPickGameEmpty => switch (lang) {
+    AppLanguage.ptBr => 'Adicione um jogo na Biblioteca para criar um card.',
+    AppLanguage.en   => 'Add a game in Library to create a card.',
+    AppLanguage.es   => 'Agrega un juego en la Biblioteca para crear una tarjeta.',
+  };
+
   // ─── Social — Apex Studio media (SOCIAL-U1B) ─────────────────────────────────
 
   String get apexStudioMediaSection => switch (lang) {
@@ -2359,6 +2385,42 @@ class AppStrings {
     AppLanguage.ptBr => 'MAIS RECENTE',
     AppLanguage.en   => 'MOST RECENT',
     AppLanguage.es   => 'MÁS RECIENTE',
+  };
+
+  String get apexStudioDeleteCaptureTitle => switch (lang) {
+    AppLanguage.ptBr => 'Excluir captura?',
+    AppLanguage.en   => 'Delete screenshot?',
+    AppLanguage.es   => '¿Eliminar captura?',
+  };
+
+  String get apexStudioDeleteVideoTitle => switch (lang) {
+    AppLanguage.ptBr => 'Excluir vídeo?',
+    AppLanguage.en   => 'Delete video?',
+    AppLanguage.es   => '¿Eliminar video?',
+  };
+
+  String get apexStudioDeleteDialogContent => switch (lang) {
+    AppLanguage.ptBr => 'Esta ação não pode ser desfeita.',
+    AppLanguage.en   => 'This action cannot be undone.',
+    AppLanguage.es   => 'Esta acción no se puede deshacer.',
+  };
+
+  String get apexStudioDeleteConfirm => switch (lang) {
+    AppLanguage.ptBr => 'EXCLUIR',
+    AppLanguage.en   => 'DELETE',
+    AppLanguage.es   => 'ELIMINAR',
+  };
+
+  String get apexStudioDeleteTooltip => switch (lang) {
+    AppLanguage.ptBr => 'Excluir',
+    AppLanguage.en   => 'Delete',
+    AppLanguage.es   => 'Eliminar',
+  };
+
+  String get apexStudioDeleteError => switch (lang) {
+    AppLanguage.ptBr => 'Não foi possível excluir. Tente novamente.',
+    AppLanguage.en   => 'Could not delete. Please try again.',
+    AppLanguage.es   => 'No se pudo eliminar. Inténtalo de nuevo.',
   };
 
   String get apexStudioSessionNameSection => switch (lang) {
@@ -2571,6 +2633,50 @@ class AppStrings {
         'Studio.',
     AppLanguage.es =>
         'Al capturar, la sesión termina y la imagen va al Apex Studio.',
+  };
+
+  // SOCIAL-U7A (Opção B): seletor de modo antes de armar a sessão.
+  String get captureModeDialogTitle => switch (lang) {
+    AppLanguage.ptBr => 'Escolha o modo de captura',
+    AppLanguage.en   => 'Choose capture mode',
+    AppLanguage.es   => 'Elige el modo de captura',
+  };
+
+  String get captureModeScreenshotOption => switch (lang) {
+    AppLanguage.ptBr => 'Print da tela',
+    AppLanguage.en   => 'Screenshot',
+    AppLanguage.es   => 'Captura de pantalla',
+  };
+
+  String get captureModeScreenshotSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Captura uma imagem por toque.',
+    AppLanguage.en   => 'Captures one image per tap.',
+    AppLanguage.es   => 'Captura una imagen por toque.',
+  };
+
+  String get captureModeVideoOption => switch (lang) {
+    AppLanguage.ptBr => 'Vídeo curto',
+    AppLanguage.en   => 'Short video',
+    AppLanguage.es   => 'Video corto',
+  };
+
+  String get captureModeVideoSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Escolha a duração e grave sem áudio.',
+    AppLanguage.en   => 'Choose the duration and record without audio.',
+    AppLanguage.es   => 'Elige la duración y graba sin audio.',
+  };
+
+  // SOCIAL-U7B: duração configurável do vídeo curto.
+  String get videoDurationDialogTitle => switch (lang) {
+    AppLanguage.ptBr => 'Escolha a duração do vídeo',
+    AppLanguage.en   => 'Choose the video duration',
+    AppLanguage.es   => 'Elige la duración del video',
+  };
+
+  String videoDurationOptionLabel(int seconds) => switch (lang) {
+    AppLanguage.ptBr => '$seconds segundos',
+    AppLanguage.en   => '$seconds seconds',
+    AppLanguage.es   => '$seconds segundos',
   };
 
   // Consent sheet

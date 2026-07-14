@@ -176,26 +176,35 @@ internal class FloatingOverlayManager private constructor(private val context: C
             setPadding(pad, pad, pad, pad)
         }
 
-        container.addView(
-            buildMenuItem(density, "Capturar tela", Color.parseColor("#22C55E"), enabled = true) {
-                // Reusa a MediaProjection já concedida pelo Modo Captura da Sessão —
-                // não abre novo diálogo de consentimento nem traz o Apex para frente.
-                // Esconde o overlay (botão A+ e mini-menu) ANTES de capturar para que
-                // eles não apareçam no frame salvo; aguarda o WindowManager assentar.
-                hide()
-                Handler(context.mainLooper).postDelayed({
-                    ScreenCaptureService.instance?.captureNow()
-                }, 400)
-            },
-        )
-        container.addView(
-            buildMenuItem(
-                density,
-                "Gravar vídeo (em breve)",
-                Color.parseColor("#666666"),
-                enabled = false,
-            ),
-        )
+        // SOCIAL-U7A (Opção B): a sessão armada é print XOR vídeo — o
+        // mini-menu mostra só a ação compatível com o modo ativo, nunca as
+        // duas juntas (cada MediaProjection só sustenta um VirtualDisplay).
+        val mode = ScreenCaptureService.instance?.getMode()
+        if (mode == ScreenCaptureService.MODE_VIDEO) {
+            container.addView(
+                buildMenuItem(density, "Gravar vídeo", Color.parseColor("#3B82F6"), enabled = true) {
+                    // Same hide-before-act pattern as "Capturar tela" so the A+
+                    // button/menu never appear inside the recorded clip.
+                    hide()
+                    Handler(context.mainLooper).postDelayed({
+                        ScreenCaptureService.instance?.startVideoRecording()
+                    }, 400)
+                },
+            )
+        } else {
+            container.addView(
+                buildMenuItem(density, "Capturar tela", Color.parseColor("#22C55E"), enabled = true) {
+                    // Reusa a MediaProjection já concedida pelo Modo Captura da Sessão —
+                    // não abre novo diálogo de consentimento nem traz o Apex para frente.
+                    // Esconde o overlay (botão A+ e mini-menu) ANTES de capturar para que
+                    // eles não apareçam no frame salvo; aguarda o WindowManager assentar.
+                    hide()
+                    Handler(context.mainLooper).postDelayed({
+                        ScreenCaptureService.instance?.captureNow()
+                    }, 400)
+                },
+            )
+        }
         container.addView(
             buildMenuItem(density, "Fechar", Color.parseColor("#A1A1AA"), enabled = true) {
                 hideMiniMenu()
