@@ -2870,4 +2870,132 @@ class AppStrings {
     AppLanguage.en   => 'View card',
     AppLanguage.es   => 'Ver tarjeta',
   };
+
+  // ─── Unlock / Desbloqueio único (BILL-U1B) ────────────────────────────────────
+
+  String get unlockCardTitle => switch (lang) {
+    AppLanguage.ptBr => 'Desbloqueio único',
+    AppLanguage.en   => 'One-time unlock',
+    AppLanguage.es   => 'Desbloqueo único',
+  };
+
+  String get unlockCardSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Compra única, sem assinatura',
+    AppLanguage.en   => 'One-time purchase, no subscription',
+    AppLanguage.es   => 'Compra única, sin suscripción',
+  };
+
+  String get unlockCardAction => switch (lang) {
+    AppLanguage.ptBr => 'Ver desbloqueio',
+    AppLanguage.en   => 'View unlock',
+    AppLanguage.es   => 'Ver desbloqueo',
+  };
+
+  String get unlockScreenTitle => switch (lang) {
+    AppLanguage.ptBr => 'Desbloqueio Apex Booster+',
+    AppLanguage.en   => 'Apex Booster+ Unlock',
+    AppLanguage.es   => 'Desbloqueo Apex Booster+',
+  };
+
+  String get unlockBenefitsLabel => switch (lang) {
+    AppLanguage.ptBr => 'O que você desbloqueia',
+    AppLanguage.en   => 'What you unlock',
+    AppLanguage.es   => 'Qué desbloqueas',
+  };
+
+  String get unlockBenefit1 => switch (lang) {
+    AppLanguage.ptBr => 'Acesso completo ao Apex Studio e captura de momentos',
+    AppLanguage.en   => 'Full access to Apex Studio and moment capture',
+    AppLanguage.es   => 'Acceso completo a Apex Studio y captura de momentos',
+  };
+
+  String get unlockBenefit2 => switch (lang) {
+    AppLanguage.ptBr => 'Perfis GFX ilimitados por jogo',
+    AppLanguage.en   => 'Unlimited GFX profiles per game',
+    AppLanguage.es   => 'Perfiles GFX ilimitados por juego',
+  };
+
+  String get unlockBenefit3 => switch (lang) {
+    AppLanguage.ptBr => 'Apoia o desenvolvimento contínuo do app',
+    AppLanguage.en   => 'Supports the app\'s ongoing development',
+    AppLanguage.es   => 'Apoya el desarrollo continuo de la app',
+  };
+
+  String get unlockPriceLabel => switch (lang) {
+    AppLanguage.ptBr => 'R\$ 2,99 (preço informativo)',
+    AppLanguage.en   => 'US\$ 2.99 (informational price)',
+    AppLanguage.es   => 'US\$ 2.99 (precio informativo)',
+  };
+
+  String get unlockPriceNote => switch (lang) {
+    AppLanguage.ptBr => 'Valor final definido pela loja no momento da compra.',
+    AppLanguage.en   => 'Final price is set by the store at purchase time.',
+    AppLanguage.es   => 'El precio final lo define la tienda al momento de la compra.',
+  };
+
+  String get unlockBuyButton => switch (lang) {
+    AppLanguage.ptBr => 'Desbloquear agora',
+    AppLanguage.en   => 'Unlock now',
+    AppLanguage.es   => 'Desbloquear ahora',
+  };
+
+  String get unlockRestoreButton => switch (lang) {
+    AppLanguage.ptBr => 'Restaurar compra',
+    AppLanguage.en   => 'Restore purchase',
+    AppLanguage.es   => 'Restaurar compra',
+  };
+
+  String get unlockUnlockedTitle => switch (lang) {
+    AppLanguage.ptBr => 'Desbloqueado',
+    AppLanguage.en   => 'Unlocked',
+    AppLanguage.es   => 'Desbloqueado',
+  };
+
+  String get unlockUnlockedDesc => switch (lang) {
+    AppLanguage.ptBr => 'Obrigado por apoiar o Apex Booster+. Todos os recursos premium estão liberados.',
+    AppLanguage.en   => 'Thank you for supporting Apex Booster+. All premium features are unlocked.',
+    AppLanguage.es   => 'Gracias por apoyar Apex Booster+. Todas las funciones premium están desbloqueadas.',
+  };
+
+  String get unlockUnavailableTitle => switch (lang) {
+    AppLanguage.ptBr => 'Loja indisponível',
+    AppLanguage.en   => 'Store unavailable',
+    AppLanguage.es   => 'Tienda no disponible',
+  };
+
+  String get unlockUnavailableDesc => switch (lang) {
+    AppLanguage.ptBr => 'Não foi possível conectar à loja agora. Tente novamente mais tarde.',
+    AppLanguage.en   => 'We could not reach the store right now. Please try again later.',
+    AppLanguage.es   => 'No pudimos conectar con la tienda ahora. Inténtalo de nuevo más tarde.',
+  };
+
+  String get unlockErrorTitle => switch (lang) {
+    AppLanguage.ptBr => 'Algo deu errado',
+    AppLanguage.en   => 'Something went wrong',
+    AppLanguage.es   => 'Algo salió mal',
+  };
+
+  String get unlockErrorDesc => switch (lang) {
+    AppLanguage.ptBr => 'Não foi possível concluir a compra. Tente novamente.',
+    AppLanguage.en   => 'We could not complete the purchase. Please try again.',
+    AppLanguage.es   => 'No pudimos completar la compra. Inténtalo de nuevo.',
+  };
+
+  String get unlockRestoreSuccess => switch (lang) {
+    AppLanguage.ptBr => 'Compra restaurada com sucesso.',
+    AppLanguage.en   => 'Purchase restored successfully.',
+    AppLanguage.es   => 'Compra restaurada con éxito.',
+  };
+
+  String get unlockRestoreNotFound => switch (lang) {
+    AppLanguage.ptBr => 'Nenhuma compra encontrada para restaurar.',
+    AppLanguage.en   => 'No previous purchase found to restore.',
+    AppLanguage.es   => 'No se encontró ninguna compra para restaurar.',
+  };
+
+  String get unlockDisclaimer => switch (lang) {
+    AppLanguage.ptBr => 'Desbloqueio único de recursos do app. Não altera desempenho de jogos de terceiros.',
+    AppLanguage.en   => 'One-time unlock of app features. Does not alter third-party game performance.',
+    AppLanguage.es   => 'Desbloqueo único de funciones de la app. No altera el rendimiento de juegos de terceros.',
+  };
 }

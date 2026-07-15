@@ -10,6 +10,7 @@ import '../../presentation/screens/gfx_profile/gfx_profile_screen.dart';
 import '../../presentation/screens/configuracoes/honest_booster_mode_screen.dart';
 import '../../presentation/screens/result_card/result_card_screen.dart';
 import '../../presentation/screens/share_studio/share_studio_screen.dart';
+import '../../presentation/screens/unlock/apex_unlock_screen.dart';
 import '../../domain/entities/session_record.dart';
 
 final appRouter = GoRouter(
@@ -64,6 +65,10 @@ final appRouter = GoRouter(
       builder: (context, state) => ResultCardScreen(
         session: state.extra is SessionRecord ? state.extra as SessionRecord : null,
       ),
+    ),
+    GoRoute(
+      path: '/unlock',
+      builder: (context, state) => const ApexUnlockScreen(),
     ),
   ],
 );

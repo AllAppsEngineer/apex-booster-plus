@@ -6,13 +6,40 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:apex_booster_plus/core/billing/purchase_service.dart';
 
 class _FakeBillingClient implements BillingClient {
-  _FakeBillingClient({this.available = true, this.availableError, this.restoreError});
+  _FakeBillingClient({
+    this.available = true,
+    this.availableError,
+    this.restoreError,
+    this.queryError,
+    this.buyError,
+    List<ProductDetails>? products,
+    List<String>? notFoundIDs,
+    IAPError? productQueryError,
+  })  : _products = products ??
+            [
+              ProductDetails(
+                id: kApexFullUnlockProductId,
+                title: 'Apex Booster+ Unlock',
+                description: 'One-time unlock',
+                price: 'R\$ 2,99',
+                rawPrice: 2.99,
+                currencyCode: 'BRL',
+              ),
+            ],
+        _notFoundIDs = notFoundIDs ?? const [],
+        _productQueryError = productQueryError;
 
   bool available;
   Object? availableError;
   Object? restoreError;
+  Object? queryError;
+  Object? buyError;
+  final List<ProductDetails> _products;
+  final List<String> _notFoundIDs;
+  final IAPError? _productQueryError;
   int restoreCallCount = 0;
   final List<PurchaseDetails> completedPurchases = [];
+  final List<PurchaseParam> buyNonConsumableCalls = [];
   final _controller = StreamController<List<PurchaseDetails>>.broadcast();
 
   @override
@@ -33,6 +60,23 @@ class _FakeBillingClient implements BillingClient {
   @override
   Future<void> completePurchase(PurchaseDetails purchase) async {
     completedPurchases.add(purchase);
+  }
+
+  @override
+  Future<ProductDetailsResponse> queryProductDetails(Set<String> identifiers) async {
+    if (queryError != null) throw queryError!;
+    return ProductDetailsResponse(
+      productDetails: _products,
+      notFoundIDs: _notFoundIDs,
+      error: _productQueryError,
+    );
+  }
+
+  @override
+  Future<bool> buyNonConsumable(PurchaseParam purchaseParam) async {
+    if (buyError != null) throw buyError!;
+    buyNonConsumableCalls.add(purchaseParam);
+    return true;
   }
 
   void emit(List<PurchaseDetails> purchases) => _controller.add(purchases);
@@ -224,6 +268,148 @@ void main() {
 
       expect(notifier.value, false);
       fake.dispose();
+    });
+
+    group('ensureSubscribed()', () {
+      test('receives purchase updates without calling isAvailable or restorePurchases', () async {
+        final fake = _FakeBillingClient();
+        final notifier = ValueNotifier<bool>(false);
+        final service = PurchaseService(
+          client: fake,
+          unlockNotifier: notifier,
+          persistUnlock: (_) async {},
+        );
+
+        service.ensureSubscribed();
+        fake.emit([
+          _purchase(productId: kApexFullUnlockProductId, status: PurchaseStatus.purchased),
+        ]);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(notifier.value, true);
+        expect(fake.restoreCallCount, 0);
+        fake.dispose();
+      });
+
+      test('is idempotent — calling it twice does not create a duplicate subscription', () async {
+        final fake = _FakeBillingClient();
+        final notifier = ValueNotifier<bool>(false);
+        var persistCalls = 0;
+        final service = PurchaseService(
+          client: fake,
+          unlockNotifier: notifier,
+          persistUnlock: (_) async => persistCalls++,
+        );
+
+        service.ensureSubscribed();
+        service.ensureSubscribed();
+        fake.emit([
+          _purchase(productId: kApexFullUnlockProductId, status: PurchaseStatus.purchased),
+        ]);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(persistCalls, 1);
+        fake.dispose();
+      });
+    });
+
+    group('buy()', () {
+      test('throws PurchaseUnavailableException when the store is unavailable', () async {
+        final fake = _FakeBillingClient(available: false);
+        final service = PurchaseService(
+          client: fake,
+          unlockNotifier: ValueNotifier<bool>(false),
+          persistUnlock: (_) async {},
+        );
+
+        await expectLater(service.buy(), throwsA(isA<PurchaseUnavailableException>()));
+        fake.dispose();
+      });
+
+      test('throws PurchaseUnavailableException when isAvailable() fails (offline)', () async {
+        final fake = _FakeBillingClient(availableError: Exception('offline'));
+        final service = PurchaseService(
+          client: fake,
+          unlockNotifier: ValueNotifier<bool>(false),
+          persistUnlock: (_) async {},
+        );
+
+        await expectLater(service.buy(), throwsA(isA<PurchaseUnavailableException>()));
+        fake.dispose();
+      });
+
+      test('throws PurchaseUnavailableException when the product is not found', () async {
+        final fake = _FakeBillingClient(
+          products: const [],
+          notFoundIDs: const [kApexFullUnlockProductId],
+        );
+        final service = PurchaseService(
+          client: fake,
+          unlockNotifier: ValueNotifier<bool>(false),
+          persistUnlock: (_) async {},
+        );
+
+        await expectLater(service.buy(), throwsA(isA<PurchaseUnavailableException>()));
+        fake.dispose();
+      });
+
+      test('throws PurchaseUnavailableException when the product query returns an error', () async {
+        final fake = _FakeBillingClient(
+          products: const [],
+          productQueryError: IAPError(
+            source: 'test',
+            code: 'not_found',
+            message: 'product not configured',
+          ),
+        );
+        final service = PurchaseService(
+          client: fake,
+          unlockNotifier: ValueNotifier<bool>(false),
+          persistUnlock: (_) async {},
+        );
+
+        await expectLater(service.buy(), throwsA(isA<PurchaseUnavailableException>()));
+        fake.dispose();
+      });
+
+      test('throws PurchaseFailedException when queryProductDetails throws', () async {
+        final fake = _FakeBillingClient(queryError: Exception('network error'));
+        final service = PurchaseService(
+          client: fake,
+          unlockNotifier: ValueNotifier<bool>(false),
+          persistUnlock: (_) async {},
+        );
+
+        await expectLater(service.buy(), throwsA(isA<PurchaseFailedException>()));
+        fake.dispose();
+      });
+
+      test('throws PurchaseFailedException when buyNonConsumable throws', () async {
+        final fake = _FakeBillingClient(buyError: Exception('payment declined'));
+        final service = PurchaseService(
+          client: fake,
+          unlockNotifier: ValueNotifier<bool>(false),
+          persistUnlock: (_) async {},
+        );
+
+        await expectLater(service.buy(), throwsA(isA<PurchaseFailedException>()));
+        fake.dispose();
+      });
+
+      test('calls buyNonConsumable with the apex_full_unlock product when everything succeeds', () async {
+        final fake = _FakeBillingClient();
+        final service = PurchaseService(
+          client: fake,
+          unlockNotifier: ValueNotifier<bool>(false),
+          persistUnlock: (_) async {},
+        );
+
+        await service.buy();
+
+        expect(fake.buyNonConsumableCalls, hasLength(1));
+        expect(fake.buyNonConsumableCalls.single.productDetails.id, kApexFullUnlockProductId);
+        fake.dispose();
+      });
     });
   });
 }

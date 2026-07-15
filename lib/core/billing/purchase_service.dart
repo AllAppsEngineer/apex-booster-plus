@@ -17,6 +17,8 @@ abstract class BillingClient {
   Future<void> restorePurchases();
   Stream<List<PurchaseDetails>> get purchaseStream;
   Future<void> completePurchase(PurchaseDetails purchase);
+  Future<ProductDetailsResponse> queryProductDetails(Set<String> identifiers);
+  Future<bool> buyNonConsumable(PurchaseParam purchaseParam);
 }
 
 /// Default [BillingClient] backed by the real `in_app_purchase` plugin.
@@ -36,6 +38,30 @@ class InAppPurchaseBillingClient implements BillingClient {
 
   @override
   Future<void> completePurchase(PurchaseDetails purchase) => _iap.completePurchase(purchase);
+
+  @override
+  Future<ProductDetailsResponse> queryProductDetails(Set<String> identifiers) =>
+      _iap.queryProductDetails(identifiers);
+
+  @override
+  Future<bool> buyNonConsumable(PurchaseParam purchaseParam) =>
+      _iap.buyNonConsumable(purchaseParam: purchaseParam);
+}
+
+/// Thrown by [PurchaseService.buy] when the store or the product is not
+/// reachable (offline, store unavailable, product not configured yet).
+///
+/// The UI must render a friendly "unavailable" state for this, never a crash.
+class PurchaseUnavailableException implements Exception {
+  const PurchaseUnavailableException();
+}
+
+/// Thrown by [PurchaseService.buy] when the store responded but the purchase
+/// attempt itself failed (query or buy call errored).
+///
+/// The UI must render a friendly error state for this, never a crash.
+class PurchaseFailedException implements Exception {
+  const PurchaseFailedException();
 }
 
 /// Technical foundation for the one-time unlock (`apex_full_unlock`).
@@ -65,10 +91,7 @@ class PurchaseService {
   /// blocks on network/store availability. If billing is unavailable or the
   /// device is offline, the previously cached unlock state is left as-is.
   Future<void> startupCheck() async {
-    _subscription ??= _client.purchaseStream.listen(
-      _handlePurchaseUpdates,
-      onError: (Object _, StackTrace __) {},
-    );
+    ensureSubscribed();
 
     try {
       final available = await _client.isAvailable();
@@ -76,6 +99,54 @@ class PurchaseService {
       await _client.restorePurchases();
     } catch (_) {
       // Offline or store unavailable: keep the last known cached state.
+    }
+  }
+
+  /// Subscribes to [purchaseStream] without querying the store.
+  ///
+  /// Safe to call multiple times (at most one subscription is ever created)
+  /// and safe to call before or after [startupCheck]. Use this when a screen
+  /// needs to receive purchase confirmations (e.g. from [buy]) without
+  /// triggering an active restore/availability round-trip to the store.
+  void ensureSubscribed() {
+    _subscription ??= _client.purchaseStream.listen(
+      _handlePurchaseUpdates,
+      onError: (Object _, StackTrace __) {},
+    );
+  }
+
+  /// Starts the purchase flow for [kApexFullUnlockProductId].
+  ///
+  /// Returns once the purchase has been *initiated* — completion (or
+  /// failure) arrives later through [purchaseStream] and is handled by
+  /// [_handlePurchaseUpdates]. Never leaves the unlock state in a fake
+  /// "purchased" state: only a real [PurchaseStatus.purchased] or
+  /// [PurchaseStatus.restored] update flips [unlockNotifier].
+  Future<void> buy() async {
+    bool available;
+    try {
+      available = await _client.isAvailable();
+    } catch (_) {
+      throw const PurchaseUnavailableException();
+    }
+    if (!available) throw const PurchaseUnavailableException();
+
+    final ProductDetailsResponse response;
+    try {
+      response = await _client.queryProductDetails({kApexFullUnlockProductId});
+    } catch (_) {
+      throw const PurchaseFailedException();
+    }
+    if (response.error != null || response.productDetails.isEmpty) {
+      throw const PurchaseUnavailableException();
+    }
+
+    try {
+      await _client.buyNonConsumable(
+        PurchaseParam(productDetails: response.productDetails.first),
+      );
+    } catch (_) {
+      throw const PurchaseFailedException();
     }
   }
 

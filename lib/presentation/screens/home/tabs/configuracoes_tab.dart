@@ -42,6 +42,8 @@ class ConfiguracoesTab extends StatelessWidget {
                   const SizedBox(height: 12),
                   _HonestBoosterCard(),
                   const SizedBox(height: 12),
+                  _UnlockCard(),
+                  const SizedBox(height: 12),
                   _LowDistractionCard(),
                   const SizedBox(height: 12),
                   FloatingCaptureCard(),
@@ -1093,6 +1095,103 @@ class _HonestBoosterCard extends StatelessWidget {
     )
         .animate()
         .fadeIn(delay: 120.ms, duration: 500.ms)
+        .slideY(begin: 0.04, end: 0, duration: 380.ms);
+  }
+}
+
+// ─── Desbloqueio único ───────────────────────────────────────────────────────
+
+class _UnlockCard extends StatelessWidget {
+  const _UnlockCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings(languageNotifier.value);
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: () => context.push('/unlock'),
+        borderRadius: BorderRadius.circular(12),
+        splashColor: AppColors.apexGreen.withValues(alpha: 0.08),
+        highlightColor: AppColors.apexGreen.withValues(alpha: 0.04),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.apexGreen.withValues(alpha: 0.08),
+                AppColors.white.withValues(alpha: 0.03),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.apexGreen.withValues(alpha: 0.22),
+              width: 1,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.apexGreen.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.lock_open_rounded,
+                  color: AppColors.apexGreen,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.unlockCardTitle,
+                      style: const TextStyle(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      s.unlockCardSubtitle,
+                      style: TextStyle(
+                        color: AppColors.textGray.withValues(alpha: 0.8),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                s.unlockCardAction,
+                style: const TextStyle(
+                  color: AppColors.apexGreen,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.apexGreen.withValues(alpha: 0.45),
+                size: 18,
+              ),
+            ],
+          ),
+        ),
+      ),
+    )
+        .animate()
+        .fadeIn(delay: 140.ms, duration: 500.ms)
         .slideY(begin: 0.04, end: 0, duration: 380.ms);
   }
 }
