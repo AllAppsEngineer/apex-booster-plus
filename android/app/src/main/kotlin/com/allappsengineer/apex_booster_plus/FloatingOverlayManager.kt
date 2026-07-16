@@ -207,7 +207,18 @@ internal class FloatingOverlayManager private constructor(private val context: C
         }
         container.addView(
             buildMenuItem(density, "Fechar", Color.parseColor("#A1A1AA"), enabled = true) {
-                hideMiniMenu()
+                // stopSession() is the single teardown path already used by
+                // onDestroy/onTaskRemoved/disarmSession — it desarms the
+                // capture session AND calls hide() internally, which removes
+                // both the mini-menu and the A+ button with no orphan view.
+                // Fallback to hide() directly covers the case where the
+                // session already ended but the button somehow remained.
+                val service = ScreenCaptureService.instance
+                if (service != null) {
+                    service.stopSession()
+                } else {
+                    hide()
+                }
             },
         )
 

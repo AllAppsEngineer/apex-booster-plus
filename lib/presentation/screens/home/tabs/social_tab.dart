@@ -156,11 +156,120 @@ class _CreateCardSection extends StatelessWidget {
                 fontSize: 13,
               ),
             )
-          else
+          else ...[
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                key: const Key('social_tab_create_new_card_cta'),
+                onPressed: () => _openGameChooser(context, s, games),
+                icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
+                label: Text(
+                  s.socialTabCreateNewCardCta,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.apexGreen,
+                  foregroundColor: Colors.black,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              s.socialTabQuickAccessLabel.toUpperCase(),
+              style: TextStyle(
+                color: AppColors.textGray.withValues(alpha: 0.6),
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: 4),
             Column(
               children: [for (final game in games) _GamePickerTile(game: game)],
             ),
+          ],
         ],
+      ),
+    );
+  }
+
+  void _openGameChooser(
+      BuildContext context, AppStrings s, List<ApexGame> games) {
+    if (games.isEmpty) return;
+    if (games.length == 1) {
+      debugPrint('[ApexStudio] create new card cta - single game shortcut');
+      context.push('/share-studio/${games.first.id}');
+      return;
+    }
+    debugPrint('[ApexStudio] create new card cta - opening game chooser');
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF111111),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => _GameChooserSheet(s: s, games: games),
+    );
+  }
+}
+
+class _GameChooserSheet extends StatelessWidget {
+  final AppStrings s;
+  final List<ApexGame> games;
+
+  const _GameChooserSheet({required this.s, required this.games});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF333333),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              s.socialTabChooseGameSheetTitle,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              s.socialTabChooseGameSheetSubtitle,
+              style: const TextStyle(
+                color: Color(0xFF666666),
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 12),
+            for (final game in games)
+              _GamePickerTile(
+                game: game,
+                onBeforeNavigate: () => Navigator.of(context).pop(),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -168,7 +277,8 @@ class _CreateCardSection extends StatelessWidget {
 
 class _GamePickerTile extends StatelessWidget {
   final ApexGame game;
-  const _GamePickerTile({required this.game});
+  final VoidCallback? onBeforeNavigate;
+  const _GamePickerTile({required this.game, this.onBeforeNavigate});
 
   @override
   Widget build(BuildContext context) {
@@ -179,6 +289,7 @@ class _GamePickerTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         onTap: () {
           debugPrint('[ApexStudio] social tab game tapped');
+          onBeforeNavigate?.call();
           context.push('/share-studio/${game.id}');
         },
         child: Padding(

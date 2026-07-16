@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,12 +20,12 @@ void main() {
     expect(find.text('Apex Studio'), findsOneWidget);
   });
 
-  testWidgets('ApexStudioScreen shows export button', (tester) async {
+  testWidgets('ApexStudioScreen shows generate card button by default', (tester) async {
     await tester.pumpWidget(const MaterialApp(
       home: ApexStudioScreen(gameId: 'test-game'),
     ));
     await tester.pumpAndSettle();
-    expect(find.text('Exportar'), findsOneWidget);
+    expect(find.text('Gerar card'), findsOneWidget);
   });
 
   testWidgets('ApexStudioScreen shows caption hint', (tester) async {
@@ -152,6 +154,82 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(
       find.textContaining('fase futura'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+      'ApexStudioScreen shows generate card as primary action and original clip as secondary action for video',
+      (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: ApexStudioScreen(
+        gameId: 'test-game',
+        initialMediaPath: '/fake/path/clip.mp4',
+      ),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Gerar card'), findsOneWidget);
+    expect(find.text('Compartilhar clipe original'), findsOneWidget);
+    final disabledBtn = find.byWidgetPredicate(
+      (w) => w is ButtonStyleButton && w.onPressed == null,
+    );
+    expect(disabledBtn, findsNothing);
+  });
+
+  testWidgets(
+      'ApexStudioScreen renders original clip share as its own secondary button, separate from the honest notice',
+      (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: ApexStudioScreen(
+        gameId: 'test-game',
+        initialMediaPath: '/fake/path/clip.mp4',
+      ),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    // The honest notice keeps its own text, unrelated to the share action.
+    expect(find.textContaining('fase futura'), findsOneWidget);
+
+    final shareButtonFinder =
+        find.byKey(const Key('apex_studio_share_original_clip_button'));
+    expect(shareButtonFinder, findsOneWidget);
+    // Confirms it renders as a real secondary button, not a plain text link.
+    expect(tester.widget<OutlinedButton>(shareButtonFinder), isNotNull);
+  });
+
+  testWidgets(
+      'ApexStudioScreen shows friendly error when sharing a video file that does not exist',
+      (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: ApexStudioScreen(
+        gameId: 'test-game',
+        initialMediaPath: '/fake/path/clip.mp4',
+      ),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    final shareOriginalClip = find.text('Compartilhar clipe original');
+    await tester.ensureVisible(shareOriginalClip);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(shareOriginalClip);
+    // The video card preview keeps an infinite scan-line animation running,
+    // so pumpAndSettle would never settle; step manually instead.
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    // Privacy Guard sheet appears before the share action runs; confirm it.
+    await tester.tap(find.text('Exportar'));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(
+      find.text('Não foi possível encontrar o vídeo capturado.'),
       findsOneWidget,
     );
   });
@@ -403,9 +481,62 @@ void main() {
       expect(disabledExportBtn, findsOneWidget);
     }, timeout: const Timeout(Duration(seconds: 30)));
   });
+
+  testWidgets(
+      'ApexStudioScreen opens the Apex captures sheet immediately with a loading placeholder, without waiting for listCaptures',
+      (tester) async {
+    final completer = Completer<List<CapturedScreenshot>>();
+    final service = _DelayedFakeGalleryService(completer.future);
+
+    await tester.pumpWidget(MaterialApp(
+      home: ApexStudioScreen(gameId: 'test-game', galleryService: service),
+    ));
+    await tester.pumpAndSettle();
+
+    final addMediaButton = find.text('Adicionar print ou vídeo');
+    await tester.ensureVisible(addMediaButton);
+    await tester.pumpAndSettle();
+    await tester.tap(addMediaButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Capturas do Apex'));
+    await tester.pump();
+    await tester.pump();
+
+    // The sheet is already open with a loading placeholder — listCaptures()
+    // has not resolved yet, so it never blocked opening the sheet.
+    expect(find.text('Capturas do Apex'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsWidgets);
+    expect(
+      find.text(
+        'Nenhuma captura disponível ainda. Capture pela tela do jogo com o botão flutuante A+.',
+      ),
+      findsNothing,
+    );
+
+    completer.complete(<CapturedScreenshot>[]);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Nenhuma captura disponível ainda. Capture pela tela do jogo com o botão flutuante A+.',
+      ),
+      findsOneWidget,
+    );
+  });
 }
 
 final _fakeTimestamp = DateTime.fromMillisecondsSinceEpoch(1000);
+
+/// Lets a test control exactly when listCaptures() resolves, so the sheet's
+/// intermediate loading state can be observed deterministically.
+class _DelayedFakeGalleryService extends ScreenCaptureGalleryService {
+  _DelayedFakeGalleryService(this._future) : super(resolveBaseDir: () async => null);
+
+  final Future<List<CapturedScreenshot>> _future;
+
+  @override
+  Future<List<CapturedScreenshot>> listCaptures() => _future;
+}
 
 /// Resolves via plain Dart Futures only — no real file I/O — so it can be
 /// driven through gesture-triggered async gaps in a widget test. Real

@@ -2256,6 +2256,30 @@ class AppStrings {
     AppLanguage.es   => 'Agrega un juego en la Biblioteca para crear una tarjeta.',
   };
 
+  String get socialTabCreateNewCardCta => switch (lang) {
+    AppLanguage.ptBr => 'Criar novo card',
+    AppLanguage.en   => 'Create new card',
+    AppLanguage.es   => 'Crear nueva tarjeta',
+  };
+
+  String get socialTabQuickAccessLabel => switch (lang) {
+    AppLanguage.ptBr => 'Acesso rápido',
+    AppLanguage.en   => 'Quick access',
+    AppLanguage.es   => 'Acceso rápido',
+  };
+
+  String get socialTabChooseGameSheetTitle => switch (lang) {
+    AppLanguage.ptBr => 'Escolher jogo',
+    AppLanguage.en   => 'Choose game',
+    AppLanguage.es   => 'Elegir juego',
+  };
+
+  String get socialTabChooseGameSheetSubtitle => switch (lang) {
+    AppLanguage.ptBr => 'Selecione o jogo para criar o card.',
+    AppLanguage.en   => 'Select the game to create the card.',
+    AppLanguage.es   => 'Selecciona el juego para crear la tarjeta.',
+  };
+
   // ─── Social — Apex Studio media (SOCIAL-U1B) ─────────────────────────────────
 
   String get apexStudioMediaSection => switch (lang) {
@@ -2325,9 +2349,27 @@ class AppStrings {
   };
 
   String get apexStudioVideoExportNotice => switch (lang) {
-    AppLanguage.ptBr => 'Vídeo selecionado. Exportação em vídeo será ativada em fase futura.',
-    AppLanguage.en   => 'Video selected. Video export will be available in a future phase.',
-    AppLanguage.es   => 'Video seleccionado. La exportación de video estará disponible en una fase futura.',
+    AppLanguage.ptBr => 'O card usa a imagem do vídeo. Vídeo com moldura animada será fase futura.',
+    AppLanguage.en   => 'The card uses a still from your video. Animated video framing will be a future phase.',
+    AppLanguage.es   => 'La tarjeta usa una imagen del video. El video con marco animado será una fase futura.',
+  };
+
+  String get apexStudioGenerateCardLabel => switch (lang) {
+    AppLanguage.ptBr => 'Gerar card',
+    AppLanguage.en   => 'Generate card',
+    AppLanguage.es   => 'Generar tarjeta',
+  };
+
+  String get apexStudioShareOriginalClipLabel => switch (lang) {
+    AppLanguage.ptBr => 'Compartilhar clipe original',
+    AppLanguage.en   => 'Share original clip',
+    AppLanguage.es   => 'Compartir clip original',
+  };
+
+  String get apexStudioVideoMissingError => switch (lang) {
+    AppLanguage.ptBr => 'Não foi possível encontrar o vídeo capturado.',
+    AppLanguage.en   => 'Could not find the captured video.',
+    AppLanguage.es   => 'No se pudo encontrar el video capturado.',
   };
 
   String get apexStudioMediaError => switch (lang) {

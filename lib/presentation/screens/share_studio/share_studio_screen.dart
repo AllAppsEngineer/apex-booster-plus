@@ -53,9 +53,15 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
   Uint8List? _videoThumbnail;
   late final ScreenCaptureGalleryService _galleryService;
 
+  // Reference point for T+ timing logs (same pattern as [DETAIL-NAV]).
+  final int _t0 = DateTime.now().millisecondsSinceEpoch;
+
+  int get _tms => DateTime.now().millisecondsSinceEpoch - _t0;
+
   @override
   void initState() {
     super.initState();
+    debugPrint('[ApexStudio] T+${_tms}ms studio init');
     _galleryService = widget.galleryService ?? ScreenCaptureGalleryService();
     _lang = languageNotifier.value;
     final path = widget.initialMediaPath;
@@ -73,11 +79,14 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
     _mediaPath = path;
     _mediaIsVideo = isVideo;
     _loaded = true;
-    if (isVideo) {
-      _generateVideoThumbnail(path);
-    }
+    // Thumbnail generation is kicked off after the first frame paints (not
+    // here in initState) so the native platform-channel round trip never
+    // competes with the page-transition frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      debugPrint('[ApexStudio] detail first frame rendered');
+      debugPrint('[ApexStudio] T+${_tms}ms studio first frame');
+      if (isVideo) {
+        _generateVideoThumbnail(path);
+      }
     });
   }
 
@@ -98,6 +107,7 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
   }
 
   Future<void> _generateVideoThumbnail(String path) async {
+    debugPrint('[ApexStudio] T+${_tms}ms thumbnail generation started');
     try {
       final bytes = await VideoThumbnail.thumbnailData(
         video: path,
@@ -105,9 +115,13 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
         maxWidth: 144,
         quality: 75,
       );
+      debugPrint(
+          '[ApexStudio] T+${_tms}ms thumbnail generation ended (bytes=${bytes?.length})');
       if (!mounted || bytes == null) return;
       setState(() => _videoThumbnail = bytes);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[ApexStudio] T+${_tms}ms thumbnail generation failed ($e)');
+    }
   }
 
   @override
@@ -117,7 +131,7 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
     super.dispose();
   }
 
-  bool get _canExport => _mediaPath != null && !_mediaIsVideo;
+  bool get _canExport => _mediaPath != null;
 
   SocialTemplate get _activeTemplate =>
       kSocialTemplates.firstWhere((t) => t.id == _selectedTemplateId);
@@ -179,9 +193,9 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
   }
 
   Future<void> _pickApexCapture(AppStrings s) async {
-    final captures = await _galleryService.listCaptures();
-    if (!mounted) return;
-
+    // Sheet opens immediately with a lightweight loading placeholder;
+    // listCaptures() resolves inside the sheet so it never blocks navigation.
+    debugPrint('[ApexStudio] T+${_tms}ms apex captures sheet opened (async load)');
     final selected = await showModalBottomSheet<CapturedScreenshot>(
       context: context,
       backgroundColor: const Color(0xFF111111),
@@ -190,13 +204,13 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (_) => _ApexCapturesSheet(
-        captures: captures,
         galleryService: _galleryService,
         title: s.apexStudioCapturesSheetTitle,
         subtitle: s.apexStudioCapturesSheetSubtitle,
         emptyMessage: s.apexStudioCapturesEmpty,
         mostRecentLabel: s.apexStudioCaptureMostRecent,
         lang: _lang,
+        t0: _t0,
         onCaptureDeleted: _onApexCaptureDeleted,
       ),
     );
@@ -323,6 +337,37 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
     }
   }
 
+  Future<void> _confirmAndShareOriginalClip() async {
+    final privacyConfirmed = await showPrivacyGuardSheet(context, _lang);
+    if (!privacyConfirmed || !mounted) return;
+    await _shareVideoFile();
+  }
+
+  Future<void> _shareVideoFile() async {
+    final path = _mediaPath;
+    if (path == null) return;
+
+    final file = File(path);
+    if (!file.existsSync()) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppStrings(_lang).apexStudioVideoMissingError),
+          backgroundColor: const Color(0xFF1A1A1A),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _exporting = true);
+    try {
+      await Share.shareXFiles([XFile(path)], text: _card.caption);
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = AppStrings(_lang);
@@ -368,7 +413,7 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
                       )
                     : const Icon(Icons.share_rounded, size: 18),
                 label: Text(
-                  s.socialStudioExport,
+                  s.apexStudioGenerateCardLabel,
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 15),
                 ),
@@ -860,6 +905,37 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                key: const Key('apex_studio_share_original_clip_button'),
+                onPressed: _confirmAndShareOriginalClip,
+                icon: const Icon(
+                  Icons.ios_share_rounded,
+                  color: Color(0xFF3B82F6),
+                  size: 16,
+                ),
+                label: Text(
+                  s.apexStudioShareOriginalClipLabel,
+                  style: const TextStyle(
+                    color: Color(0xFF3B82F6),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(
+                    color: Color(0xFF3B82F6),
+                    width: 1,
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
           ],
         ],
       ),
@@ -1201,22 +1277,22 @@ class _VideoPreviewDialogState extends State<_VideoPreviewDialog> {
 }
 
 class _ApexCapturesSheet extends StatefulWidget {
-  final List<CapturedScreenshot> captures;
   final ScreenCaptureGalleryService galleryService;
   final String title;
   final String subtitle;
   final String emptyMessage;
   final String mostRecentLabel;
   final AppLanguage lang;
+  final int t0;
   final void Function(CapturedScreenshot) onCaptureDeleted;
   const _ApexCapturesSheet({
-    required this.captures,
     required this.galleryService,
     required this.title,
     required this.subtitle,
     required this.emptyMessage,
     required this.mostRecentLabel,
     required this.lang,
+    required this.t0,
     required this.onCaptureDeleted,
   });
 
@@ -1226,11 +1302,26 @@ class _ApexCapturesSheet extends StatefulWidget {
 
 class _ApexCapturesSheetState extends State<_ApexCapturesSheet> {
   final List<CapturedScreenshot> _captures = [];
+  bool _loading = true;
+
+  int get _tms => DateTime.now().millisecondsSinceEpoch - widget.t0;
 
   @override
   void initState() {
     super.initState();
-    _captures.addAll(widget.captures);
+    _load();
+  }
+
+  Future<void> _load() async {
+    debugPrint('[ApexStudio] T+${_tms}ms listCaptures started');
+    final captures = await widget.galleryService.listCaptures();
+    debugPrint(
+        '[ApexStudio] T+${_tms}ms listCaptures ended (count=${captures.length})');
+    if (!mounted) return;
+    setState(() {
+      _captures.addAll(captures);
+      _loading = false;
+    });
   }
 
   Future<void> _confirmDelete(CapturedScreenshot capture) async {
@@ -1341,7 +1432,9 @@ class _ApexCapturesSheetState extends State<_ApexCapturesSheet> {
               ),
             ),
             const SizedBox(height: 16),
-            if (captures.isEmpty)
+            if (_loading)
+              _buildLoadingState()
+            else if (captures.isEmpty)
               _buildEmptyState()
             else
               ConstrainedBox(
@@ -1473,6 +1566,22 @@ class _ApexCapturesSheetState extends State<_ApexCapturesSheet> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 32),
+      child: Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Color(0xFF22C55E),
+          ),
         ),
       ),
     );
