@@ -13,6 +13,8 @@ import 'package:apex_booster_plus/domain/entities/gfx_profile.dart';
 import 'package:apex_booster_plus/domain/entities/session_record.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_feature_card.dart';
+import 'package:apex_booster_plus/presentation/screens/home/home_screen.dart'
+    show homeTabNotifier;
 
 class InicioTab extends StatefulWidget {
   final bool isActive;
@@ -29,6 +31,12 @@ class _InicioTabState extends State<InicioTab> {
   int _sessionCount = 0;
   SessionRecord? _lastSession;
   Uint8List? _lastIconBytes;
+  bool _scanning = false;
+
+  static const int _tabLibrary = 1;
+  static const int _tabPrepare = 2;
+  static const int _tabHistory = 4;
+  static const int _tabSettings = 5;
 
   @override
   void initState() {
@@ -44,6 +52,19 @@ class _InicioTabState extends State<InicioTab> {
     if (widget.isActive && !oldWidget.isActive) {
       _loadData();
     }
+  }
+
+  void _goToTab(int index) {
+    homeTabNotifier.value = index;
+  }
+
+  Future<void> _handleScanTap() async {
+    if (_scanning) return;
+    setState(() => _scanning = true);
+    await Future.delayed(const Duration(milliseconds: 750));
+    if (!mounted) return;
+    setState(() => _scanning = false);
+    _goToTab(_tabPrepare);
   }
 
   Future<void> _loadData() async {
@@ -102,82 +123,143 @@ class _InicioTabState extends State<InicioTab> {
       builder: (context, _) {
         final s = AppStrings(languageNotifier.value);
         return ApexBackground(
-          child: SafeArea(
-            child: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _InicioHeader(),
-                  const SizedBox(height: 28),
-                  if (_lastSession != null) ...[
-                    _LastSessionCard(
-                      session: _lastSession!,
-                      iconBytes: _lastIconBytes,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  _QuickStatsRow(
-                    gameCount: _gameCount,
-                    sessionCount: _sessionCount,
-                    loading: _loading,
+          child: Stack(
+            children: [
+              SafeArea(
+                child: SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _InicioHeader(),
+                      const SizedBox(height: 28),
+                      if (_lastSession != null) ...[
+                        _LastSessionCard(
+                          session: _lastSession!,
+                          iconBytes: _lastIconBytes,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      _QuickStatsRow(
+                        gameCount: _gameCount,
+                        sessionCount: _sessionCount,
+                        loading: _loading,
+                      ),
+                      const SizedBox(height: 16),
+                      ApexFeatureCard(
+                        badge: s.homeLibraryBadge,
+                        title: s.homeLibraryTitle,
+                        subtitle: _loading
+                            ? s.homeLibraryLoadingSubtitle
+                            : s.gameCountStat(_gameCount),
+                        accentColor: AppColors.cyberBlue,
+                        delay: 100.ms,
+                        onTap: () => _goToTab(_tabLibrary),
+                      ),
+                      const SizedBox(height: 12),
+                      ApexFeatureCard(
+                        badge: s.homeHistoryBadge,
+                        title: s.homeHistoryFeatureTitle,
+                        subtitle: _loading
+                            ? s.homeHistoryLoadingSubtitle
+                            : s.sessionCountStat(_sessionCount),
+                        accentColor: AppColors.apexGreen,
+                        delay: 150.ms,
+                        onTap: () => _goToTab(_tabHistory),
+                      ),
+                      const SizedBox(height: 12),
+                      ApexFeatureCard(
+                        badge: s.focusBadge,
+                        title: s.focusTitle,
+                        subtitle: s.homeFocusSubtitle,
+                        accentColor: AppColors.apexGreen,
+                        delay: const Duration(milliseconds: 200),
+                        onTap: () => _goToTab(_tabSettings),
+                      ),
+                      const SizedBox(height: 12),
+                      ApexFeatureCard(
+                        badge: s.prepScanBadge,
+                        title: s.homeScanTitle,
+                        subtitle: s.homeScanSubtitle,
+                        accentColor: AppColors.cyberBlue,
+                        delay: const Duration(milliseconds: 250),
+                        onTap: _handleScanTap,
+                      ),
+                      const SizedBox(height: 12),
+                      ApexFeatureCard(
+                        badge: s.homeGameBadge,
+                        title: s.homeClassTitle,
+                        subtitle: s.homeClassSubtitle,
+                        accentColor: AppColors.apexGreen,
+                        delay: const Duration(milliseconds: 300),
+                        onTap: () => _goToTab(_tabLibrary),
+                      ),
+                      if (!_loading && _lastSession == null) ...[
+                        const SizedBox(height: 24),
+                        _EmptyHint(),
+                      ],
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  ApexFeatureCard(
-                    badge: s.homeLibraryBadge,
-                    title: s.homeLibraryTitle,
-                    subtitle: _loading
-                        ? s.homeLibraryLoadingSubtitle
-                        : s.gameCountStat(_gameCount),
-                    accentColor: AppColors.cyberBlue,
-                    delay: 100.ms,
-                  ),
-                  const SizedBox(height: 12),
-                  ApexFeatureCard(
-                    badge: s.homeHistoryBadge,
-                    title: s.homeHistoryFeatureTitle,
-                    subtitle: _loading
-                        ? s.homeHistoryLoadingSubtitle
-                        : s.sessionCountStat(_sessionCount),
-                    accentColor: AppColors.apexGreen,
-                    delay: 150.ms,
-                  ),
-                  const SizedBox(height: 12),
-                  ApexFeatureCard(
-                    badge: s.focusBadge,
-                    title: s.focusTitle,
-                    subtitle: s.homeFocusSubtitle,
-                    accentColor: AppColors.apexGreen,
-                    delay: const Duration(milliseconds: 200),
-                  ),
-                  const SizedBox(height: 12),
-                  ApexFeatureCard(
-                    badge: s.prepScanBadge,
-                    title: s.homeScanTitle,
-                    subtitle: s.homeScanSubtitle,
-                    accentColor: AppColors.cyberBlue,
-                    delay: const Duration(milliseconds: 250),
-                  ),
-                  const SizedBox(height: 12),
-                  ApexFeatureCard(
-                    badge: s.homeGameBadge,
-                    title: s.homeClassTitle,
-                    subtitle: s.homeClassSubtitle,
-                    accentColor: AppColors.apexGreen,
-                    delay: const Duration(milliseconds: 300),
-                  ),
-                  if (!_loading && _lastSession == null) ...[
-                    const SizedBox(height: 24),
-                    _EmptyHint(),
-                  ],
-                ],
+                ),
               ),
-            ),
+              if (_scanning) _ApexScanOverlay(label: s.homeScanAnimLabel),
+            ],
           ),
         );
       },
     );
+  }
+}
+
+// ── Apex Scan overlay — brief visual transition, no real scan claim ─────────
+
+class _ApexScanOverlay extends StatelessWidget {
+  final String label;
+
+  const _ApexScanOverlay({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Container(
+          color: AppColors.background.withValues(alpha: 0.85),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.cyberBlue.withValues(alpha: 0.6),
+                      width: 2,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.radar_rounded,
+                    color: AppColors.cyberBlue,
+                    size: 32,
+                  ),
+                ).animate(onPlay: (c) => c.repeat()).rotate(duration: 700.ms),
+                const SizedBox(height: 16),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ).animate().fadeIn(duration: 150.ms);
   }
 }
 

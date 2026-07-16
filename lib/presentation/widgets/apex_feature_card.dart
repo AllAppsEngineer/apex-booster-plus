@@ -10,6 +10,7 @@ class ApexFeatureCard extends StatelessWidget {
   final String subtitle;
   final Color accentColor;
   final Duration delay;
+  final VoidCallback? onTap;
 
   const ApexFeatureCard({
     super.key,
@@ -18,6 +19,7 @@ class ApexFeatureCard extends StatelessWidget {
     required this.subtitle,
     this.accentColor = AppColors.apexGreen,
     this.delay = Duration.zero,
+    this.onTap,
   });
 
   @override
@@ -26,73 +28,89 @@ class ApexFeatureCard extends StatelessWidget {
       decoration: ApexCardDecoration.elevated(accentGlow: accentColor),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: Container(
-          decoration: ApexCardDecoration.surface(),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  width: 3,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        accentColor,
-                        accentColor.withValues(alpha: 0.65),
-                      ],
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                        colors: [
-                          accentColor.withValues(alpha: 0.07),
-                          Colors.transparent,
-                        ],
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            splashColor: accentColor.withValues(alpha: 0.12),
+            highlightColor: accentColor.withValues(alpha: 0.06),
+            child: Container(
+              decoration: ApexCardDecoration.surface(),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      width: 3,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            accentColor,
+                            accentColor.withValues(alpha: 0.65),
+                          ],
+                        ),
                       ),
                     ),
-                    padding: const EdgeInsets.fromLTRB(12, 14, 16, 14),
-                    child: Row(
-                      children: [
-                        ApexBadge(label: badge, color: accentColor),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                title,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyLarge
-                                    ?.copyWith(
-                                  color: AppColors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                subtitle,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(fontSize: 12),
-                              ),
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              accentColor.withValues(alpha: 0.07),
+                              Colors.transparent,
                             ],
                           ),
                         ),
-                      ],
+                        padding: const EdgeInsets.fromLTRB(12, 14, 16, 14),
+                        child: Row(
+                          children: [
+                            ApexBadge(label: badge, color: accentColor),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    title,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge
+                                        ?.copyWith(
+                                      color: AppColors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    subtitle,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (onTap != null) ...[
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: accentColor.withValues(alpha: 0.55),
+                                size: 20,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

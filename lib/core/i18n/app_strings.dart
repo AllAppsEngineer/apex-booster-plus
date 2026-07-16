@@ -591,9 +591,9 @@ class AppStrings {
   };
 
   String get homeLibraryTitle => switch (lang) {
-    AppLanguage.ptBr => 'Biblioteca gamer',
-    AppLanguage.en   => 'Game library',
-    AppLanguage.es   => 'Biblioteca gamer',
+    AppLanguage.ptBr => 'Biblioteca Gamer',
+    AppLanguage.en   => 'Game Library',
+    AppLanguage.es   => 'Biblioteca Gamer',
   };
 
   String get homeHistoryBadge => switch (lang) {
@@ -603,9 +603,9 @@ class AppStrings {
   };
 
   String get homeHistoryFeatureTitle => switch (lang) {
-    AppLanguage.ptBr => 'Histórico de sessões',
-    AppLanguage.en   => 'Session history',
-    AppLanguage.es   => 'Historial de sesiones',
+    AppLanguage.ptBr => 'Histórico de Sessão',
+    AppLanguage.en   => 'Session History',
+    AppLanguage.es   => 'Historial de Sesión',
   };
 
   String get homeFocusSubtitle => switch (lang) {
@@ -622,6 +622,12 @@ class AppStrings {
     AppLanguage.es   => 'Diagnóstico en el detalle de cada juego.',
   };
 
+  String get homeScanAnimLabel => switch (lang) {
+    AppLanguage.ptBr => 'Analisando...',
+    AppLanguage.en   => 'Analyzing...',
+    AppLanguage.es   => 'Analizando...',
+  };
+
   String get homeGameBadge => switch (lang) {
     AppLanguage.ptBr => 'GAME',
     AppLanguage.en   => 'GAME',
@@ -629,9 +635,9 @@ class AppStrings {
   };
 
   String get homeClassTitle => switch (lang) {
-    AppLanguage.ptBr => 'Classificação gamer',
-    AppLanguage.en   => 'Gamer classification',
-    AppLanguage.es   => 'Clasificación gamer',
+    AppLanguage.ptBr => 'Classificação Gamer',
+    AppLanguage.en   => 'Gamer Classification',
+    AppLanguage.es   => 'Clasificación Gamer',
   };
 
   String get homeClassSubtitle => switch (lang) {
