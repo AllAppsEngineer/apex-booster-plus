@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apex_booster_plus/data/services/screen_capture_gallery_service.dart';
 import 'package:apex_booster_plus/presentation/screens/share_studio/share_studio_screen.dart';
-import 'package:apex_booster_plus/presentation/widgets/social/share_card_portrait.dart';
+import 'package:apex_booster_plus/presentation/widgets/social/template_share_card.dart';
 
 void main() {
   setUp(() {
@@ -36,13 +36,13 @@ void main() {
     expect(find.text('Escreva sobre sua sessão...'), findsOneWidget);
   });
 
-  testWidgets('ApexStudioScreen shows preset chips', (tester) async {
+  testWidgets('ApexStudioScreen shows orientation toggle', (tester) async {
     await tester.pumpWidget(const MaterialApp(
       home: ApexStudioScreen(gameId: 'test-game'),
     ));
     await tester.pumpAndSettle();
-    expect(find.text('9:16'), findsOneWidget);
-    expect(find.text('1:1'), findsOneWidget);
+    expect(find.text('Vertical'), findsOneWidget);
+    expect(find.text('Horizontal'), findsOneWidget);
   });
 
   testWidgets('ApexStudioScreen shows template selector', (tester) async {
@@ -50,7 +50,7 @@ void main() {
       home: ApexStudioScreen(gameId: 'test-game'),
     ));
     await tester.pumpAndSettle();
-    expect(find.text('Apex Dark'), findsOneWidget);
+    expect(find.text('Neon Grid'), findsOneWidget);
   });
 
   testWidgets('ApexStudioScreen shows add media button', (tester) async {
@@ -143,23 +143,8 @@ void main() {
     expect(find.byIcon(Icons.play_circle_rounded), findsOneWidget);
   });
 
-  testWidgets('ApexStudioScreen shows video export notice for video', (tester) async {
-    await tester.pumpWidget(const MaterialApp(
-      home: ApexStudioScreen(
-        gameId: 'test-game',
-        initialMediaPath: '/fake/path/clip.mp4',
-      ),
-    ));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(
-      find.textContaining('fase futura'),
-      findsOneWidget,
-    );
-  });
-
   testWidgets(
-      'ApexStudioScreen shows generate card as primary action and original clip as secondary action for video',
+      'ApexStudioScreen shows generate video with card as primary action and original clip as secondary action for video',
       (tester) async {
     await tester.pumpWidget(const MaterialApp(
       home: ApexStudioScreen(
@@ -170,7 +155,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('Gerar card'), findsOneWidget);
+    expect(find.text('Gerar vídeo com card'), findsOneWidget);
     expect(find.text('Compartilhar clipe original'), findsOneWidget);
     final disabledBtn = find.byWidgetPredicate(
       (w) => w is ButtonStyleButton && w.onPressed == null,
@@ -179,7 +164,7 @@ void main() {
   });
 
   testWidgets(
-      'ApexStudioScreen renders original clip share as its own secondary button, separate from the honest notice',
+      'ApexStudioScreen renders original clip share as its own secondary button',
       (tester) async {
     await tester.pumpWidget(const MaterialApp(
       home: ApexStudioScreen(
@@ -189,9 +174,6 @@ void main() {
     ));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-
-    // The honest notice keeps its own text, unrelated to the share action.
-    expect(find.textContaining('fase futura'), findsOneWidget);
 
     final shareButtonFinder =
         find.byKey(const Key('apex_studio_share_original_clip_button'));
@@ -262,7 +244,7 @@ void main() {
       find.byKey(const Key('apex_studio_session_name_field')),
     );
     expect(field.controller!.text, isEmpty);
-    final card = tester.widget<ShareCardPortrait>(find.byType(ShareCardPortrait));
+    final card = tester.widget<TemplateShareCard>(find.byType(TemplateShareCard));
     expect(card.card.gameName, isEmpty);
   });
 
@@ -279,8 +261,12 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Custom Session'), findsNWidgets(2));
-    final card = tester.widget<ShareCardPortrait>(find.byType(ShareCardPortrait));
+    // The card preview now paints the game name onto a Canvas (parity with
+    // the export path) instead of a widget-tree Text — only the input field
+    // itself is findable via find.text now. The card's bound data (which
+    // drives that canvas paint) is verified via the property assertion below.
+    expect(find.text('Custom Session'), findsOneWidget);
+    final card = tester.widget<TemplateShareCard>(find.byType(TemplateShareCard));
     expect(card.card.gameName, 'Custom Session');
   });
 
@@ -305,7 +291,7 @@ void main() {
 
     expect(find.text('Sessão gamer'), findsNothing);
     expect(find.text('Custom Session'), findsNothing);
-    final card = tester.widget<ShareCardPortrait>(find.byType(ShareCardPortrait));
+    final card = tester.widget<TemplateShareCard>(find.byType(TemplateShareCard));
     expect(card.card.gameName, isEmpty);
   });
 
@@ -467,7 +453,10 @@ void main() {
         path: '/fake/apex_cap_1.png',
         capturedAt: _fakeTimestamp,
       ));
-      await tester.tap(find.byTooltip('Trocar mídia'));
+      final trocarMidiaButton = find.byTooltip('Trocar mídia');
+      await tester.ensureVisible(trocarMidiaButton);
+      await settle(tester);
+      await tester.tap(trocarMidiaButton);
       await settle(tester);
       await tester.tap(find.text('Capturas do Apex'));
       await settle(tester);

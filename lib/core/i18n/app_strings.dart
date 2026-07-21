@@ -2354,16 +2354,40 @@ class AppStrings {
     AppLanguage.es   => 'Agrega una imagen o video para exportar',
   };
 
-  String get apexStudioVideoExportNotice => switch (lang) {
-    AppLanguage.ptBr => 'O card usa a imagem do vídeo. Vídeo com moldura animada será fase futura.',
-    AppLanguage.en   => 'The card uses a still from your video. Animated video framing will be a future phase.',
-    AppLanguage.es   => 'La tarjeta usa una imagen del video. El video con marco animado será una fase futura.',
-  };
-
   String get apexStudioGenerateCardLabel => switch (lang) {
     AppLanguage.ptBr => 'Gerar card',
     AppLanguage.en   => 'Generate card',
     AppLanguage.es   => 'Generar tarjeta',
+  };
+
+  String get apexStudioGenerateVideoCardLabel => switch (lang) {
+    AppLanguage.ptBr => 'Gerar vídeo com card',
+    AppLanguage.en   => 'Generate video with card',
+    AppLanguage.es   => 'Generar video con tarjeta',
+  };
+
+  String get apexStudioOrientationVertical => switch (lang) {
+    AppLanguage.ptBr => 'Vertical',
+    AppLanguage.en   => 'Vertical',
+    AppLanguage.es   => 'Vertical',
+  };
+
+  String get apexStudioOrientationHorizontal => switch (lang) {
+    AppLanguage.ptBr => 'Horizontal',
+    AppLanguage.en   => 'Horizontal',
+    AppLanguage.es   => 'Horizontal',
+  };
+
+  String get apexStudioComposingVideoMessage => switch (lang) {
+    AppLanguage.ptBr => 'Compondo vídeo com moldura Apex...',
+    AppLanguage.en   => 'Composing video with Apex frame...',
+    AppLanguage.es   => 'Componiendo video con marco Apex...',
+  };
+
+  String get apexStudioVideoComposeError => switch (lang) {
+    AppLanguage.ptBr => 'Não foi possível gerar o vídeo com moldura. Tente novamente.',
+    AppLanguage.en   => 'Could not generate the video with frame. Please try again.',
+    AppLanguage.es   => 'No se pudo generar el video con marco. Inténtalo de nuevo.',
   };
 
   String get apexStudioShareOriginalClipLabel => switch (lang) {

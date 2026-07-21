@@ -1,9 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
@@ -14,13 +14,13 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/i18n/app_language.dart';
 import '../../../core/i18n/app_strings.dart';
 import '../../../data/services/screen_capture_gallery_service.dart';
-import '../../../domain/entities/share_preset.dart';
+import '../../../data/services/template_compositor.dart';
+import '../../../data/services/video_card_export_service.dart';
 import '../../../domain/entities/social_card.dart';
-import '../../../domain/entities/social_template.dart';
+import '../../../domain/entities/studio_template_spec.dart';
 import '../../widgets/social/privacy_guard_sheet.dart';
-import '../../widgets/social/share_card_portrait.dart';
-import '../../widgets/social/share_card_square.dart';
-import '../../widgets/social/social_template_selector.dart';
+import '../../widgets/social/template_share_card.dart';
+import '../../widgets/social/studio_template_selector.dart';
 
 class ApexStudioScreen extends StatefulWidget {
   final String gameId;
@@ -38,12 +38,12 @@ class ApexStudioScreen extends StatefulWidget {
 }
 
 class _ApexStudioScreenState extends State<ApexStudioScreen> {
-  final _exportKey = GlobalKey();
   final _captionController = TextEditingController();
   final _gameNameController = TextEditingController();
   final _imagePicker = ImagePicker();
   late SocialCard _card;
-  String _selectedTemplateId = 'default';
+  StudioTemplateOrientation _orientation = StudioTemplateOrientation.vertical;
+  String _selectedTemplateId = 'vertical_neon_grid';
   bool _exporting = false;
   bool _loaded = false;
   AppLanguage _lang = AppLanguage.ptBr;
@@ -52,6 +52,8 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
   BoxFit _imageFit = BoxFit.cover;
   Uint8List? _videoThumbnail;
   late final ScreenCaptureGalleryService _galleryService;
+
+  final _videoCardExportService = VideoCardExportService();
 
   // Reference point for T+ timing logs (same pattern as [DETAIL-NAV]).
   final int _t0 = DateTime.now().millisecondsSinceEpoch;
@@ -102,7 +104,11 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
     await showDialog<void>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.85),
-      builder: (_) => _VideoPreviewDialog(filePath: path),
+      builder: (_) => _VideoPreviewDialog(
+        filePath: path,
+        spec: _activeTemplate,
+        fit: _imageFit,
+      ),
     );
   }
 
@@ -133,18 +139,25 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
 
   bool get _canExport => _mediaPath != null;
 
-  SocialTemplate get _activeTemplate =>
-      kSocialTemplates.firstWhere((t) => t.id == _selectedTemplateId);
+  StudioTemplateSpec get _activeTemplate => studioTemplateById(_selectedTemplateId);
 
-  void _onTemplateSelected(SocialTemplate t) {
+  void _onTemplateSelected(StudioTemplateSpec t) {
     setState(() {
+      _orientation = t.orientation;
       _selectedTemplateId = t.id;
       _card = _card.copyWith(templateId: t.id);
     });
   }
 
-  void _onPresetChanged(SharePreset p) =>
-      setState(() => _card = _card.copyWith(preset: p));
+  void _onOrientationChanged(StudioTemplateOrientation o) {
+    if (o == _orientation) return;
+    final firstOfOrientation = studioTemplatesFor(o).first;
+    setState(() {
+      _orientation = o;
+      _selectedTemplateId = firstOfOrientation.id;
+      _card = _card.copyWith(templateId: firstOfOrientation.id);
+    });
+  }
 
   Future<void> _pickMedia() async {
     final s = AppStrings(_lang);
@@ -311,27 +324,171 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
     });
   }
 
+  /// STUDIO-TEMPLATE-ASSETS-U1: composes the final PNG at the template's
+  /// native resolution — media cropped into [StudioTemplateSpec.mediaSlot],
+  /// the punched template frame on top, then the text layer — via
+  /// [TemplateComposer.composeStaticCard]. No widget capture involved, so
+  /// the output resolution is never limited by how large the on-screen
+  /// preview happens to be.
   Future<void> _export() async {
     final privacyConfirmed = await showPrivacyGuardSheet(context, _lang);
     if (!privacyConfirmed || !mounted) return;
+    final mediaPath = _mediaPath;
+    if (mediaPath == null) return;
 
     setState(() => _exporting = true);
     try {
-      final boundary = _exportKey.currentContext
-          ?.findRenderObject() as RenderRepaintBoundary?;
-      if (boundary == null) return;
+      final spec = _activeTemplate;
+      debugPrint(
+          'action=generate_card selectedTemplateId=${spec.id} templatePath=${spec.backgroundAssetPath} '
+          'canvas=${spec.canvasWidth.round()}x${spec.canvasHeight.round()} '
+          'slot=(${spec.mediaSlot.x.round()},${spec.mediaSlot.y.round()},'
+          '${spec.mediaSlot.width.round()},${spec.mediaSlot.height.round()}) '
+          'fitMode=${_imageFit.name} preview_uses_same_spec=true export_uses_same_spec=true');
 
-      final image = await boundary.toImage(pixelRatio: 3.0);
-      final byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) return;
+      final mediaBytes = await File(mediaPath).readAsBytes();
+      final codec = await ui.instantiateImageCodec(mediaBytes);
+      final frame = await codec.getNextFrame();
+      final mediaImage = frame.image;
 
-      final bytes = byteData.buffer.asUint8List();
+      final pngBytes = await TemplateComposer.composeStaticCard(
+        spec: spec,
+        media: mediaImage,
+        fit: _imageFit,
+        gameName: _card.gameName,
+        caption: _card.caption,
+        lang: _lang,
+      );
+      mediaImage.dispose();
+
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/apex_card_${_card.id}.png');
-      await file.writeAsBytes(bytes);
+      await file.writeAsBytes(pngBytes);
+      debugPrint(
+          'action=generate_card inputPath=$mediaPath outputPath=${file.path} '
+          'outputPath!=inputPath=${file.path != mediaPath} final_debug_frame=${file.path}');
 
       await Share.shareXFiles([XFile(file.path)], text: _card.caption);
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  /// STUDIO-TEMPLATE-ASSETS-U2: composes a final MP4 using a background PNG
+  /// punched transparent inside [StudioTemplateSpec.mediaSlot] (see
+  /// [TemplateComposer.videoBackgroundMaskBytes]) as the native
+  /// `backgroundPath` layer — the video is composited under it, so it can
+  /// only show through the punched slot — and a transparent PNG (wordmark,
+  /// mascot, game name/caption/badge, painted at their fixed rects, which
+  /// never overlap the media slot) as `overlayPath`. Both come straight from
+  /// [TemplateComposer] — no widget capture, no runtime slot measurement.
+  /// VideoCardExporter.kt and the outputPath/sharePath flow are unchanged.
+  Future<void> _exportVideo() async {
+    final privacyConfirmed = await showPrivacyGuardSheet(context, _lang);
+    if (!privacyConfirmed || !mounted) return;
+
+    final s = AppStrings(_lang);
+    setState(() => _exporting = true);
+    try {
+      final spec = _activeTemplate;
+      final canvasW = spec.canvasWidth.round();
+      final canvasH = spec.canvasHeight.round();
+      final slotX = spec.mediaSlot.x.round();
+      final slotY = spec.mediaSlot.y.round();
+      final slotW = spec.mediaSlot.width.round();
+      final slotH = spec.mediaSlot.height.round();
+      debugPrint(
+          'action=generate_video_card selectedTemplateId=${spec.id} templatePath=${spec.backgroundAssetPath} '
+          'canvas=${canvasW}x$canvasH slotRect=($slotX,$slotY,$slotW,$slotH) '
+          'fitMode=${_imageFit.name} preview_uses_same_spec=true export_uses_same_spec=true');
+
+      final backgroundMaskBytes = await TemplateComposer.videoBackgroundMaskBytes(spec);
+
+      final overlayPngBytes = await TemplateComposer.composeOverlayLayer(
+        spec: spec,
+        gameName: _card.gameName,
+        caption: _card.caption,
+        lang: _lang,
+      );
+
+      final dir = await getTemporaryDirectory();
+      final overlayFile = File('${dir.path}/apex_overlay_${_card.id}.png');
+      await overlayFile.writeAsBytes(overlayPngBytes);
+      final backgroundMaskFile = File('${dir.path}/apex_video_background_mask_${_card.id}.png');
+      await backgroundMaskFile.writeAsBytes(backgroundMaskBytes);
+      final outputFile = File('${dir.path}/apex_video_card_${_card.id}.mp4');
+
+      final inputPath = _mediaPath!;
+      debugPrint(
+          'action=generate_video_card inputPath=$inputPath '
+          'requestedOutputPath=${outputFile.path} '
+          'videoBackgroundMaskPath=${backgroundMaskFile.path} overlayPath=${overlayFile.path} '
+          'mediaRect=($slotX,$slotY,$slotW,$slotH)');
+      VideoCardExportResult exportResult;
+      try {
+        exportResult = await _videoCardExportService
+            .composeVideoCard(
+              videoPath: inputPath,
+              overlayPath: overlayFile.path,
+              backgroundPath: backgroundMaskFile.path,
+              outputPath: outputFile.path,
+              slotX: slotX,
+              slotY: slotY,
+              slotW: slotW,
+              slotH: slotH,
+              canvasW: canvasW,
+              canvasH: canvasH,
+              fit: _imageFit == BoxFit.contain
+                  ? VideoCardFit.contain
+                  : VideoCardFit.cover,
+            )
+            .timeout(const Duration(seconds: 120));
+      } on TimeoutException {
+        await _videoCardExportService.cancelVideoExport();
+        rethrow;
+      }
+      final outputPath = exportResult.outputPath;
+      final debugFramePath = exportResult.debugFramePath;
+      debugPrint('[ApexStudio] video export: compose succeeded, output=$outputPath');
+      debugPrint(
+          'final_debug_frame=$debugFramePath final_output=$outputPath');
+      debugPrint(
+          'action=generate_video_card inputPath=$inputPath outputPath=$outputPath '
+          'outputPath!=inputPath=${outputPath != inputPath} debugFramePath=$debugFramePath');
+
+      if (!mounted) return;
+      final sharePath = outputPath;
+      debugPrint(
+          'action=generate_video_card sharePath=$sharePath '
+          'sharePath==outputPath=${sharePath == outputPath} '
+          'sharePath!=inputPath=${sharePath != inputPath}');
+      debugPrint('[ApexStudio] video export: share invoked, output=$sharePath');
+      try {
+        final shareResult = await Share.shareXFiles(
+          [
+            XFile(
+              sharePath,
+              mimeType: 'video/mp4',
+              name: 'apex_video_card_${_card.id}.mp4',
+            ),
+          ],
+          text: _card.caption,
+        );
+        debugPrint('[ApexStudio] video export: share result=${shareResult.status}');
+      } catch (e) {
+        debugPrint('[ApexStudio] video export: share failed: $e');
+        rethrow;
+      }
+    } catch (e) {
+      debugPrint('[ApexStudio] video export failed: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(s.apexStudioVideoComposeError),
+          backgroundColor: const Color(0xFF1A1A1A),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
@@ -346,6 +503,9 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
   Future<void> _shareVideoFile() async {
     final path = _mediaPath;
     if (path == null) return;
+    debugPrint(
+        'action=share_original_clip originalPath=$path '
+        '(raw clip only — not the branded "Gerar vídeo com card" output)');
 
     final file = File(path);
     if (!file.existsSync()) {
@@ -401,7 +561,9 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton.icon(
-                onPressed: (_canExport && !_exporting) ? _export : null,
+                onPressed: (_canExport && !_exporting)
+                    ? (_mediaIsVideo ? _exportVideo : _export)
+                    : null,
                 icon: _exporting
                     ? const SizedBox(
                         width: 16,
@@ -413,7 +575,9 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
                       )
                     : const Icon(Icons.share_rounded, size: 18),
                 label: Text(
-                  s.apexStudioGenerateCardLabel,
+                  _mediaIsVideo
+                      ? s.apexStudioGenerateVideoCardLabel
+                      : s.apexStudioGenerateCardLabel,
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 15),
                 ),
@@ -439,10 +603,26 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
                 textAlign: TextAlign.center,
               ),
             ],
+            if (_exporting && _mediaIsVideo) ...[
+              const SizedBox(height: 8),
+              Text(
+                s.apexStudioComposingVideoMessage,
+                style: const TextStyle(
+                  color: Color(0xFF555555),
+                  fontSize: 12,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ],
         ),
       ),
-      body: SingleChildScrollView(
+      body: _buildScrollableBody(s),
+    );
+  }
+
+  Widget _buildScrollableBody(AppStrings s) {
+    return SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -458,28 +638,21 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
                     BoxShadow(
                       blurRadius: 24,
                       spreadRadius: 0,
-                      color: _activeTemplate.accentColor
-                          .withValues(alpha: 0.15),
+                      color: AppColors.apexGreen.withValues(alpha: 0.15),
                     ),
                   ],
                 ),
-                child: RepaintBoundary(
-                  key: _exportKey,
-                  child: _card.preset == SharePreset.portrait
-                      ? ShareCardPortrait(
-                          card: _card,
-                          template: _activeTemplate,
-                          lang: _lang,
-                          mediaFit: _imageFit,
-                          videoThumbnail: _videoThumbnail,
-                        )
-                      : ShareCardSquare(
-                          card: _card,
-                          template: _activeTemplate,
-                          lang: _lang,
-                          mediaFit: _imageFit,
-                          videoThumbnail: _videoThumbnail,
-                        ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: TemplateShareCard(
+                    card: _card,
+                    spec: _activeTemplate,
+                    lang: _lang,
+                    mediaFit: _imageFit,
+                    mediaPath: _mediaPath,
+                    isVideo: _mediaIsVideo,
+                    videoThumbnail: _videoThumbnail,
+                  ),
                 ),
               ),
             ),
@@ -514,53 +687,12 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
                 ),
               ),
             ),
-            SocialTemplateSelector(
-              templates: kSocialTemplates,
+            StudioTemplateSelector(
+              orientation: _orientation,
               selectedId: _selectedTemplateId,
-              onSelected: _onTemplateSelected,
               lang: _lang,
-            ),
-            const SizedBox(height: 16),
-            // ── Format chips ──────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: SharePreset.values
-                    .where((p) => p != SharePreset.landscape)
-                    .map((p) => Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 4),
-                            child: ChoiceChip(
-                              label: Text(p.label),
-                              selected: _card.preset == p,
-                              onSelected: (_) => _onPresetChanged(p),
-                              selectedColor: AppColors.apexGreen
-                                  .withValues(alpha: 0.15),
-                              labelStyle: TextStyle(
-                                color: _card.preset == p
-                                    ? AppColors.apexGreen
-                                    : AppColors.textGray,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              backgroundColor:
-                                  const Color(0xFF111111),
-                              side: BorderSide(
-                                color: _card.preset == p
-                                    ? AppColors.apexGreen
-                                        .withValues(alpha: 0.4)
-                                    : const Color(0xFF2A2A2A),
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
-                        ))
-                    .toList(),
-              ),
+              onOrientationChanged: _onOrientationChanged,
+              onTemplateSelected: _onTemplateSelected,
             ),
             const SizedBox(height: 16),
             // ── Nome do jogo/sessão ──────────────────────────────────────
@@ -655,7 +787,6 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
             const SizedBox(height: 8),
           ],
         ),
-      ),
     );
   }
 
@@ -872,40 +1003,6 @@ class _ApexStudioScreenState extends State<ApexStudioScreen> {
           ),
           if (_mediaIsVideo) ...[
             const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0D1117),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.info_outline_rounded,
-                    color: Color(0xFF3B82F6),
-                    size: 14,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      s.apexStudioVideoExportNotice,
-                      style: const TextStyle(
-                        color: Color(0xFFA1A1AA),
-                        fontSize: 12,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -1053,7 +1150,13 @@ enum _MediaType { image, video, apexCapture }
 
 class _VideoPreviewDialog extends StatefulWidget {
   final String filePath;
-  const _VideoPreviewDialog({required this.filePath});
+  final StudioTemplateSpec spec;
+  final BoxFit fit;
+  const _VideoPreviewDialog({
+    required this.filePath,
+    required this.spec,
+    required this.fit,
+  });
 
   @override
   State<_VideoPreviewDialog> createState() => _VideoPreviewDialogState();
@@ -1114,9 +1217,11 @@ class _VideoPreviewDialogState extends State<_VideoPreviewDialog> {
   Widget build(BuildContext context) {
     final s = AppStrings(languageNotifier.value);
 
-    final aspectRatio = (_initialized && _controller.value.aspectRatio > 0)
-        ? _controller.value.aspectRatio
-        : 16.0 / 9.0;
+    // The preview box is shaped like the selected template's media slot
+    // (STUDIO-U3-PREVIEW-FIX) — not the raw clip's native aspect ratio — so
+    // a Horizontal template always previews landscape-framed, matching what
+    // the final composited card will actually show.
+    final aspectRatio = widget.spec.mediaSlot.width / widget.spec.mediaSlot.height;
 
     return Dialog(
       backgroundColor: Colors.black,
@@ -1191,7 +1296,24 @@ class _VideoPreviewDialogState extends State<_VideoPreviewDialog> {
                                   child: Stack(
                                     fit: StackFit.expand,
                                     children: [
-                                      VideoPlayer(_controller),
+                                      // Crops/fits the raw clip into the
+                                      // slot-shaped box the same way
+                                      // TemplateComposer.paintMediaInSlot
+                                      // does for the final card — a plain
+                                      // VideoPlayer here would just stretch
+                                      // to fill this box, distorting the
+                                      // frame whenever the clip's native
+                                      // aspect ratio differs from the slot.
+                                      ClipRect(
+                                        child: FittedBox(
+                                          fit: widget.fit,
+                                          child: SizedBox(
+                                            width: _controller.value.size.width,
+                                            height: _controller.value.size.height,
+                                            child: VideoPlayer(_controller),
+                                          ),
+                                        ),
+                                      ),
                                       ValueListenableBuilder<VideoPlayerValue>(
                                         valueListenable: _controller,
                                         builder: (_, value, __) {

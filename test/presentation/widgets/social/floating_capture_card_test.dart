@@ -33,6 +33,25 @@ void _clearChannels() {
       .setMockMethodCallHandler(_captureChannel, null);
 }
 
+void _mockChannelsGrantedAndArmed() {
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(_overlayChannel, (call) async {
+    switch (call.method) {
+      case 'isOverlayPermissionGranted':
+        return true;
+      case 'isFloatingShowing':
+        return true;
+      default:
+        return null;
+    }
+  });
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(_captureChannel, (call) async {
+    if (call.method == 'isSessionArmed') return true;
+    return null;
+  });
+}
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -49,6 +68,38 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Modo Captura da Sessão'), findsOneWidget);
     expect(find.text('STUDIO'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  // STUDIO-U3-FIX: regression for "RenderFlex overflowed by 1.0 pixels on
+  // the right" seen on-device — the badge+status Row had no Flexible, so a
+  // narrow width overflows without it. Forces a tight width to reproduce.
+  testWidgets(
+      'FloatingCaptureCard header row does not overflow at a narrow width (permission required)',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(width: 260, child: FloatingCaptureCard()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'FloatingCaptureCard header row does not overflow at a narrow width (enabled)',
+      (tester) async {
+    _mockChannelsGrantedAndArmed();
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(width: 260, child: FloatingCaptureCard()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
 }

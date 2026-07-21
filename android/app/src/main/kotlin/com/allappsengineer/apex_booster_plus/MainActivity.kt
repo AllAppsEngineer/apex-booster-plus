@@ -19,13 +19,16 @@ import android.provider.Settings
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.media3.common.util.UnstableApi
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
 
+@UnstableApi
 class MainActivity : FlutterFragmentActivity() {
     private val overlayManager get() = FloatingOverlayManager.getInstance(applicationContext)
+    private val videoCardExporter by lazy { VideoCardExporter(applicationContext) }
     private var _previousFilter: Int? = null
     private var _focusModeActivatedByApp: Boolean = false
     private var overlayChannel: MethodChannel? = null
@@ -416,6 +419,61 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 "isSessionArmed" -> {
                     result.success(ScreenCaptureService.instance != null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        // STUDIO-U3: compose a branded MP4 (source video + Apex chrome overlay,
+        // positioned exactly at the measured media-slot rect). See
+        // VideoCardExporter for the Media3 Transformer composition pipeline.
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "apex/video_export"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "composeVideoCard" -> {
+                    val videoPath = call.argument<String>("videoPath")
+                    val overlayPath = call.argument<String>("overlayPath")
+                    val backgroundPath = call.argument<String>("backgroundPath")
+                    val outputPath = call.argument<String>("outputPath")
+                    val slotX = call.argument<Int>("slotX")
+                    val slotY = call.argument<Int>("slotY")
+                    val slotW = call.argument<Int>("slotW")
+                    val slotH = call.argument<Int>("slotH")
+                    val canvasW = call.argument<Int>("canvasW")
+                    val canvasH = call.argument<Int>("canvasH")
+                    val fitMode = call.argument<String>("fitMode") ?: "cover"
+                    if (videoPath == null || overlayPath == null || backgroundPath == null ||
+                        outputPath == null ||
+                        slotX == null || slotY == null || slotW == null || slotH == null ||
+                        canvasW == null || canvasH == null
+                    ) {
+                        result.error("INVALID_ARGS", "missing required arguments", null)
+                        return@setMethodCallHandler
+                    }
+                    try {
+                        videoCardExporter.compose(
+                            videoPath = videoPath,
+                            overlayPath = overlayPath,
+                            backgroundPath = backgroundPath,
+                            outputPath = outputPath,
+                            slotX = slotX,
+                            slotY = slotY,
+                            slotW = slotW,
+                            slotH = slotH,
+                            canvasW = canvasW,
+                            canvasH = canvasH,
+                            fitMode = fitMode,
+                            result = result,
+                        )
+                    } catch (e: Exception) {
+                        result.error("COMPOSE_START_ERROR", e.message, null)
+                    }
+                }
+                "cancelVideoExport" -> {
+                    videoCardExporter.cancel()
+                    result.success(null)
                 }
                 else -> result.notImplemented()
             }

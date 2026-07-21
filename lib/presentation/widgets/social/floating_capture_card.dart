@@ -341,11 +341,16 @@ class _FloatingCaptureCardState extends State<FloatingCaptureCard>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              ApexBadge(
-                label: s.captureFloatBadge,
-                color: _overlayOn ? AppColors.apexGreen : AppColors.textGray,
+              Flexible(
+                child: ApexBadge(
+                  label: s.captureFloatBadge,
+                  color: _overlayOn ? AppColors.apexGreen : AppColors.textGray,
+                ),
               ),
-              _buildStatusChip(s, isLoading, permRequired),
+              const SizedBox(width: 8),
+              Flexible(
+                child: _buildStatusChip(s, isLoading, permRequired),
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -475,6 +480,8 @@ class _FloatingCaptureCardState extends State<FloatingCaptureCard>
         ),
         child: Text(
           s.captureFloatCardPermRequired,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             color: AppColors.energyOrange,
             fontSize: 11,
@@ -498,6 +505,8 @@ class _FloatingCaptureCardState extends State<FloatingCaptureCard>
       ),
       child: Text(
         _overlayOn ? s.captureFloatCardEnabled : s.captureFloatCardDisabled,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: _overlayOn ? AppColors.apexGreen : AppColors.textGray,
           fontSize: 11,

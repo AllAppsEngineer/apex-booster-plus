@@ -58,6 +58,16 @@ android {
     }
 }
 
+dependencies {
+    // STUDIO-U3: video card export (branded MP4) — decode/overlay/encode pipeline.
+    // Official Jetpack library, no NDK/FFmpeg required. See docs/superpowers/plans
+    // for the composition design (Presentation + custom MatrixTransformation +
+    // OverlayEffect).
+    implementation("androidx.media3:media3-transformer:1.9.2")
+    implementation("androidx.media3:media3-effect:1.9.2")
+    implementation("androidx.media3:media3-common:1.9.2")
+}
+
 flutter {
     source = "../.."
 }

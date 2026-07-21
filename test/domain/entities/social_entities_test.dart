@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:apex_booster_plus/domain/entities/social_card.dart';
 import 'package:apex_booster_plus/domain/entities/share_preset.dart';
-import 'package:apex_booster_plus/domain/entities/social_template.dart';
 
 void main() {
   group('SocialCard', () {
@@ -78,32 +77,6 @@ void main() {
     });
     test('landscape label is 16:9', () {
       expect(SharePreset.landscape.label, '16:9');
-    });
-  });
-
-  group('kSocialTemplates', () {
-    test('contains at least 2 templates', () {
-      expect(kSocialTemplates.length, greaterThanOrEqualTo(2));
-    });
-    test('first template id is default', () {
-      expect(kSocialTemplates.first.id, 'default');
-    });
-    test('default template is free', () {
-      expect(kSocialTemplates.first.isFree, true);
-    });
-    test('all templates have non-empty ids', () {
-      for (final t in kSocialTemplates) {
-        expect(t.id, isNotEmpty);
-      }
-    });
-    test('template ids are unique', () {
-      final ids = kSocialTemplates.map((t) => t.id).toList();
-      expect(ids.toSet().length, ids.length);
-    });
-    test('SocialTemplate backgroundColor is opaque', () {
-      for (final t in kSocialTemplates) {
-        expect(t.backgroundColor.a, closeTo(1.0, 0.001));
-      }
     });
   });
 }
