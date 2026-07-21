@@ -12,6 +12,7 @@ import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.media.Image
 import android.media.ImageReader
+import android.media.MediaMetadataRetriever
 import android.media.MediaRecorder
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
@@ -110,6 +111,15 @@ class ScreenCaptureService : Service() {
     @Volatile
     private var recording = false
 
+    // DEBUG-U1: set for the duration of stopVideoRecording() so the
+    // MediaProjection.Callback.onStop() fired by our OWN mediaProjection.stop()
+    // call at the end of that sequence (Android invokes onStop for
+    // self-initiated stops too, not just externally revoked ones) doesn't
+    // re-enter stopSession()/stopVideoRecording(discard=true) while the
+    // stop -> validate -> register sequence is still finishing.
+    @Volatile
+    private var internalStopInProgress = false
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -175,19 +185,11 @@ class ScreenCaptureService : Service() {
             return START_NOT_STICKY
         }
 
-        // 3. Display dimensions.
-        val windowManager = getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager
-        val (w, h, density) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val bounds = windowManager.currentWindowMetrics.bounds
-            Triple(bounds.width(), bounds.height(), resources.displayMetrics.densityDpi)
-        } else {
-            @Suppress("DEPRECATION")
-            val display = windowManager.defaultDisplay
-            val metrics = android.util.DisplayMetrics()
-            @Suppress("DEPRECATION")
-            display.getRealMetrics(metrics)
-            Triple(metrics.widthPixels, metrics.heightPixels, metrics.densityDpi)
-        }
+        // 3. Display dimensions — an arm-time snapshot, used only to size the
+        // screenshot pipeline's fixed ImageReader/VirtualDisplay (built right
+        // here, in this same call). Video recording does NOT reuse these:
+        // see the fresh re-measure in startVideoRecording().
+        val (w, h, density) = measureDisplayMetrics()
         captureWidth = w
         captureHeight = h
 
@@ -207,6 +209,10 @@ class ScreenCaptureService : Service() {
         //    regardless of mode.
         projection.registerCallback(object : MediaProjection.Callback() {
             override fun onStop() {
+                if (internalStopInProgress) {
+                    Log.d(TAG, "MediaProjection onStop — internal stop already in progress, ignoring re-entrant callback.")
+                    return
+                }
                 Log.d(TAG, "MediaProjection stopped externally; ending session.")
                 stopSession()
             }
@@ -323,6 +329,7 @@ class ScreenCaptureService : Service() {
      */
     fun startVideoRecording() {
         val projection = mediaProjection
+        Log.d(TAG, "action=start_video requestedDurationMs=$videoDurationMs")
         if (!armed || sessionMode != MODE_VIDEO || recording || projection == null) {
             Log.d(TAG, "startVideoRecording ignored — not armed for video mode, already recording, or no projection.")
             return
@@ -335,8 +342,28 @@ class ScreenCaptureService : Service() {
             return
         }
 
-        val (videoW, videoH) = computeSafeVideoSize(captureWidth, captureHeight)
+        // VIDEO-ORIENTATION-FIX: re-measure the live display right here,
+        // instead of reusing captureWidth/captureHeight from armSession()
+        // time. The armed session can sit idle for minutes while Apex
+        // Booster+ (portrait-locked) is backgrounded and the user opens a
+        // landscape-forced game — the stale portrait bounds from arm time
+        // would otherwise size this VirtualDisplay/MediaRecorder as
+        // portrait, and AUTO_MIRROR would letterbox the real (landscape)
+        // content inside it, baking permanent black bars into the MP4.
+        val (liveW, liveH, liveDensity) = measureDisplayMetrics()
+        val (videoW, videoH) = computeSafeVideoSize(liveW, liveH)
         val file = File(dir, "apex_clip_${System.currentTimeMillis()}.mp4")
+        val rotation = try {
+            @Suppress("DEPRECATION")
+            (getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).defaultDisplay.rotation
+        } catch (e: Exception) {
+            -1
+        }
+        Log.d(
+            TAG,
+            "outputPath=${file.absolutePath} measuredWidth=$liveW measuredHeight=$liveH " +
+                "videoWidth=$videoW videoHeight=$videoH rotation=$rotation",
+        )
 
         val recorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             MediaRecorder(this)
@@ -354,6 +381,7 @@ class ScreenCaptureService : Service() {
             recorder.setVideoFrameRate(VIDEO_FRAME_RATE)
             recorder.setVideoEncodingBitRate(VIDEO_BITRATE)
             recorder.prepare()
+            Log.d(TAG, "recorder prepared")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to prepare MediaRecorder: ${e.message}", e)
             runCatching { recorder.release() }
@@ -368,7 +396,7 @@ class ScreenCaptureService : Service() {
         val display = try {
             projection.createVirtualDisplay(
                 "ApexRecordSession",
-                videoW, videoH, resources.displayMetrics.densityDpi,
+                videoW, videoH, liveDensity,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 recorder.surface,
                 null,
@@ -387,6 +415,7 @@ class ScreenCaptureService : Service() {
 
         try {
             recorder.start()
+            Log.d(TAG, "recorder started")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start MediaRecorder: ${e.message}", e)
             runCatching { display.release() }
@@ -403,7 +432,10 @@ class ScreenCaptureService : Service() {
         updateNotification(getString(R.string.capture_notification_recording_text))
         notifyToast(getString(R.string.capture_recording_text))
 
-        val runnable = Runnable { stopVideoRecording(discard = false) }
+        val runnable = Runnable {
+            Log.d(TAG, "stop requested by timer")
+            stopVideoRecording(discard = false)
+        }
         stopRecordingRunnable = runnable
         mainHandler?.postDelayed(runnable, videoDurationMs)
     }
@@ -418,6 +450,11 @@ class ScreenCaptureService : Service() {
     fun stopVideoRecording(discard: Boolean) {
         if (!recording) return
         recording = false
+        // DEBUG-U1: block the MediaProjection.Callback.onStop() re-entrancy
+        // path for the duration of this stop -> validate -> register
+        // sequence; only cleared in the finally block below, after the clip
+        // is either registered or discarded.
+        internalStopInProgress = true
         stopRecordingRunnable?.let { mainHandler?.removeCallbacks(it) }
         stopRecordingRunnable = null
 
@@ -428,35 +465,106 @@ class ScreenCaptureService : Service() {
         val file = recordingFile
         recordingFile = null
 
-        var success = !discard
-        if (recorder != null) {
-            try {
-                recorder.stop()
-            } catch (e: Exception) {
-                Log.e(TAG, "Error stopping MediaRecorder: ${e.message}", e)
-                success = false
+        try {
+            // BUGFIX-U1: [discard] used to force this clip to be thrown away
+            // unconditionally whenever stopVideoRecording() was reached from
+            // anywhere other than the auto-stop timer (e.g. stopSession()
+            // called while still recording). In real usage that path fires
+            // far more often than a genuine broken/external teardown — e.g.
+            // FloatingCaptureCard._syncState() (Dart) reconciles "armed" vs
+            // "overlay showing" on every AppLifecycleState.resumed, and the
+            // overlay is deliberately hidden during recording (so the A+
+            // button never appears in the clip); a resume mid-recording read
+            // that as drift and called disarmSession(), discarding an
+            // otherwise perfectly valid, non-empty, playable clip every
+            // time. MediaRecorder.stop() finalizes the MP4 container (moov
+            // atom) correctly as long as it doesn't throw, whether the timer
+            // or an early teardown triggered it — so validity should be
+            // decided by inspecting the actual output file, not by which
+            // caller asked for the stop. [discard] is now informational only
+            // (logged below); [stopOk] tracks the one case that genuinely
+            // makes the file untrustworthy: recorder.stop() itself throwing.
+            var stopOk = true
+            if (recorder != null) {
+                try {
+                    recorder.stop()
+                    Log.d(TAG, "recorder stopped ok")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error stopping MediaRecorder: ${e.message}", e)
+                    stopOk = false
+                }
+                runCatching { recorder.release() }
             }
-            runCatching { recorder.release() }
-        }
-        runCatching { display?.release() }
+            runCatching { display?.release() }
 
-        if (success && file != null && file.exists() && file.length() > 0L) {
-            registerClip(file)
-            // videoDurationMs reflects the cap actually used for this
-            // recording — stopVideoRecording(discard = false) is only
-            // reached from the auto-stop timer (no manual stop in this
-            // phase), so it always matches the recorded length.
-            val seconds = (videoDurationMs / 1_000L).toInt()
-            notifyToast(getString(R.string.capture_video_saved_with_duration, seconds))
-        } else {
-            file?.let { runCatching { it.delete() } }
-            notifyToast(getString(R.string.capture_video_error_text))
-        }
+            val exists = file?.exists() == true
+            val size = if (exists) file!!.length() else -1L
+            Log.d(TAG, "output exists=$exists size=$size discard=$discard")
 
-        if (armed) {
-            updateNotification(getString(R.string.capture_notification_text))
+            var durationMs = -1L
+            if (stopOk && exists && size > 0L) {
+                val retriever = MediaMetadataRetriever()
+                durationMs = try {
+                    retriever.setDataSource(file!!.absolutePath)
+                    retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                        ?.toLongOrNull() ?: -1L
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to read clip metadata duration: ${e.message}", e)
+                    -1L
+                } finally {
+                    runCatching { retriever.release() }
+                }
+                Log.d(TAG, "metadata duration=${durationMs}ms")
+            }
+
+            if (stopOk && exists && size > 0L && durationMs > 0L) {
+                registerClip(file!!)
+                Log.d(TAG, "clip registered in index path=${file.absolutePath}")
+                // Uses the clip's actual measured duration, not the
+                // requested cap — an early-but-valid stop (see BUGFIX-U1
+                // above) records less than videoDurationMs, and the toast
+                // must reflect what was really saved.
+                val seconds = (durationMs / 1_000L).toInt().coerceAtLeast(1)
+                notifyToast(getString(R.string.capture_video_saved_with_duration, seconds))
+            } else {
+                Log.e(
+                    TAG,
+                    "clip rejected — stopOk=$stopOk exists=$exists size=$size durationMs=$durationMs",
+                )
+                file?.let { runCatching { it.delete() } }
+                notifyToast(getString(R.string.capture_video_error_text))
+            }
+
+            if (armed) {
+                updateNotification(getString(R.string.capture_notification_text))
+            }
+        } finally {
+            internalStopInProgress = false
         }
         endSessionAfterCapture()
+    }
+
+    /**
+     * Reads the live display bounds/density at the moment of the call.
+     * Called at arm time (to size the screenshot pipeline) and again, fresh,
+     * right before [startVideoRecording] builds its VirtualDisplay — the
+     * armed session can sit idle for minutes between the two, during which
+     * the visible app's orientation (e.g. a landscape-forced game) may have
+     * changed entirely from what it was at arm time.
+     */
+    private fun measureDisplayMetrics(): Triple<Int, Int, Int> {
+        val windowManager = getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val bounds = windowManager.currentWindowMetrics.bounds
+            Triple(bounds.width(), bounds.height(), resources.displayMetrics.densityDpi)
+        } else {
+            @Suppress("DEPRECATION")
+            val display = windowManager.defaultDisplay
+            val metrics = android.util.DisplayMetrics()
+            @Suppress("DEPRECATION")
+            display.getRealMetrics(metrics)
+            Triple(metrics.widthPixels, metrics.heightPixels, metrics.densityDpi)
+        }
     }
 
     private fun computeSafeVideoSize(w: Int, h: Int): Pair<Int, Int> {
@@ -626,6 +734,7 @@ class ScreenCaptureService : Service() {
         // a new session requires re-enabling from the app (new consent).
         FloatingOverlayManager.getInstance(applicationContext).hide()
 
+        Log.d(TAG, "session ended")
         stopSelf()
     }
 
