@@ -1,5 +1,6 @@
 package com.allappsengineer.apex_booster_plus
 
+import android.Manifest
 import android.app.Activity
 import android.app.ActivityManager
 import android.app.NotificationManager
@@ -19,6 +20,7 @@ import android.provider.Settings
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -51,8 +53,28 @@ class MainActivity : FlutterFragmentActivity() {
     // Activity Result launcher for MediaProjection consent dialog.
     private lateinit var captureResultLauncher: ActivityResultLauncher<Intent>
 
+    // AUDIO-CAPTURE-U1 (POC): fire-and-forget RECORD_AUDIO request — the
+    // video session arms regardless of the outcome (audio is best-effort,
+    // never allowed to block or gate video capture).
+    private lateinit var audioPermissionLauncher: ActivityResultLauncher<String>
+
+    // AUDIO-CAPTURE-U1 (POC): release-build gate. Checked at runtime via
+    // ApplicationInfo.FLAG_DEBUGGABLE instead of BuildConfig.DEBUG — this
+    // project doesn't enable Gradle's buildConfig feature, and turning it on
+    // just for this diagnostic POC is out of scope for this checkpoint.
+    private fun isDebuggableBuild(): Boolean =
+        (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
+        audioPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+            android.util.Log.d(
+                "InternalAudioRecorder",
+                "permission ${if (granted) "granted" else "denied"} (runtime request result)",
+            )
+        }
         captureResultLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result: ActivityResult ->
@@ -69,6 +91,21 @@ class MainActivity : FlutterFragmentActivity() {
                 startForegroundService(serviceIntent)
                 pendingCaptureResult?.success(true)
                 pendingCaptureResult = null
+
+                // AUDIO-CAPTURE-U1 (POC): requested only AFTER the video
+                // session has already armed — never racing the MediaProjection
+                // consent activity-result flow above with a second one.
+                // Best-effort/fire-and-forget: a denial here just means
+                // InternalAudioRecorder no-ops later, video is unaffected.
+                // Gated to debug builds only — release must never show this
+                // dialog or touch RECORD_AUDIO for this diagnostic POC.
+                if (isDebuggableBuild() &&
+                    pendingSessionMode == ScreenCaptureService.MODE_VIDEO &&
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
+                    PackageManager.PERMISSION_GRANTED
+                ) {
+                    audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                }
             } else {
                 // User denied or cancelled — clean shutdown, no retry.
                 pendingCaptureResult?.success(false)

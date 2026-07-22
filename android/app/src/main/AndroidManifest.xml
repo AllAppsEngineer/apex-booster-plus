@@ -62,6 +62,12 @@
     <!-- Required for MediaProjection foreground capture service (SOCIAL-U2B) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <!-- AUDIO-CAPTURE-U1 (POC): required by AudioRecord even when configured
+         with AudioPlaybackCaptureConfiguration (internal app-audio capture) —
+         the physical microphone is never read in that configuration, this is
+         a platform quirk of the AudioRecord permission model, not a mic
+         feature. See docs/superpowers/plans/2026-07-21-audio-capture-u1-plan.md. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>

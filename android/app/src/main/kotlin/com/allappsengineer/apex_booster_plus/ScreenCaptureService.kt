@@ -1,10 +1,13 @@
 package com.allappsengineer.apex_booster_plus
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
@@ -24,6 +27,7 @@ import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -119,6 +123,19 @@ class ScreenCaptureService : Service() {
     // stop -> validate -> register sequence is still finishing.
     @Volatile
     private var internalStopInProgress = false
+
+    // AUDIO-CAPTURE-U1 (POC): isolated internal-audio experiment, started and
+    // stopped alongside the video recording but never wired into its
+    // validation/registration path yet — see InternalAudioRecorder's own
+    // doc comment. Never allowed to affect [recording]/[mediaRecorder].
+    private var internalAudioRecorder: InternalAudioRecorder? = null
+
+    // AUDIO-CAPTURE-U1 (POC): release-build gate. Checked at runtime via
+    // ApplicationInfo.FLAG_DEBUGGABLE instead of BuildConfig.DEBUG — this
+    // project doesn't enable Gradle's buildConfig feature, and turning it on
+    // just for this diagnostic POC is out of scope for this checkpoint.
+    private fun isDebuggableBuild(): Boolean =
+        (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -429,6 +446,28 @@ class ScreenCaptureService : Service() {
         recordingFile = file
         recording = true
 
+        // AUDIO-CAPTURE-U1 (POC): started right after the video recorder is
+        // confirmed running, reusing the same MediaProjection instance.
+        // Wrapped defensively — this experiment must never be able to affect
+        // video recording, which is already armed and running above this line.
+        // Gated to debug builds only: in release, InternalAudioRecorder is
+        // never instantiated/started, no apex_audio_poc directory is created,
+        // no WAV is produced — the video pipeline is untouched either way.
+        if (isDebuggableBuild()) {
+            runCatching {
+                val hasRecordAudioPermission = ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.RECORD_AUDIO,
+                ) == PackageManager.PERMISSION_GRANTED
+                val audioOutputDir = File(getExternalFilesDir(Environment.DIRECTORY_MUSIC), "apex_audio_poc")
+                val audioRecorder = InternalAudioRecorder()
+                internalAudioRecorder = audioRecorder
+                audioRecorder.start(projection, hasRecordAudioPermission, audioOutputDir)
+            }.onFailure { e ->
+                Log.e(TAG, "InternalAudioRecorder POC threw unexpectedly: ${e.message}", e)
+            }
+        }
+
         updateNotification(getString(R.string.capture_notification_recording_text))
         notifyToast(getString(R.string.capture_recording_text))
 
@@ -464,6 +503,13 @@ class ScreenCaptureService : Service() {
         videoVirtualDisplay = null
         val file = recordingFile
         recordingFile = null
+
+        // AUDIO-CAPTURE-U1 (POC): stopped alongside the video, independent of
+        // whatever the video validation below decides — this experiment does
+        // not read/write/register any file yet, so it has nothing to
+        // validate here. Never allowed to affect the video's success/failure.
+        runCatching { internalAudioRecorder?.stop() }
+        internalAudioRecorder = null
 
         try {
             // BUGFIX-U1: [discard] used to force this clip to be thrown away

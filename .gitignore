@@ -49,3 +49,7 @@ android/key.properties
 key.properties
 *.jks
 *.keystore
+
+# AUDIO-CAPTURE-U1 diagnostic artifacts
+/apex_audio_poc_*.wav
+/apex_audio_poc_*.wav.part
