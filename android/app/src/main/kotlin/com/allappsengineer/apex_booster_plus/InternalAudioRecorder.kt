@@ -25,7 +25,7 @@ import kotlin.math.sqrt
  * Deliberately does nothing else: no AAC, no MediaCodec, no MediaMuxer, no
  * muxing into the MP4. This class only reads PCM samples, streams them
  * incrementally to a raw .wav.part file, measures RMS/peak, and finalizes a
- * playable .wav on stop(). It never touches the video Surface/MediaRecorder/
+ * playable .wav via finalizeAndRelease(). It never touches the video Surface/MediaRecorder/
  * output file, and every failure path here is swallowed — a problem in this
  * class must never affect video recording, which keeps running exactly as it
  * does today regardless of what happens here.
@@ -62,10 +62,30 @@ class InternalAudioRecorder {
     private var recording = false
 
     // Set true only after readLoop()'s finally block has closed the PCM
-    // FileOutputStream — stop() refuses to patch/rename the file until this
-    // is confirmed, on top of (not instead of) the Thread.isAlive check.
+    // FileOutputStream — finalizeAndRelease() refuses to patch/rename the
+    // file until this is confirmed, on top of (not instead of) the
+    // Thread.isAlive check.
     @Volatile
     private var pcmStreamClosed = false
+
+    // AUDIO-CAPTURE-U2.2: true once start() has this instance fully wired up
+    // (AudioRecord initialized, read thread launched) — distinguishes "never
+    // started" (finalizeAndRelease() should be a silent no-op) from "started
+    // and already finalized". Reset at the top of every start().
+    @Volatile
+    private var started = false
+
+    // True after the first requestStop() call this session — makes
+    // requestStop() idempotent, including the internal call finalizeAndRelease()
+    // makes to itself. Reset at the top of every start().
+    @Volatile
+    private var stopRequested = false
+
+    // True after finalizeAndRelease() has run its join/release/rename logic
+    // once this session — guards against repeating that work on a duplicate
+    // call. Reset at the top of every start().
+    @Volatile
+    private var finalized = false
 
     private var audioRecord: AudioRecord? = null
     private var readThread: Thread? = null
@@ -74,8 +94,8 @@ class InternalAudioRecorder {
     private var partFile: File? = null
     private var finalFile: File? = null
 
-    // Written by readThread, read by the caller's thread in stop() only
-    // after Thread.join() returns — join() establishes a happens-before
+    // Written by readThread, read by the caller's thread in finalizeAndRelease()
+    // only after Thread.join() returns — join() establishes a happens-before
     // edge, so these plain fields are safely visible without @Volatile.
     private var pcmBytesWritten = 0L
     private var totalSamples = 0L
@@ -105,6 +125,8 @@ class InternalAudioRecorder {
      * caller's video recording is never affected by anything that happens here.
      */
     fun start(projection: MediaProjection, hasRecordAudioPermission: Boolean, outputDir: File) {
+        stopRequested = false
+        finalized = false
         if (!isSupported()) {
             Log.d(TAG, "capture blocked or unavailable — reason=unsupported_sdk")
             return
@@ -201,6 +223,7 @@ class InternalAudioRecorder {
 
         audioRecord = record
         pcmStreamClosed = false
+        started = true
         recording = true
 
         val thread = Thread({ readLoop(record, minBufferSize, part) }, "ApexAudioCaptureThread")
@@ -242,7 +265,7 @@ class InternalAudioRecorder {
         var out: FileOutputStream? = null
         try {
             out = FileOutputStream(part)
-            out.write(buildWavHeader(0)) // provisional header, patched on stop()
+            out.write(buildWavHeader(0)) // provisional header, patched on finalizeAndRelease()
 
             while (recording) {
                 val read = record.read(buffer, 0, buffer.size)
@@ -254,28 +277,40 @@ class InternalAudioRecorder {
                 }
                 if (read == 0) continue
 
+                // Only complete stereo frames are ever written/counted — a
+                // read() returning a shortcount not divisible by CHANNEL_COUNT
+                // would otherwise desync the L/R interleaving and skew the
+                // duration math (totalSamples / CHANNEL_COUNT) downstream.
+                val validShorts = read - (read % CHANNEL_COUNT)
+                if (validShorts <= 0) continue
+                val pcmFramesInBuffer = validShorts / CHANNEL_COUNT
+
                 pcmBytes.clear()
                 var sumOfSquares = 0.0
-                for (i in 0 until read) {
+                for (i in 0 until validShorts) {
                     val sample = buffer[i]
                     pcmBytes.putShort(sample)
                     val s = sample.toDouble()
                     sumOfSquares += s * s
                 }
-                // Only the readCount samples actually returned by this call —
+                // Only the valid, frame-aligned samples from this call —
                 // never the full (possibly stale-tailed) buffer.
-                out.write(pcmBytes.array(), 0, read * 2)
-                bytesWritten += read * 2
+                out.write(pcmBytes.array(), 0, validShorts * 2)
+                bytesWritten += validShorts * 2
 
-                val rms = sqrt(sumOfSquares / read)
+                val rms = sqrt(sumOfSquares / validShorts)
                 sumSquaresLocal += sumOfSquares
-                totalSamplesLocal += read
+                totalSamplesLocal += validShorts
                 reads++
                 if (rms > peakRmsLocal) peakRmsLocal = rms
 
                 if (reads % LOG_EVERY_N_READS == 0) {
                     val silent = rms < SILENCE_RMS_THRESHOLD
-                    Log.d(TAG, "rmsLevel=${"%.1f".format(rms)} silenceDetected=$silent")
+                    Log.d(
+                        TAG,
+                        "rmsLevel=${"%.1f".format(rms)} silenceDetected=$silent " +
+                            "pcmFramesInBuffer=$pcmFramesInBuffer",
+                    )
                 }
             }
         } catch (e: Exception) {
@@ -295,20 +330,39 @@ class InternalAudioRecorder {
     }
 
     /**
-     * Stops the experiment, finalizes the WAV file if — and only if — the
-     * capture thread provably finished and closed its stream, and releases
-     * all resources. Idempotent, best-effort — safe to call even if [start]
-     * never got past an early return.
+     * Non-blocking, idempotent, no-throw: signals the read loop to stop and
+     * best-effort calls [AudioRecord.stop] only to unblock a pending/blocking
+     * [AudioRecord.read] in [readLoop]. Never releases audioRecord or joins
+     * the read thread — that is [finalizeAndRelease]'s job. Safe to call
+     * repeatedly (including internally, from [finalizeAndRelease]) or even if
+     * [start] never got past an early return.
      */
-    fun stop() {
-        if (!recording) return
+    fun requestStop() {
+        if (stopRequested) return
+        stopRequested = true
         recording = false
+        runCatching { audioRecord?.stop() }
+    }
+
+    /**
+     * Idempotent, blocking: calls [requestStop] first (defensive — safe even
+     * if the caller already did, and avoids an unnecessary join timeout if it
+     * didn't), then waits for the read thread, confirms the PCM stream
+     * closed, patches the WAV header, renames .wav.part -> .wav, and releases
+     * the AudioRecord. Runs its join/release/rename logic at most once per
+     * [start] — a repeated call is a silent no-op. Safe to call even if
+     * [start] never got past an early return.
+     *
+     * If the read thread is still alive after both waits below, the
+     * .wav.part is preserved and never renamed/treated as a valid .wav.
+     */
+    fun finalizeAndRelease() {
+        requestStop()
+        if (!started || finalized) return
+        finalized = true
 
         val record = audioRecord
         audioRecord = null
-        // Unblocks a blocking record.read() call in readLoop so the thread
-        // can actually observe recording=false and exit.
-        runCatching { record?.stop() }
 
         val thread = readThread
         thread?.join(THREAD_JOIN_TIMEOUT_MS)

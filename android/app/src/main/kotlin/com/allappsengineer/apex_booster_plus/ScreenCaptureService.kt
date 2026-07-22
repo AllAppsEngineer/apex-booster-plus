@@ -510,9 +510,18 @@ class ScreenCaptureService : Service() {
      */
     fun stopVideoRecording(discard: Boolean) {
         if (!recording) return
-        // AUDIO-CAPTURE-U2.1: measured before recorder.stop() so it reflects
-        // the real stop request instant, not the (possibly slow) teardown.
+        // AUDIO-CAPTURE-U2.1: measured before recorder.stop() AND before
+        // internalAudioRecorder?.requestStop() below (which itself calls
+        // AudioRecord.stop() and can take a moment) so it keeps representing
+        // the real stop-request instant, not the (possibly slow) teardown.
         val stopRequestElapsedMs = SystemClock.elapsedRealtime()
+
+        // AUDIO-CAPTURE-U2.2: signaled as early as possible, non-blocking, so
+        // the read thread has this whole method's video-side bookkeeping
+        // below as a head start to wind down before the blocking
+        // finalizeAndRelease() call further down this same method.
+        runCatching { internalAudioRecorder?.requestStop() }
+
         val realSessionDurationMs =
             if (recordingStartElapsedMs > 0L) stopRequestElapsedMs - recordingStartElapsedMs else -1L
         recordingStartElapsedMs = -1L
@@ -532,11 +541,14 @@ class ScreenCaptureService : Service() {
         val file = recordingFile
         recordingFile = null
 
-        // AUDIO-CAPTURE-U1 (POC): stopped alongside the video, independent of
-        // whatever the video validation below decides — this experiment does
-        // not read/write/register any file yet, so it has nothing to
+        // AUDIO-CAPTURE-U1 (POC): finalized alongside the video, independent
+        // of whatever the video validation below decides — this experiment
+        // does not read/write/register any file yet, so it has nothing to
         // validate here. Never allowed to affect the video's success/failure.
-        runCatching { internalAudioRecorder?.stop() }
+        // AUDIO-CAPTURE-U2.2: requestStop() already ran above; this is the
+        // blocking join+finalize+release step, kept synchronous at this same
+        // point for now (no executor yet).
+        runCatching { internalAudioRecorder?.finalizeAndRelease() }
         internalAudioRecorder = null
 
         try {
