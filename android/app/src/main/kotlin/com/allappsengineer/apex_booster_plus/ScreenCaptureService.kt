@@ -24,6 +24,7 @@ import android.os.Environment
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
+import android.os.SystemClock
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
@@ -46,6 +47,15 @@ import org.json.JSONObject
  * API 34+. [MODE_SCREENSHOT] builds the ImageReader/VirtualDisplay pipeline
  * at arm time; [MODE_VIDEO] defers its VirtualDisplay to [startVideoRecording].
  */
+// AUDIO-CAPTURE-U2.1: classifies how the MP4's own metadata duration compares
+// to the real wall-clock session length measured via SystemClock.elapsedRealtime().
+// Diagnostic only — does not feed into the existing MP4 validation/discard path.
+private enum class TimelineClassification {
+    COHERENT,
+    SPARSE_VIDEO_TIMELINE,
+    UNKNOWN,
+}
+
 class ScreenCaptureService : Service() {
 
     companion object {
@@ -64,6 +74,11 @@ class ScreenCaptureService : Service() {
         private const val TAG = "ScreenCaptureService"
         private const val CAPTURE_RETRY_DELAY_MS = 150L
         private const val MAX_INDEX_ENTRIES = 60
+
+        // AUDIO-CAPTURE-U2.1: below this metadataDurationMs/realSessionDurationMs
+        // ratio, the MP4 timeline is considered too sparse relative to the real
+        // wall-clock session length to trust for future audio/video muxing.
+        private const val SPARSE_TIMELINE_RATIO_THRESHOLD = 0.5
 
         // SOCIAL-U7B: short/manual clip recording, no audio, user-selectable
         // duration. EXTRA_VIDEO_DURATION_MS is re-validated against this
@@ -114,6 +129,12 @@ class ScreenCaptureService : Service() {
 
     @Volatile
     private var recording = false
+
+    // AUDIO-CAPTURE-U2.1: elapsedRealtime() at the moment recorder.start()
+    // succeeded, consumed and reset to -1L at the top of stopVideoRecording()
+    // so it never carries over into the next recording session.
+    @Volatile
+    private var recordingStartElapsedMs: Long = -1L
 
     // DEBUG-U1: set for the duration of stopVideoRecording() so the
     // MediaProjection.Callback.onStop() fired by our OWN mediaProjection.stop()
@@ -433,6 +454,7 @@ class ScreenCaptureService : Service() {
         try {
             recorder.start()
             Log.d(TAG, "recorder started")
+            recordingStartElapsedMs = SystemClock.elapsedRealtime()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start MediaRecorder: ${e.message}", e)
             runCatching { display.release() }
@@ -488,6 +510,12 @@ class ScreenCaptureService : Service() {
      */
     fun stopVideoRecording(discard: Boolean) {
         if (!recording) return
+        // AUDIO-CAPTURE-U2.1: measured before recorder.stop() so it reflects
+        // the real stop request instant, not the (possibly slow) teardown.
+        val stopRequestElapsedMs = SystemClock.elapsedRealtime()
+        val realSessionDurationMs =
+            if (recordingStartElapsedMs > 0L) stopRequestElapsedMs - recordingStartElapsedMs else -1L
+        recordingStartElapsedMs = -1L
         recording = false
         // DEBUG-U1: block the MediaProjection.Callback.onStop() re-entrancy
         // path for the duration of this stop -> validate -> register
@@ -562,6 +590,24 @@ class ScreenCaptureService : Service() {
                 }
                 Log.d(TAG, "metadata duration=${durationMs}ms")
             }
+
+            // AUDIO-CAPTURE-U2.1: diagnostic-only timeline classification —
+            // does not affect the MP4 validation/discard decision below.
+            val timelineRatio = if (realSessionDurationMs > 0L) {
+                durationMs.toDouble() / realSessionDurationMs.toDouble()
+            } else {
+                -1.0
+            }
+            val timelineClassification = when {
+                realSessionDurationMs <= 0L || durationMs <= 0L -> TimelineClassification.UNKNOWN
+                timelineRatio < SPARSE_TIMELINE_RATIO_THRESHOLD -> TimelineClassification.SPARSE_VIDEO_TIMELINE
+                else -> TimelineClassification.COHERENT
+            }
+            Log.d(
+                TAG,
+                "timeline classification=$timelineClassification realSessionDurationMs=$realSessionDurationMs " +
+                    "metadataDurationMs=$durationMs ratio=$timelineRatio",
+            )
 
             if (stopOk && exists && size > 0L && durationMs > 0L) {
                 registerClip(file!!)
