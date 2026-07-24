@@ -26,6 +26,7 @@ import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
+import java.io.File
 
 @UnstableApi
 class MainActivity : FlutterFragmentActivity() {
@@ -456,6 +457,56 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 "isSessionArmed" -> {
                     result.success(ScreenCaptureService.instance != null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        // AUDIO-CAPTURE-U2.4: Kotlin/native is the only writer of
+        // index.json — Flutter reads the index directly but must request
+        // deletion through this channel instead of touching the file.
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "apex/gallery"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "deleteEntry" -> {
+                    val kind = when (call.argument<String>("kind")) {
+                        "screenshot" -> ClipKind.SCREENSHOT
+                        "video" -> ClipKind.VIDEO
+                        else -> null
+                    }
+                    val path = call.argument<String>("path")
+                    val id = call.argument<String>("id")
+                    if (kind == null || path.isNullOrEmpty()) {
+                        result.error("INVALID_ARGS", "kind (screenshot|video) and path are required", null)
+                        return@setMethodCallHandler
+                    }
+
+                    val store = ClipIndexStore.getInstance(applicationContext)
+                    // ID is authoritative for video entries; path is only a
+                    // fallback lookup key for legacy entries that never got
+                    // an id (screenshots, pre-U2.4 clips).
+                    val indexResult = if (kind == ClipKind.VIDEO && !id.isNullOrEmpty()) {
+                        store.deleteById(id)
+                    } else {
+                        store.deleteByPath(kind, path)
+                    }
+
+                    when (indexResult) {
+                        is ClipIndexResult.Success -> {
+                            // The physical file is deleted using the path
+                            // stored in the removed index entry itself —
+                            // never the raw argument received here.
+                            val storedPath = indexResult.path
+                            if (!storedPath.isNullOrEmpty()) {
+                                runCatching { File(storedPath).takeIf { it.exists() }?.delete() }
+                            }
+                            result.success(mapOf("status" to "success"))
+                        }
+                        is ClipIndexResult.NotFound -> result.success(mapOf("status" to "not_found"))
+                        is ClipIndexResult.Failure -> result.error("DELETE_FAILED", indexResult.reason, null)
+                    }
                 }
                 else -> result.notImplemented()
             }

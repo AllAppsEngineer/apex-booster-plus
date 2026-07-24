@@ -32,8 +32,6 @@ import androidx.core.content.ContextCompat
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import org.json.JSONArray
-import org.json.JSONObject
 
 /**
  * Foreground service for Modo Captura da Sessão (SOCIAL-U2B rework).
@@ -73,7 +71,6 @@ class ScreenCaptureService : Service() {
         private const val CHANNEL_ID = "apex_capture_channel"
         private const val TAG = "ScreenCaptureService"
         private const val CAPTURE_RETRY_DELAY_MS = 150L
-        private const val MAX_INDEX_ENTRIES = 60
 
         // AUDIO-CAPTURE-U2.1: below this metadataDurationMs/realSessionDurationMs
         // ratio, the MP4 timeline is considered too sparse relative to the real
@@ -157,6 +154,10 @@ class ScreenCaptureService : Service() {
     // just for this diagnostic POC is out of scope for this checkpoint.
     private fun isDebuggableBuild(): Boolean =
         (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+
+    // AUDIO-CAPTURE-U2.4: same process-wide instance MainActivity uses —
+    // one ClipIndexStore, one lock, for both apex_captures and apex_clips.
+    private val clipIndexStore get() = ClipIndexStore.getInstance(applicationContext)
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -697,35 +698,18 @@ class ScreenCaptureService : Service() {
     }
 
     /**
-     * Appends the clip to apex_clips/index.json with a "type": "video" marker
-     * so Flutter's gallery service can merge it with the screenshot index.
-     * Best-effort, mirrors [registerCapture].
+     * Registers the clip in apex_clips/index.json via the single
+     * ClipIndexStore coordinator, with a "type": "video" marker so Flutter's
+     * gallery service can merge it with the screenshot index. Best-effort —
+     * a registration failure never affects the already-saved MP4.
      */
     private fun registerClip(file: File) {
-        try {
-            val dir = file.parentFile ?: return
-            val indexFile = File(dir, "index.json")
-            val entries = if (indexFile.exists()) {
-                JSONArray(indexFile.readText())
-            } else {
-                JSONArray()
-            }
-            entries.put(JSONObject().apply {
-                put("type", "video")
-                put("path", file.absolutePath)
-                put("timestamp", System.currentTimeMillis())
-            })
-            val trimmed = if (entries.length() > MAX_INDEX_ENTRIES) {
-                JSONArray(
-                    (entries.length() - MAX_INDEX_ENTRIES until entries.length())
-                        .map { entries.get(it) },
-                )
-            } else {
-                entries
-            }
-            indexFile.writeText(trimmed.toString())
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to update clip index: ${e.message}", e)
+        when (val result = clipIndexStore.registerVideoClip(file.absolutePath, System.currentTimeMillis())) {
+            is ClipIndexResult.Success ->
+                Log.d(TAG, "clip registered in index id=${result.id} path=${result.path}")
+            is ClipIndexResult.Failure ->
+                Log.e(TAG, "Failed to update clip index: ${result.reason}")
+            ClipIndexResult.NotFound -> Unit // not a possible outcome for a register call
         }
     }
 
@@ -756,7 +740,7 @@ class ScreenCaptureService : Service() {
             FileOutputStream(file).use { out ->
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
             }
-            registerCapture(dir, file.absolutePath, timestamp)
+            registerCapture(file.absolutePath, timestamp)
             file.absolutePath
         } catch (e: IOException) {
             Log.e(TAG, "IOException saving bitmap: ${e.message}", e)
@@ -768,34 +752,19 @@ class ScreenCaptureService : Service() {
     }
 
     /**
-     * Appends the capture to apex_captures/index.json so Flutter (Apex Studio)
-     * can list previously captured screenshots without a MethodChannel round-trip.
-     * Best-effort: an index failure must not affect the capture itself, which is
-     * already saved on disk by the time this runs.
+     * Registers the capture in apex_captures/index.json via the single
+     * ClipIndexStore coordinator, so Flutter (Apex Studio) can list previously
+     * captured screenshots without a MethodChannel round-trip for reads.
+     * Best-effort: an index failure must not affect the capture itself, which
+     * is already saved on disk by the time this runs.
      */
-    private fun registerCapture(dir: File, filePath: String, timestamp: Long) {
-        try {
-            val indexFile = File(dir, "index.json")
-            val entries = if (indexFile.exists()) {
-                JSONArray(indexFile.readText())
-            } else {
-                JSONArray()
-            }
-            entries.put(JSONObject().apply {
-                put("path", filePath)
-                put("timestamp", timestamp)
-            })
-            val trimmed = if (entries.length() > MAX_INDEX_ENTRIES) {
-                JSONArray(
-                    (entries.length() - MAX_INDEX_ENTRIES until entries.length())
-                        .map { entries.get(it) },
-                )
-            } else {
-                entries
-            }
-            indexFile.writeText(trimmed.toString())
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to update capture index: ${e.message}", e)
+    private fun registerCapture(filePath: String, timestamp: Long) {
+        when (val result = clipIndexStore.registerScreenshot(filePath, timestamp)) {
+            is ClipIndexResult.Success ->
+                Log.d(TAG, "capture registered in index path=${result.path}")
+            is ClipIndexResult.Failure ->
+                Log.e(TAG, "Failed to update capture index: ${result.reason}")
+            ClipIndexResult.NotFound -> Unit // not a possible outcome for a register call
         }
     }
 

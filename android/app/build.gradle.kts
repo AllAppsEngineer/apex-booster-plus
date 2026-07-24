@@ -66,6 +66,11 @@ dependencies {
     implementation("androidx.media3:media3-transformer:1.9.2")
     implementation("androidx.media3:media3-effect:1.9.2")
     implementation("androidx.media3:media3-common:1.9.2")
+
+    // AUDIO-CAPTURE-U2.4: test-only, does not ship in the APK — JUnit for
+    // ClipIndexMutator/ClipIndexStore unit tests (pure Kotlin + fakes, no
+    // Robolectric needed).
+    testImplementation("junit:junit:4.13.2")
 }
 
 flutter {

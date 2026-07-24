@@ -1,24 +1,38 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:apex_booster_plus/data/services/screen_capture_gallery_service.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late Directory tempDir;
   late Directory captureDir;
+
+  const channel = MethodChannel('apex/gallery');
 
   setUp(() async {
     tempDir = await Directory.systemTemp.createTemp('apex_capture_gallery_test');
     captureDir = Directory('${tempDir.path}/Pictures/apex_captures');
     await captureDir.create(recursive: true);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null);
   });
 
   tearDown(() async {
     if (await tempDir.exists()) {
       await tempDir.delete(recursive: true);
     }
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null);
   });
+
+  void mockChannel(Future<dynamic> Function(MethodCall) handler) {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, handler);
+  }
 
   ScreenCaptureGalleryService makeService() =>
       ScreenCaptureGalleryService(resolveBaseDir: () async => tempDir);
@@ -55,6 +69,28 @@ void main() {
       expect(result, hasLength(1));
       expect(result.first.path, file.path);
       expect(result.first.capturedAt, DateTime.fromMillisecondsSinceEpoch(1000));
+    });
+
+    test('parses the id field when present', () async {
+      final file = await writeCaptureFile('apex_cap_1.png');
+      await writeIndex([
+        {'path': file.path, 'timestamp': 1000, 'id': 'abc-123'},
+      ]);
+
+      final result = await makeService().listCaptures();
+
+      expect(result.first.id, 'abc-123');
+    });
+
+    test('leaves id null for legacy entries without it', () async {
+      final file = await writeCaptureFile('apex_cap_1.png');
+      await writeIndex([
+        {'path': file.path, 'timestamp': 1000},
+      ]);
+
+      final result = await makeService().listCaptures();
+
+      expect(result.first.id, isNull);
     });
 
     test('drops entries whose file no longer exists on disk', () async {
@@ -102,122 +138,99 @@ void main() {
   });
 
   group('deleteCapture', () {
-    Future<Directory> clipDir() async {
-      final dir = Directory('${tempDir.path}/Movies/apex_clips');
-      await dir.create(recursive: true);
-      return dir;
-    }
+    test('invokes deleteEntry with kind=screenshot and no id', () async {
+      MethodCall? received;
+      mockChannel((call) async {
+        received = call;
+        return {'status': 'success'};
+      });
 
-    Future<void> writeClipIndex(
-        Directory dir, List<Map<String, dynamic>> entries) async {
-      final indexFile = File('${dir.path}/index.json');
-      await indexFile.writeAsString(jsonEncode(entries));
-    }
+      final capture = CapturedScreenshot(
+        path: '${captureDir.path}/apex_cap_1.png',
+        capturedAt: DateTime.fromMillisecondsSinceEpoch(1000),
+      );
 
-    Future<File> writeClipFile(Directory dir, String name) async {
-      final file = File('${dir.path}/$name');
-      await file.writeAsBytes([0]);
-      return file;
-    }
+      final ok = await makeService().deleteCapture(capture);
 
-    test('deletes screenshot file and removes its index.json entry',
-        () async {
+      expect(ok, isTrue);
+      expect(received?.method, 'deleteEntry');
+      expect(received?.arguments['kind'], 'screenshot');
+      expect(received?.arguments['path'], capture.path);
+      expect(received?.arguments['id'], isNull);
+    });
+
+    test('invokes deleteEntry with kind=video and id when present', () async {
+      MethodCall? received;
+      mockChannel((call) async {
+        received = call;
+        return {'status': 'success'};
+      });
+
+      final capture = CapturedScreenshot(
+        path: '${tempDir.path}/Movies/apex_clips/apex_clip_1.mp4',
+        capturedAt: DateTime.fromMillisecondsSinceEpoch(1000),
+        isVideo: true,
+        id: 'abc-123',
+      );
+
+      await makeService().deleteCapture(capture);
+
+      expect(received?.arguments['kind'], 'video');
+      expect(received?.arguments['id'], 'abc-123');
+    });
+
+    test('returns true when the channel reports success', () async {
+      mockChannel((call) async => {'status': 'success'});
+      final capture = CapturedScreenshot(
+        path: '${captureDir.path}/apex_cap_1.png',
+        capturedAt: DateTime.fromMillisecondsSinceEpoch(1000),
+      );
+
+      expect(await makeService().deleteCapture(capture), isTrue);
+    });
+
+    test('returns true (idempotent) when the channel reports not_found', () async {
+      mockChannel((call) async => {'status': 'not_found'});
+      final capture = CapturedScreenshot(
+        path: '${captureDir.path}/apex_cap_1.png',
+        capturedAt: DateTime.fromMillisecondsSinceEpoch(1000),
+      );
+
+      expect(await makeService().deleteCapture(capture), isTrue);
+    });
+
+    test('returns false when the channel throws PlatformException', () async {
+      mockChannel((call) async {
+        throw PlatformException(code: 'DELETE_FAILED');
+      });
+      final capture = CapturedScreenshot(
+        path: '${captureDir.path}/apex_cap_1.png',
+        capturedAt: DateTime.fromMillisecondsSinceEpoch(1000),
+      );
+
+      expect(await makeService().deleteCapture(capture), isFalse);
+    });
+
+    test('does not write to index.json or touch the file itself', () async {
       final file = await writeCaptureFile('apex_cap_1.png');
       await writeIndex([
         {'path': file.path, 'timestamp': 1000},
       ]);
+      mockChannel((call) async => {'status': 'success'});
 
       final capture = CapturedScreenshot(
         path: file.path,
         capturedAt: DateTime.fromMillisecondsSinceEpoch(1000),
       );
+      await makeService().deleteCapture(capture);
 
-      final ok = await makeService().deleteCapture(capture);
-
-      expect(ok, isTrue);
-      expect(await file.exists(), isFalse);
-      final indexFile = File('${captureDir.path}/index.json');
-      final decoded = jsonDecode(await indexFile.readAsString()) as List;
-      expect(decoded, isEmpty);
-    });
-
-    test('deletes video file and removes entry from apex_clips index.json',
-        () async {
-      final clips = await clipDir();
-      final file = await writeClipFile(clips, 'apex_clip_1.mp4');
-      await writeClipIndex(clips, [
-        {'path': file.path, 'timestamp': 1000, 'type': 'video'},
-      ]);
-
-      final capture = CapturedScreenshot(
-        path: file.path,
-        capturedAt: DateTime.fromMillisecondsSinceEpoch(1000),
-        isVideo: true,
-      );
-
-      final ok = await makeService().deleteCapture(capture);
-
-      expect(ok, isTrue);
-      expect(await file.exists(), isFalse);
-      final indexFile = File('${clips.path}/index.json');
-      final decoded = jsonDecode(await indexFile.readAsString()) as List;
-      expect(decoded, isEmpty);
-    });
-
-    test('removes broken index entry without crashing when file already gone',
-        () async {
-      final file = await writeCaptureFile('apex_cap_gone.png');
-      await writeIndex([
-        {'path': file.path, 'timestamp': 1000},
-      ]);
-      await file.delete();
-
-      final capture = CapturedScreenshot(
-        path: file.path,
-        capturedAt: DateTime.fromMillisecondsSinceEpoch(1000),
-      );
-
-      final ok = await makeService().deleteCapture(capture);
-
-      expect(ok, isTrue);
-      final indexFile = File('${captureDir.path}/index.json');
-      final decoded = jsonDecode(await indexFile.readAsString()) as List;
-      expect(decoded, isEmpty);
-    });
-
-    test('does not affect other entries or files in the same index',
-        () async {
-      final keep = await writeCaptureFile('apex_cap_keep.png');
-      final remove = await writeCaptureFile('apex_cap_remove.png');
-      await writeIndex([
-        {'path': keep.path, 'timestamp': 1000},
-        {'path': remove.path, 'timestamp': 2000},
-      ]);
-
-      final capture = CapturedScreenshot(
-        path: remove.path,
-        capturedAt: DateTime.fromMillisecondsSinceEpoch(2000),
-      );
-
-      final ok = await makeService().deleteCapture(capture);
-
-      expect(ok, isTrue);
-      expect(await keep.exists(), isTrue);
-      expect(await remove.exists(), isFalse);
+      // Deletion is entirely delegated to the channel handler (mocked here
+      // as a no-op on disk) — the service itself never calls File.delete()
+      // or writes index.json, so both are untouched by this call.
+      expect(await file.exists(), isTrue);
       final indexFile = File('${captureDir.path}/index.json');
       final decoded = jsonDecode(await indexFile.readAsString()) as List;
       expect(decoded, hasLength(1));
-      expect((decoded.first as Map)['path'], keep.path);
-    });
-
-    test('returns false when base directory resolves to null', () async {
-      final service = ScreenCaptureGalleryService(resolveBaseDir: () async => null);
-      final capture = CapturedScreenshot(
-        path: '${captureDir.path}/whatever.png',
-        capturedAt: DateTime.fromMillisecondsSinceEpoch(1000),
-      );
-
-      expect(await service.deleteCapture(capture), isFalse);
     });
   });
 }
