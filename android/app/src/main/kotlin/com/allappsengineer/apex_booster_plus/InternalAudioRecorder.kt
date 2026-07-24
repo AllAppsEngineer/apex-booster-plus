@@ -4,6 +4,11 @@ import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioPlaybackCaptureConfiguration
 import android.media.AudioRecord
+import android.media.MediaCodec
+import android.media.MediaCodecInfo
+import android.media.MediaExtractor
+import android.media.MediaFormat
+import android.media.MediaMuxer
 import android.media.projection.MediaProjection
 import android.os.Build
 import android.util.Log
@@ -12,7 +17,23 @@ import java.io.FileOutputStream
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.math.abs
 import kotlin.math.sqrt
+
+/**
+ * AUDIO-CAPTURE-U2.3: independent PCM copy handed off from the capture
+ * thread to [InternalAudioRecorder]'s dedicated AAC encoder thread. Never
+ * aliases the capture loop's reused buffers — [bytes] is this slot's own
+ * fixed-capacity array, filled up to [validByteLength] on each handoff.
+ */
+private class AacPcmSlot(maxBytes: Int) {
+    val bytes = ByteArray(maxBytes)
+    var validByteLength = 0
+    var validFrameCount = 0
+}
 
 /**
  * AUDIO-CAPTURE-U1.1B: isolated experiment proving whether
@@ -56,6 +77,26 @@ class InternalAudioRecorder {
 
         private const val THREAD_JOIN_TIMEOUT_MS = 1_500L
         private const val THREAD_JOIN_RETRY_TIMEOUT_MS = 500L
+
+        // AUDIO-CAPTURE-U2.3: AAC-LC encode of the same validated PCM,
+        // isolated on its own thread — see ApexAacEncoderThread below.
+        private const val AAC_MIME_TYPE = "audio/mp4a-latm"
+        private const val AAC_BITRATE = 128_000
+        private const val AAC_QUEUE_CAPACITY = 8
+        private const val AAC_POLL_TIMEOUT_MS = 50L
+        private const val AAC_INPUT_DEQUEUE_TIMEOUT_US = 10_000L
+
+        // Operational budget for delivering one PCM chunk (fragmented, frame
+        // aligned) to the encoder, and for the EOS handshake — exceeding
+        // either invalidates the AAC session but never touches WAV/MP4.
+        private const val AAC_FRAGMENT_BUDGET_MS = 200L
+        private const val AAC_EOS_DRAIN_MAX_ATTEMPTS = 100
+        private const val AAC_THREAD_JOIN_TIMEOUT_MS = 1_500L
+
+        // Standard AAC-LC frame length in samples per channel — used only to
+        // estimate the duration contributed by the last encoded frame, since
+        // MediaExtractor exposes sample *start* times, not durations.
+        private const val AAC_FRAME_SAMPLE_COUNT = 1_024L
     }
 
     @Volatile
@@ -103,6 +144,40 @@ class InternalAudioRecorder {
     private var peakRms = 0.0
     private var negativeReadCount = 0
     private var lastNegativeReadCode = 0
+
+    // AUDIO-CAPTURE-U2.3: AAC session state. aacSessionValid only ever moves
+    // true -> false (never back), flipped exclusively through invalidateAac()
+    // so the first reason wins and is never lost to a race between the
+    // capture thread (queue/pool saturation) and the encoder thread (codec
+    // errors). @Volatile because both threads write/read it.
+    @Volatile
+    private var aacSessionValid = false
+    private val aacInvalidReason = AtomicReference<String?>(null)
+
+    // Set (in a finally block) by the capture thread once no more PCM will
+    // ever be produced — the encoder thread's only permitted signal to drain
+    // its queue and move on to EOS.
+    @Volatile
+    private var aacProducerDone = false
+
+    // Set by the encoder thread once its own MediaCodec/MediaMuxer
+    // stop()/release() sequence has run (success or failure) — mirrors
+    // pcmStreamClosed's role for the WAV path.
+    @Volatile
+    private var aacStreamClosed = false
+
+    @Volatile
+    private var aacEosOutputSeen = false
+
+    // Single writer (encoder thread only) during encoding; read by the
+    // caller's thread in validateAndPromoteAac() only after
+    // ApexAacEncoderThread.join() returns — same happens-before reasoning as
+    // pcmBytesWritten above.
+    private var totalPcmFramesQueued = 0L
+
+    private var aacEncoderThread: Thread? = null
+    private var aacPart: File? = null
+    private var aacFinal: File? = null
 
     /** API 29 (Android 10) is the platform floor for AudioPlaybackCaptureConfiguration. */
     fun isSupported(): Boolean {
@@ -203,6 +278,10 @@ class InternalAudioRecorder {
         val final = File(outputDir, "apex_audio_poc_$timestamp.wav")
         partFile = part
         finalFile = final
+        val aacPartFile = File(outputDir, "apex_audio_poc_$timestamp.m4a.part")
+        val aacFinalFile = File(outputDir, "apex_audio_poc_$timestamp.m4a")
+        aacPart = aacPartFile
+        aacFinal = aacFinalFile
 
         try {
             record.startRecording()
@@ -226,7 +305,29 @@ class InternalAudioRecorder {
         started = true
         recording = true
 
-        val thread = Thread({ readLoop(record, minBufferSize, part) }, "ApexAudioCaptureThread")
+        aacSessionValid = true
+        aacInvalidReason.set(null)
+        aacProducerDone = false
+        aacStreamClosed = false
+        aacEosOutputSeen = false
+        totalPcmFramesQueued = 0L
+
+        val maxChunkBytes = (minBufferSize / 2).coerceAtLeast(1) * 2
+        val aacFreeSlots = ArrayBlockingQueue<AacPcmSlot>(AAC_QUEUE_CAPACITY)
+        repeat(AAC_QUEUE_CAPACITY) { aacFreeSlots.offer(AacPcmSlot(maxChunkBytes)) }
+        val aacWorkQueue = ArrayBlockingQueue<AacPcmSlot>(AAC_QUEUE_CAPACITY)
+
+        val aacThread = Thread(
+            { aacEncoderLoop(aacFreeSlots, aacWorkQueue, aacPartFile) },
+            "ApexAacEncoderThread",
+        )
+        aacEncoderThread = aacThread
+        aacThread.start()
+
+        val thread = Thread(
+            { readLoop(record, minBufferSize, part, aacFreeSlots, aacWorkQueue) },
+            "ApexAudioCaptureThread",
+        )
         readThread = thread
         thread.start()
     }
@@ -251,7 +352,13 @@ class InternalAudioRecorder {
         return buffer.array()
     }
 
-    private fun readLoop(record: AudioRecord, minBufferSize: Int, part: File) {
+    private fun readLoop(
+        record: AudioRecord,
+        minBufferSize: Int,
+        part: File,
+        aacFreeSlots: ArrayBlockingQueue<AacPcmSlot>,
+        aacWorkQueue: ArrayBlockingQueue<AacPcmSlot>,
+    ) {
         val buffer = ShortArray((minBufferSize / 2).coerceAtLeast(1))
         val pcmBytes = ByteBuffer.allocate(buffer.size * 2).order(ByteOrder.LITTLE_ENDIAN)
         var bytesWritten = 0L
@@ -298,6 +405,15 @@ class InternalAudioRecorder {
                 out.write(pcmBytes.array(), 0, validShorts * 2)
                 bytesWritten += validShorts * 2
 
+                // AUDIO-CAPTURE-U2.3: best-effort, non-blocking handoff of an
+                // independent copy of this same validated chunk to the AAC
+                // encoder thread. Any failure here is contained inside
+                // submitPcmForAac() (invalidateAac()) and never touches the
+                // WAV write above or this loop's control flow.
+                runCatching {
+                    submitPcmForAac(pcmBytes.array(), validShorts * 2, pcmFramesInBuffer, aacFreeSlots, aacWorkQueue)
+                }
+
                 val rms = sqrt(sumOfSquares / validShorts)
                 sumSquaresLocal += sumOfSquares
                 totalSamplesLocal += validShorts
@@ -319,6 +435,11 @@ class InternalAudioRecorder {
             runCatching { out?.flush() }
             runCatching { out?.close() }
             pcmStreamClosed = true
+            // Must be set here, in the finally block, so the encoder thread
+            // is guaranteed to observe "no more PCM coming" even if this
+            // loop exits via an exception — otherwise it would poll its
+            // queue forever and never reach EOS (req. 3).
+            aacProducerDone = true
         }
 
         pcmBytesWritten = bytesWritten
@@ -327,6 +448,357 @@ class InternalAudioRecorder {
         peakRms = peakRmsLocal
         negativeReadCount = negativeCount
         lastNegativeReadCode = lastNegativeCode
+    }
+
+    /**
+     * Runs on the capture thread. Copies exactly [validByteLength] bytes
+     * (already frame-aligned by the caller, same [validShorts]-derived value
+     * used for the WAV write) out of the reused [sourceBytes] array into a
+     * pooled [AacPcmSlot] — never a reference to a buffer the capture loop
+     * will overwrite on its next iteration. Non-blocking: pool/queue
+     * exhaustion invalidates the AAC session instead of waiting.
+     */
+    private fun submitPcmForAac(
+        sourceBytes: ByteArray,
+        validByteLength: Int,
+        pcmFramesInBuffer: Int,
+        aacFreeSlots: ArrayBlockingQueue<AacPcmSlot>,
+        aacWorkQueue: ArrayBlockingQueue<AacPcmSlot>,
+    ) {
+        if (!aacSessionValid) return
+        val slot = aacFreeSlots.poll()
+        if (slot == null) {
+            invalidateAac("aac_buffer_pool_exhausted")
+            return
+        }
+        System.arraycopy(sourceBytes, 0, slot.bytes, 0, validByteLength)
+        slot.validByteLength = validByteLength
+        slot.validFrameCount = pcmFramesInBuffer
+        if (!aacWorkQueue.offer(slot)) {
+            // Nobody will ever consume this slot now — return it so the pool
+            // doesn't shrink for the (already invalidated) rest of the session.
+            aacFreeSlots.offer(slot)
+            invalidateAac("aac_queue_saturated")
+        }
+    }
+
+    /**
+     * Single, thread-safe choke point for every AAC failure path (capture
+     * thread: pool/queue saturation; encoder thread: codec/muxer/validation
+     * errors). Preserves only the first reason via CAS, flips
+     * [aacSessionValid] to false (a one-way transition for the session), and
+     * never throws — safe to call from either thread at any time without any
+     * risk of affecting WAV, video/MP4, or ScreenCaptureService.
+     */
+    private fun invalidateAac(reason: String) {
+        aacSessionValid = false
+        if (aacInvalidReason.compareAndSet(null, reason)) {
+            Log.e(TAG, "capture blocked or unavailable — reason=$reason (aac)")
+        }
+    }
+
+    /**
+     * Runs entirely on ApexAacEncoderThread — the only thread that ever
+     * touches [MediaCodec]/[MediaMuxer] for this session. Consumes
+     * [aacWorkQueue] until the capture thread signals [aacProducerDone] AND
+     * the queue is empty, then performs the EOS handshake. Every failure
+     * path routes through [invalidateAac]; cleanup in the trailing block
+     * always runs so native resources are released regardless of outcome.
+     */
+    private fun aacEncoderLoop(
+        aacFreeSlots: ArrayBlockingQueue<AacPcmSlot>,
+        aacWorkQueue: ArrayBlockingQueue<AacPcmSlot>,
+        aacPartFile: File,
+    ) {
+        var codec: MediaCodec? = null
+        var muxer: MediaMuxer? = null
+        var muxerTrackIndex = -1
+        var muxerStarted = false
+        var formatChangeCount = 0
+        var lastWrittenPtsUs = -1L
+        val bufferInfo = MediaCodec.BufferInfo()
+
+        fun drainOutput(timeoutUs: Long): Boolean {
+            val enc = codec ?: return false
+            while (true) {
+                val outIndex = enc.dequeueOutputBuffer(bufferInfo, timeoutUs)
+                when {
+                    outIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
+                        if (muxerStarted) {
+                            formatChangeCount++
+                            if (formatChangeCount > 1) {
+                                invalidateAac("aac_unexpected_format_change")
+                                return aacEosOutputSeen
+                            }
+                        } else {
+                            try {
+                                val newMuxer = MediaMuxer(
+                                    aacPartFile.absolutePath,
+                                    MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4,
+                                )
+                                val trackIndex = newMuxer.addTrack(enc.outputFormat)
+                                newMuxer.start()
+                                muxer = newMuxer
+                                muxerTrackIndex = trackIndex
+                                muxerStarted = true
+                            } catch (e: Exception) {
+                                invalidateAac("aac_muxer_start_failed")
+                                return aacEosOutputSeen
+                            }
+                        }
+                    }
+                    outIndex == MediaCodec.INFO_TRY_AGAIN_LATER -> return aacEosOutputSeen
+                    outIndex >= 0 -> {
+                        try {
+                            val isConfigOnly = (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0
+                            if (bufferInfo.size > 0 && !isConfigOnly) {
+                                val activeMuxer = muxer
+                                if (!muxerStarted || activeMuxer == null) {
+                                    invalidateAac("aac_sample_before_muxer_start")
+                                } else if (bufferInfo.presentationTimeUs < lastWrittenPtsUs) {
+                                    invalidateAac("aac_pts_non_monotonic")
+                                } else {
+                                    val outBuf = enc.getOutputBuffer(outIndex)
+                                    if (outBuf != null) {
+                                        outBuf.position(bufferInfo.offset)
+                                        outBuf.limit(bufferInfo.offset + bufferInfo.size)
+                                        activeMuxer.writeSampleData(muxerTrackIndex, outBuf, bufferInfo)
+                                        lastWrittenPtsUs = bufferInfo.presentationTimeUs
+                                    }
+                                }
+                            }
+                            if ((bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                                aacEosOutputSeen = true
+                            }
+                        } finally {
+                            runCatching { enc.releaseOutputBuffer(outIndex, false) }
+                        }
+                        if (aacEosOutputSeen) return true
+                    }
+                }
+            }
+        }
+
+        fun encodeSlot(slot: AacPcmSlot) {
+            val enc = codec ?: return
+            val frameSizeBytes = CHANNEL_COUNT * 2
+            var offset = 0
+            val deadline = System.nanoTime() + AAC_FRAGMENT_BUDGET_MS * 1_000_000L
+            while (offset < slot.validByteLength && aacSessionValid) {
+                val inIndex = enc.dequeueInputBuffer(AAC_INPUT_DEQUEUE_TIMEOUT_US)
+                if (inIndex < 0) {
+                    if (System.nanoTime() > deadline) break
+                    continue
+                }
+                val inputBuffer = enc.getInputBuffer(inIndex)
+                if (inputBuffer == null) {
+                    invalidateAac("aac_input_buffer_unavailable")
+                    break
+                }
+                inputBuffer.clear()
+                val remaining = slot.validByteLength - offset
+                val rawFit = minOf(inputBuffer.capacity(), remaining)
+                // Never splits a stereo frame across two input buffers.
+                val fit = rawFit - (rawFit % frameSizeBytes)
+                if (fit <= 0) break
+                inputBuffer.put(slot.bytes, offset, fit)
+                val ptsUs = totalPcmFramesQueued * 1_000_000L / SAMPLE_RATE
+                try {
+                    enc.queueInputBuffer(inIndex, 0, fit, ptsUs, 0)
+                } catch (e: Exception) {
+                    invalidateAac("aac_queue_input_failed")
+                    break
+                }
+                totalPcmFramesQueued += fit / frameSizeBytes
+                offset += fit
+                drainOutput(0L)
+            }
+            if (offset < slot.validByteLength) {
+                // A chunk that could not be delivered whole, within budget,
+                // is never partially represented in the AAC — the whole
+                // session is invalid, but WAV/MP4 are untouched.
+                invalidateAac("aac_chunk_incomplete")
+            }
+        }
+
+        try {
+            val format = MediaFormat.createAudioFormat(AAC_MIME_TYPE, SAMPLE_RATE, CHANNEL_COUNT).apply {
+                setInteger(MediaFormat.KEY_BIT_RATE, AAC_BITRATE)
+                setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
+                setInteger(MediaFormat.KEY_PCM_ENCODING, AudioFormat.ENCODING_PCM_16BIT)
+            }
+            val enc = MediaCodec.createEncoderByType(AAC_MIME_TYPE)
+            enc.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
+            enc.start()
+            codec = enc
+        } catch (e: Exception) {
+            invalidateAac("aac_encoder_init_failed: ${e.message}")
+        }
+
+        // Drains the work queue regardless of validity — an invalidated
+        // session still recycles slots back to the pool so the capture
+        // thread's non-blocking submitPcmForAac() degrades cleanly instead
+        // of tripping aac_buffer_pool_exhausted on every remaining chunk.
+        while (true) {
+            val slot = aacWorkQueue.poll(AAC_POLL_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            if (slot != null) {
+                if (aacSessionValid) encodeSlot(slot)
+                aacFreeSlots.offer(slot)
+                continue
+            }
+            if (aacProducerDone && aacWorkQueue.isEmpty()) break
+        }
+
+        if (aacSessionValid) {
+            val enc = codec
+            if (enc == null) {
+                invalidateAac("aac_encoder_missing_at_eos")
+            } else {
+                var eosSent = false
+                val eosDeadline = System.nanoTime() + AAC_FRAGMENT_BUDGET_MS * 1_000_000L
+                while (System.nanoTime() < eosDeadline) {
+                    val inIndex = enc.dequeueInputBuffer(AAC_INPUT_DEQUEUE_TIMEOUT_US)
+                    if (inIndex >= 0) {
+                        val ptsUs = totalPcmFramesQueued * 1_000_000L / SAMPLE_RATE
+                        try {
+                            enc.queueInputBuffer(inIndex, 0, 0, ptsUs, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+                            eosSent = true
+                        } catch (e: Exception) {
+                            invalidateAac("aac_eos_queue_failed")
+                        }
+                        break
+                    }
+                }
+                if (!eosSent) {
+                    invalidateAac("aac_eos_input_timeout")
+                } else {
+                    var attempts = 0
+                    while (!aacEosOutputSeen && attempts < AAC_EOS_DRAIN_MAX_ATTEMPTS && aacSessionValid) {
+                        drainOutput(AAC_INPUT_DEQUEUE_TIMEOUT_US)
+                        attempts++
+                    }
+                    if (!aacEosOutputSeen) {
+                        invalidateAac("aac_eos_output_timeout")
+                    }
+                }
+            }
+        }
+
+        runCatching { if (muxerStarted) muxer?.stop() }.onFailure { invalidateAac("aac_muxer_stop_failed") }
+        runCatching { muxer?.release() }
+        runCatching { codec?.stop() }
+        runCatching { codec?.release() }
+        aacStreamClosed = true
+    }
+
+    /**
+     * Runs on the caller's thread, only after ApexAacEncoderThread.join() has
+     * confirmed the thread finished — the same happens-before guarantee used
+     * for the WAV-side fields. Promotes .m4a.part -> .m4a only when the
+     * session stayed valid end to end AND an independent MediaExtractor pass
+     * confirms exactly one playable audio/mp4a-latm track with monotonic PTS
+     * and a duration consistent with the PCM frames actually queued. Any
+     * failure preserves the .m4a.part (debug-only path, gated upstream by
+     * isDebuggableBuild() in ScreenCaptureService) and never touches WAV/MP4.
+     */
+    private fun validateAndPromoteAac() {
+        if (!aacSessionValid) {
+            Log.e(
+                TAG,
+                "capture blocked or unavailable — reason=${aacInvalidReason.get() ?: "aac_session_invalid"} " +
+                    "(aac) — .m4a not promoted",
+            )
+            return
+        }
+        if (!aacStreamClosed || !aacEosOutputSeen) {
+            invalidateAac("aac_stream_incomplete")
+            return
+        }
+        if (totalPcmFramesQueued <= 0L) {
+            invalidateAac("no_pcm_frames_queued")
+            return
+        }
+        val part = aacPart
+        val final = aacFinal
+        if (part == null || final == null || !part.exists() || part.length() <= 0L) {
+            invalidateAac("aac_part_missing_or_empty")
+            return
+        }
+
+        val expectedDurationUs = totalPcmFramesQueued * 1_000_000L / SAMPLE_RATE
+        val estimatedLastSampleDurationUs = AAC_FRAME_SAMPLE_COUNT * 1_000_000L / SAMPLE_RATE
+
+        val extractor = MediaExtractor()
+        try {
+            extractor.setDataSource(part.absolutePath)
+            if (extractor.trackCount != 1) {
+                invalidateAac("aac_track_count_unexpected")
+                return
+            }
+            val format = extractor.getTrackFormat(0)
+            if (format.getString(MediaFormat.KEY_MIME) != AAC_MIME_TYPE) {
+                invalidateAac("aac_track_mime_mismatch")
+                return
+            }
+            extractor.selectTrack(0)
+
+            var sampleCount = 0
+            var firstPtsUs = -1L
+            var lastPtsUs = -1L
+            val scratch = ByteBuffer.allocate(256 * 1024)
+            while (true) {
+                val size = extractor.readSampleData(scratch, 0)
+                if (size < 0) break
+                val pts = extractor.sampleTime
+                if (firstPtsUs < 0L) firstPtsUs = pts
+                if (pts < lastPtsUs) {
+                    invalidateAac("aac_extractor_pts_non_monotonic")
+                    return
+                }
+                lastPtsUs = pts
+                sampleCount++
+                extractor.advance()
+            }
+            if (sampleCount == 0 || firstPtsUs < 0L) {
+                invalidateAac("aac_extractor_no_samples")
+                return
+            }
+
+            val actualDurationUs = (lastPtsUs - firstPtsUs) + estimatedLastSampleDurationUs
+            val toleranceUs = maxOf(250_000L, expectedDurationUs * 3L / 100L)
+            if (abs(actualDurationUs - expectedDurationUs) > toleranceUs) {
+                invalidateAac("aac_duration_mismatch")
+                Log.e(
+                    TAG,
+                    "capture blocked or unavailable — reason=aac_duration_mismatch (aac) " +
+                        "actualDurationUs=$actualDurationUs expectedDurationUs=$expectedDurationUs " +
+                        "toleranceUs=$toleranceUs",
+                )
+                return
+            }
+        } catch (e: Exception) {
+            invalidateAac("aac_extractor_validation_failed: ${e.message}")
+            return
+        } finally {
+            runCatching { extractor.release() }
+        }
+
+        val renamed = try {
+            part.renameTo(final)
+        } catch (e: Exception) {
+            Log.e(TAG, "capture blocked or unavailable — reason=aac_rename_failed: ${e.message} (aac)", e)
+            false
+        }
+        if (!renamed) {
+            invalidateAac("aac_rename_failed")
+            return
+        }
+
+        Log.d(
+            TAG,
+            "AAC saved path=${final.absolutePath} bytes=${final.length()} " +
+                "framesQueued=$totalPcmFramesQueued expectedDurationUs=$expectedDurationUs",
+        )
     }
 
     /**
@@ -402,6 +874,28 @@ class InternalAudioRecorder {
         }
 
         finalizeWavFile()
+
+        // AUDIO-CAPTURE-U2.3: bounded wait for the AAC encoder thread — never
+        // indefinite. requestStop()/the capture-thread join above already
+        // guarantee aacProducerDone=true was set (in a finally block) once
+        // the capture thread confirmed finished, so a healthy encoder thread
+        // has everything it needs to reach EOS and exit on its own by now.
+        val aacThread = aacEncoderThread
+        aacEncoderThread = null
+        if (aacThread != null) {
+            aacThread.join(AAC_THREAD_JOIN_TIMEOUT_MS)
+            if (aacThread.isAlive) {
+                invalidateAac("aac_thread_timeout")
+                Log.e(
+                    TAG,
+                    "capture blocked or unavailable — reason=aac_thread_timeout waitedMs=$AAC_THREAD_JOIN_TIMEOUT_MS " +
+                        "path=${aacPart?.absolutePath} (aac) — preserving .m4a.part",
+                )
+            } else {
+                validateAndPromoteAac()
+            }
+        }
+
         Log.d(TAG, "audio capture stopped")
     }
 
