@@ -11,6 +11,7 @@ import android.media.MediaFormat
 import android.media.MediaMuxer
 import android.media.projection.MediaProjection
 import android.os.Build
+import android.os.SystemClock
 import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
@@ -132,6 +133,14 @@ class InternalAudioRecorder {
     private var readThread: Thread? = null
     private var minBufferSizeUsed = 0
 
+    // AUDIO-CAPTURE-U2.5: elapsedRealtime() at the moment AudioRecord
+    // .startRecording() was confirmed running in start() — written only from
+    // the caller's thread inside start(), read only from the caller's thread
+    // via getAudioStartElapsedMs() after finalizeAndRelease() has returned.
+    // Same single-thread reasoning as ScreenCaptureService's own
+    // recordingStartElapsedMs, so no @Volatile is needed.
+    private var audioStartElapsedMs: Long = -1L
+
     private var partFile: File? = null
     private var finalFile: File? = null
 
@@ -202,6 +211,7 @@ class InternalAudioRecorder {
     fun start(projection: MediaProjection, hasRecordAudioPermission: Boolean, outputDir: File) {
         stopRequested = false
         finalized = false
+        audioStartElapsedMs = -1L
         if (!isSupported()) {
             Log.d(TAG, "capture blocked or unavailable — reason=unsupported_sdk")
             return
@@ -299,6 +309,11 @@ class InternalAudioRecorder {
             runCatching { record.release() }
             return
         }
+
+        // AUDIO-CAPTURE-U2.5: captured right here, right after startRecording()
+        // is confirmed — mirrors ScreenCaptureService's own
+        // recordingStartElapsedMs capture point for the video recorder.
+        audioStartElapsedMs = SystemClock.elapsedRealtime()
 
         audioRecord = record
         pcmStreamClosed = false
@@ -897,6 +912,26 @@ class InternalAudioRecorder {
         }
 
         Log.d(TAG, "audio capture stopped")
+    }
+
+    /**
+     * AUDIO-CAPTURE-U2.5: elapsedRealtime() captured right after
+     * AudioRecord.startRecording() was confirmed running in [start] — used by
+     * ClipAudioMuxer to compute the signed offset between this recorder's
+     * start instant and the video recorder's own start instant. Safe to call
+     * any time; returns -1L if [start] never reached that point.
+     */
+    fun getAudioStartElapsedMs(): Long = audioStartElapsedMs
+
+    /**
+     * AUDIO-CAPTURE-U2.5: the finalized, validated M4A file — non-null only
+     * once [finalizeAndRelease] has already run AND [validateAndPromoteAac]
+     * successfully renamed .m4a.part -> .m4a. Safe to call at any time;
+     * simply returns null before that point or after any AAC failure.
+     */
+    fun getFinalizedAacFileOrNull(): File? {
+        val final = aacFinal
+        return if (aacSessionValid && final != null && final.exists()) final else null
     }
 
     /**

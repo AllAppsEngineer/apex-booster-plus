@@ -525,6 +525,10 @@ class ScreenCaptureService : Service() {
 
         val realSessionDurationMs =
             if (recordingStartElapsedMs > 0L) stopRequestElapsedMs - recordingStartElapsedMs else -1L
+        // AUDIO-CAPTURE-U2.5: saved before the reset below — ClipAudioMuxer
+        // needs the video recorder's own start instant to compute the signed
+        // offset against InternalAudioRecorder's own start instant.
+        val videoStartElapsedMsForMux = recordingStartElapsedMs
         recordingStartElapsedMs = -1L
         recording = false
         // DEBUG-U1: block the MediaProjection.Callback.onStop() re-entrancy
@@ -549,7 +553,12 @@ class ScreenCaptureService : Service() {
         // AUDIO-CAPTURE-U2.2: requestStop() already ran above; this is the
         // blocking join+finalize+release step, kept synchronous at this same
         // point for now (no executor yet).
-        runCatching { internalAudioRecorder?.finalizeAndRelease() }
+        // AUDIO-CAPTURE-U2.5: the File/start-instant the mux needs are read
+        // here, BEFORE internalAudioRecorder is nulled below.
+        val audioRecorderForMux = internalAudioRecorder
+        runCatching { audioRecorderForMux?.finalizeAndRelease() }
+        val finalAacFileForMux = audioRecorderForMux?.getFinalizedAacFileOrNull()
+        val audioStartElapsedMsForMux = audioRecorderForMux?.getAudioStartElapsedMs() ?: -1L
         internalAudioRecorder = null
 
         try {
@@ -631,6 +640,22 @@ class ScreenCaptureService : Service() {
                 // must reflect what was really saved.
                 val seconds = (durationMs / 1_000L).toInt().coerceAtLeast(1)
                 notifyToast(getString(R.string.capture_video_saved_with_duration, seconds))
+
+                // AUDIO-CAPTURE-U2.5: best-effort AV mux attempt — debug
+                // builds only, and only once the video is already confirmed
+                // valid/registered above. Never affects the already-saved
+                // MP4/registration; any outcome here is contained entirely
+                // inside ClipAudioMuxer/maybeMuxClipAudio.
+                if (isDebuggableBuild() && finalAacFileForMux != null) {
+                    maybeMuxClipAudio(
+                        videoFile = file,
+                        audioFile = finalAacFileForMux,
+                        videoDurationMs = durationMs,
+                        realSessionDurationMs = realSessionDurationMs,
+                        videoStartElapsedMs = videoStartElapsedMsForMux,
+                        audioStartElapsedMs = audioStartElapsedMsForMux,
+                    )
+                }
             } else {
                 Log.e(
                     TAG,
@@ -710,6 +735,53 @@ class ScreenCaptureService : Service() {
             is ClipIndexResult.Failure ->
                 Log.e(TAG, "Failed to update clip index: ${result.reason}")
             ClipIndexResult.NotFound -> Unit // not a possible outcome for a register call
+        }
+    }
+
+    /**
+     * AUDIO-CAPTURE-U2.5: gates on timeline eligibility, then runs
+     * [ClipAudioMuxer] on a dedicated thread and joins it with a bounded
+     * timeout — this call blocks stopVideoRecording() until the mux finishes
+     * or the timeout elapses, keeping the service "alive" for it instead of
+     * letting teardown race an unbounded background attempt. Any outcome is
+     * best-effort/logged only; never affects the already-registered clip,
+     * the index, or the original MP4/WAV/M4A files.
+     */
+    private fun maybeMuxClipAudio(
+        videoFile: File,
+        audioFile: File,
+        videoDurationMs: Long,
+        realSessionDurationMs: Long,
+        videoStartElapsedMs: Long,
+        audioStartElapsedMs: Long,
+    ) {
+        val muxer = ClipAudioMuxer()
+        if (!muxer.isTimelineEligible(videoDurationMs, realSessionDurationMs)) {
+            Log.e(
+                TAG,
+                "capture blocked or unavailable — reason=video_timeline_not_mux_eligible " +
+                    "videoDurationMs=$videoDurationMs realSessionDurationMs=$realSessionDurationMs",
+            )
+            return
+        }
+        val thread = Thread(
+            {
+                runCatching {
+                    muxer.muxSynchronously(videoFile, audioFile, videoStartElapsedMs, audioStartElapsedMs)
+                }.onFailure { e ->
+                    Log.e(TAG, "ClipAudioMuxer threw unexpectedly: ${e.message}", e)
+                }
+            },
+            "ApexClipAudioMuxerThread",
+        )
+        thread.start()
+        thread.join(ClipAudioMuxer.MUX_THREAD_JOIN_TIMEOUT_MS)
+        if (thread.isAlive) {
+            Log.e(
+                TAG,
+                "capture blocked or unavailable — reason=av_mux_thread_timeout " +
+                    "waitedMs=${ClipAudioMuxer.MUX_THREAD_JOIN_TIMEOUT_MS}",
+            )
         }
     }
 
