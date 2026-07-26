@@ -23,6 +23,17 @@ import kotlin.math.max
  * apex_clip_<timestamp>_av.mp4.part for diagnosis; it is only ever promoted
  * to apex_clip_<timestamp>_av.mp4 after [validateOutput] passes.
  */
+/**
+ * AUDIO-CAPTURE-U2.6: outcome of [ClipAudioMuxer.muxSynchronously] — lets the
+ * caller (ScreenCaptureService) know whether to promote the clip index entry
+ * to the muxed file, and with which path/size/duration, without re-opening
+ * the output file itself.
+ */
+sealed class MuxResult {
+    data class Success(val outputFile: File, val sizeBytes: Long, val durationMs: Long) : MuxResult()
+    data class Failure(val reason: String) : MuxResult()
+}
+
 class ClipAudioMuxer {
 
     companion object {
@@ -55,10 +66,31 @@ class ClipAudioMuxer {
 
         private val ALLOWED_ROTATIONS = intArrayOf(0, 90, 180, 270)
 
-        // Bounded wait ScreenCaptureService uses to join the dedicated mux
-        // thread before letting session teardown proceed — "keep the service
-        // alive until done, or a controlled timeout", never indefinitely.
-        const val MUX_THREAD_JOIN_TIMEOUT_MS = 5_000L
+        // AUDIO-CAPTURE-U2.6: replaces the old fixed 5s join wait. Longer
+        // sessions produce bigger files and take longer to copy/validate, so
+        // the bound scales with the real recording length instead of being a
+        // one-size-fits-all constant — floor and ceiling keep it bounded
+        // either way ("keep the service alive until done, or a controlled
+        // timeout", never indefinitely, never disproportionate to a 4s clip).
+        const val MUX_TIMEOUT_FLOOR_MS = 15_000L
+        const val MUX_TIMEOUT_CEILING_MS = 30_000L
+
+        /** Pure — no I/O, safe to call before spawning the mux thread. */
+        fun computeMuxTimeoutMs(realSessionDurationMs: Long): Long =
+            maxOf(MUX_TIMEOUT_FLOOR_MS, minOf(MUX_TIMEOUT_CEILING_MS, realSessionDurationMs / 2L))
+
+        /**
+         * AUDIO-CAPTURE-U2.6: single formula deciding whether a clip is
+         * registered as PROCESSING (mux attempted) or READY_WITHOUT_AUDIO
+         * right away (mux never attempted, no register-then-downgrade
+         * churn). Pure — centralized here so it's unit-testable without
+         * Robolectric, since ScreenCaptureService itself isn't.
+         */
+        fun computeAudioCandidateEligible(
+            hasAudioCandidate: Boolean,
+            silenceDetected: Boolean,
+            muxTimelineEligible: Boolean,
+        ): Boolean = hasAudioCandidate && !silenceDetected && muxTimelineEligible
     }
 
     /**
@@ -75,7 +107,7 @@ class ClipAudioMuxer {
     /**
      * Runs synchronously on the caller's thread — ScreenCaptureService is
      * responsible for calling this from a dedicated thread and joining it
-     * with [MUX_THREAD_JOIN_TIMEOUT_MS]. [videoStartElapsedMs] and
+     * with an adaptive timeout (see [computeMuxTimeoutMs]). [videoStartElapsedMs] and
      * [audioStartElapsedMs] must both be SystemClock.elapsedRealtime()
      * instants (video recorder.start() success, and
      * InternalAudioRecorder.start()'s AudioRecord.startRecording() success,
@@ -87,14 +119,14 @@ class ClipAudioMuxer {
         audioFile: File,
         videoStartElapsedMs: Long,
         audioStartElapsedMs: Long,
-    ) {
+    ): MuxResult {
         if (!videoFile.exists() || videoFile.length() <= 0L) {
             Log.e(TAG, "capture blocked or unavailable — reason=av_mux_video_missing path=${videoFile.absolutePath}")
-            return
+            return MuxResult.Failure("av_mux_video_missing")
         }
         if (!audioFile.exists() || audioFile.length() <= 0L) {
             Log.e(TAG, "capture blocked or unavailable — reason=av_mux_audio_missing path=${audioFile.absolutePath}")
-            return
+            return MuxResult.Failure("av_mux_audio_missing")
         }
 
         val videoBaseName = videoFile.name.removeSuffix(".mp4")
@@ -115,14 +147,14 @@ class ClipAudioMuxer {
             val videoTrackIndex = findTrackIndex(vExtractor, VIDEO_MIME_PREFIX)
             if (videoTrackIndex < 0) {
                 Log.e(TAG, "capture blocked or unavailable — reason=av_mux_no_video_track")
-                return
+                return MuxResult.Failure("av_mux_no_video_track")
             }
             vExtractor.selectTrack(videoTrackIndex)
             val videoFormat = vExtractor.getTrackFormat(videoTrackIndex)
             val videoMime = videoFormat.getString(MediaFormat.KEY_MIME)
             if (videoMime == null || !videoMime.startsWith(VIDEO_MIME_PREFIX)) {
                 Log.e(TAG, "capture blocked or unavailable — reason=av_mux_video_mime_mismatch mime=$videoMime")
-                return
+                return MuxResult.Failure("av_mux_video_mime_mismatch")
             }
 
             val aExtractor = MediaExtractor().apply { setDataSource(audioFile.absolutePath) }
@@ -133,14 +165,14 @@ class ClipAudioMuxer {
                     "capture blocked or unavailable — reason=av_mux_audio_track_count_unexpected " +
                         "count=${aExtractor.trackCount}",
                 )
-                return
+                return MuxResult.Failure("av_mux_audio_track_count_unexpected")
             }
             aExtractor.selectTrack(0)
             val audioFormat = aExtractor.getTrackFormat(0)
             val audioMime = audioFormat.getString(MediaFormat.KEY_MIME)
             if (audioMime != EXPECTED_AUDIO_MIME) {
                 Log.e(TAG, "capture blocked or unavailable — reason=av_mux_audio_mime_mismatch mime=$audioMime")
-                return
+                return MuxResult.Failure("av_mux_audio_mime_mismatch")
             }
 
             val rotationDegrees = readRotationDegrees(videoFile)
@@ -168,7 +200,7 @@ class ClipAudioMuxer {
                 buffer = buffer,
                 videoStartElapsedMs = videoStartElapsedMs,
                 audioStartElapsedMs = audioStartElapsedMs,
-            ) ?: return // reason already logged inside copyInterleaved
+            ) ?: return MuxResult.Failure("av_mux_copy_failed") // reason already logged inside copyInterleaved
 
             val stopped = runCatching { newMuxer.stop() }
             muxerStarted = false
@@ -177,7 +209,7 @@ class ClipAudioMuxer {
                     TAG,
                     "capture blocked or unavailable — reason=av_mux_muxer_stop_failed: ${stopped.exceptionOrNull()?.message}",
                 )
-                return
+                return MuxResult.Failure("av_mux_muxer_stop_failed")
             }
             runCatching { newMuxer.release() }
             muxer = null
@@ -192,7 +224,7 @@ class ClipAudioMuxer {
             )
             if (!valid) {
                 // Reason already logged inside validateOutput; .part preserved for diagnosis.
-                return
+                return MuxResult.Failure("av_mux_output_validation_failed")
             }
 
             val renamed = try {
@@ -203,7 +235,7 @@ class ClipAudioMuxer {
             }
             if (!renamed) {
                 Log.e(TAG, "capture blocked or unavailable — reason=av_mux_rename_failed path=${partFile.absolutePath}")
-                return
+                return MuxResult.Failure("av_mux_rename_failed")
             }
 
             Log.d(
@@ -211,8 +243,14 @@ class ClipAudioMuxer {
                 "AV mux saved path=${finalFile.absolutePath} bytes=${finalFile.length()} " +
                     "rotation=$rotationDegrees videoSpanUs=${copyResult.videoSpanUs} audioSpanUs=${copyResult.audioSpanUs}",
             )
+            return MuxResult.Success(
+                outputFile = finalFile,
+                sizeBytes = finalFile.length(),
+                durationMs = copyResult.videoSpanUs / 1_000L,
+            )
         } catch (e: Exception) {
             Log.e(TAG, "capture blocked or unavailable — reason=av_mux_unexpected_error: ${e.message}", e)
+            return MuxResult.Failure("av_mux_unexpected_error")
         } finally {
             if (muxerStarted) {
                 runCatching { muxer?.stop() }

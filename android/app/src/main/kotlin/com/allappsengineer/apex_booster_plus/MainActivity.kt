@@ -66,8 +66,25 @@ class MainActivity : FlutterFragmentActivity() {
     private fun isDebuggableBuild(): Boolean =
         (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
+    // AUDIO-CAPTURE-U2.6: entries left in PROCESSING for at least this long
+    // (crash, kill, or an unresolved mux) are demoted to READY_WITHOUT_AUDIO
+    // by the startup recovery sweep below.
+    private val staleAudioProcessingTimeoutMs = 120_000L
+
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // AUDIO-CAPTURE-U2.6: startup recovery sweep — never recreates a
+        // deleted entry, never re-triggers a mux; pure index cleanup, safe
+        // to run unconditionally (a no-op when nothing is stale).
+        runCatching {
+            val recoveredIds = ClipIndexStore.getInstance(applicationContext)
+                .recoverStaleAudioProcessing(System.currentTimeMillis(), staleAudioProcessingTimeoutMs)
+            if (recoveredIds.isNotEmpty()) {
+                android.util.Log.d("AudioProcessingRecovery", "recovered stale PROCESSING ids=$recoveredIds")
+            }
+        }
+
         audioPermissionLauncher = registerForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) { granted ->

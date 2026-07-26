@@ -188,6 +188,14 @@ class InternalAudioRecorder {
     private var aacPart: File? = null
     private var aacFinal: File? = null
 
+    // AUDIO-CAPTURE-U2.6: set by finalizeWavFile() before finalizeAndRelease()
+    // returns; read via wasSilenceDetected() by the caller afterwards.
+    // Defaults to true (conservative "unknown/blocked" reading) so a WAV
+    // finalize that bails out early (e.g. rename failure) is never mistaken
+    // for confirmed non-silent audio.
+    @Volatile
+    private var lastRecordingSilent = true
+
     /** API 29 (Android 10) is the platform floor for AudioPlaybackCaptureConfiguration. */
     fun isSupported(): Boolean {
         val supported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
@@ -935,6 +943,15 @@ class InternalAudioRecorder {
     }
 
     /**
+     * AUDIO-CAPTURE-U2.6: true unless [finalizeWavFile] confirmed genuine
+     * non-silent audio. Conservative by default — any early bailout inside
+     * [finalizeWavFile] (rename failure, size mismatch, etc.) leaves this at
+     * its default `true`, so the caller never treats an unverified
+     * recording as "not silent". Safe to call at any time.
+     */
+    fun wasSilenceDetected(): Boolean = lastRecordingSilent
+
+    /**
      * Patches the provisional WAV header with real RIFF/data sizes and
      * renames .wav.part -> .wav — but only when the patch and the resulting
      * file size are verifiably correct. Any failure preserves the .wav.part
@@ -1014,6 +1031,7 @@ class InternalAudioRecorder {
 
         val overallRms = if (totalSamples > 0) sqrt(sumSquares / totalSamples) else 0.0
         val silenceDetected = totalSamples == 0L || overallRms < SILENCE_RMS_THRESHOLD
+        lastRecordingSilent = silenceDetected
         val durationMs = if (totalSamples > 0) {
             (totalSamples.toDouble() / CHANNEL_COUNT / SAMPLE_RATE * 1000).toLong()
         } else {

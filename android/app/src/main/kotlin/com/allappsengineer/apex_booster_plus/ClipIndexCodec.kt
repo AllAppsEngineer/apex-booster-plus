@@ -17,7 +17,8 @@ interface ClipIndexCodec {
 }
 
 class JsonClipIndexCodec : ClipIndexCodec {
-    private val knownKeys = setOf("path", "timestamp", "type", "id", "audioState", "audioProcessingStartedAt")
+    private val knownKeys =
+        setOf("path", "timestamp", "type", "id", "audioState", "audioProcessingStartedAt", "size", "durationMs")
 
     override fun decode(raw: String?): List<ClipEntry> {
         if (raw.isNullOrBlank()) return emptyList()
@@ -49,6 +50,8 @@ class JsonClipIndexCodec : ClipIndexCodec {
                     audioState = if (obj.has("audioState")) obj.optString("audioState") else null,
                     audioProcessingStartedAt =
                         if (obj.has("audioProcessingStartedAt")) obj.optLong("audioProcessingStartedAt") else null,
+                    size = if (obj.has("size")) obj.optLong("size") else null,
+                    durationMs = if (obj.has("durationMs")) obj.optLong("durationMs") else null,
                     unknownFields = unknown,
                 ),
             )
@@ -66,6 +69,8 @@ class JsonClipIndexCodec : ClipIndexCodec {
             entry.id?.let { obj.put("id", it) }
             entry.audioState?.let { obj.put("audioState", it) }
             entry.audioProcessingStartedAt?.let { obj.put("audioProcessingStartedAt", it) }
+            entry.size?.let { obj.put("size", it) }
+            entry.durationMs?.let { obj.put("durationMs", it) }
             for ((key, value) in entry.unknownFields) {
                 obj.put(key, toJson(value))
             }

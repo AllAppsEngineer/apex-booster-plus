@@ -33,8 +33,10 @@ class ClipIndexStore(
         path: String,
         timestamp: Long,
         audioState: AudioState = AudioState.READY_WITHOUT_AUDIO,
+        sizeBytes: Long? = null,
+        durationMs: Long? = null,
     ): ClipIndexResult = mutate(clipsStorage) { entries ->
-        ClipIndexMutator.insertVideoClip(entries, path, timestamp, audioState)
+        ClipIndexMutator.insertVideoClip(entries, path, timestamp, audioState, clock.nowMillis(), sizeBytes, durationMs)
     }
 
     fun registerScreenshot(path: String, timestamp: Long): ClipIndexResult =
@@ -52,6 +54,46 @@ class ClipIndexStore(
         mutate(clipsStorage) { entries ->
             ClipIndexMutator.updateAudioState(entries, id, newState, clock.nowMillis())
         }
+
+    /**
+     * AUDIO-CAPTURE-U2.6: repoints [id]'s entry at [path] (promotion to the
+     * muxed `_av.mp4`, or rollback to the original file if a post-promotion
+     * confirmation fails) — the only entry point that changes an existing
+     * entry's path. See [ClipIndexMutator.updateClipFile].
+     */
+    fun updateClipFile(id: String, path: String, sizeBytes: Long?, durationMs: Long?, audioState: AudioState): ClipIndexResult =
+        mutate(clipsStorage) { entries ->
+            ClipIndexMutator.updateClipFile(entries, id, path, sizeBytes, durationMs, audioState)
+        }
+
+    /**
+     * AUDIO-CAPTURE-U2.6: read-only — always re-reads [clipsStorage] from
+     * disk (never trusts in-memory state from a previous mutate() call),
+     * which is what lets a caller "reler o índice e confirmar a alteração"
+     * after a write it just performed.
+     */
+    fun findVideoClipById(id: String): ClipEntry? = synchronized(lock) {
+        codec.decode(clipsStorage.readRaw()).firstOrNull { it.id == id }
+    }
+
+    /**
+     * AUDIO-CAPTURE-U2.6: startup recovery sweep — demotes any entry stuck
+     * in PROCESSING (crash, kill, or an unresolved mux) for at least
+     * [timeoutMs] back to READY_WITHOUT_AUDIO. Returns the recovered ids.
+     * Never writes when nothing is stale.
+     */
+    fun recoverStaleAudioProcessing(now: Long, timeoutMs: Long): List<String> = synchronized(lock) {
+        return try {
+            val entries = codec.decode(clipsStorage.readRaw())
+            val (updated, recoveredIds) = ClipIndexMutator.recoverStaleAudioProcessing(entries, now, timeoutMs)
+            if (recoveredIds.isNotEmpty()) {
+                clipsStorage.writeRaw(codec.encode(ClipIndexMutator.trim(updated)))
+            }
+            recoveredIds
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
 
     private fun storageFor(kind: ClipKind): ClipIndexStorage =
         if (kind == ClipKind.VIDEO) clipsStorage else capturesStorage

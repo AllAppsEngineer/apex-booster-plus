@@ -2,6 +2,7 @@ package com.allappsengineer.apex_booster_plus
 
 import java.io.IOException
 import java.util.concurrent.CyclicBarrier
+import java.util.concurrent.atomic.AtomicBoolean
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -370,5 +371,209 @@ class ClipIndexStoreTest {
 
         val finalPaths = codec.decode(storage.readRaw()).map { it.path }.toSet()
         assertEquals(setOf("/new.mp4"), finalPaths)
+    }
+
+    // ---- AUDIO-CAPTURE-U2.6: elegibilidade decidida antes do registro ----
+
+    @Test
+    fun `candidato silencioso e registrado direto como READY_WITHOUT_AUDIO sem passar por PROCESSING`() {
+        val codec = FakeClipIndexCodec()
+        val storage = FakeClipIndexStorage()
+        val store = newStore(clipsStorage = storage, codec = codec)
+        val eligible = ClipAudioMuxer.computeAudioCandidateEligible(
+            hasAudioCandidate = true,
+            silenceDetected = true,
+            muxTimelineEligible = true,
+        )
+
+        store.registerVideoClip(
+            path = "/a.mp4",
+            timestamp = 1L,
+            audioState = if (eligible) AudioState.PROCESSING else AudioState.READY_WITHOUT_AUDIO,
+        )
+
+        val entry = codec.decode(storage.readRaw()).single()
+        assertEquals("READY_WITHOUT_AUDIO", entry.audioState)
+        assertNull(entry.audioProcessingStartedAt)
+    }
+
+    @Test
+    fun `timeline inelegivel e registrado direto como READY_WITHOUT_AUDIO`() {
+        val codec = FakeClipIndexCodec()
+        val storage = FakeClipIndexStorage()
+        val store = newStore(clipsStorage = storage, codec = codec)
+        val eligible = ClipAudioMuxer.computeAudioCandidateEligible(
+            hasAudioCandidate = true,
+            silenceDetected = false,
+            muxTimelineEligible = false,
+        )
+
+        store.registerVideoClip(
+            path = "/a.mp4",
+            timestamp = 1L,
+            audioState = if (eligible) AudioState.PROCESSING else AudioState.READY_WITHOUT_AUDIO,
+        )
+
+        val entry = codec.decode(storage.readRaw()).single()
+        assertEquals("READY_WITHOUT_AUDIO", entry.audioState)
+        assertNull(entry.audioProcessingStartedAt)
+    }
+
+    // ---- updateClipFile / rollback ----
+
+    @Test
+    fun `rollback via updateClipFile restaura path size e duration originais`() {
+        val codec = FakeClipIndexCodec()
+        val storage = FakeClipIndexStorage()
+        val store = newStore(clipsStorage = storage, codec = codec, clock = FixedClock(5_000L))
+        val reg = store.registerVideoClip(
+            path = "/a.mp4",
+            timestamp = 1L,
+            audioState = AudioState.PROCESSING,
+            sizeBytes = 1_000L,
+            durationMs = 4_000L,
+        ) as ClipIndexResult.Success
+        val before = store.findVideoClipById(reg.id!!)!!
+
+        // Promoção (simula sucesso do mux).
+        store.updateClipFile(
+            id = reg.id,
+            path = "/a_av.mp4",
+            sizeBytes = 1_200L,
+            durationMs = 4_050L,
+            audioState = AudioState.READY_WITH_AUDIO,
+        )
+        assertEquals("/a_av.mp4", store.findVideoClipById(reg.id)!!.path)
+
+        // Confirmação falhou — rollback completo para os valores originais.
+        store.updateClipFile(
+            id = reg.id,
+            path = before.path,
+            sizeBytes = before.size,
+            durationMs = before.durationMs,
+            audioState = AudioState.READY_WITHOUT_AUDIO,
+        )
+
+        val restored = store.findVideoClipById(reg.id)!!
+        assertEquals("/a.mp4", restored.path)
+        assertEquals(1_000L, restored.size)
+        assertEquals(4_000L, restored.durationMs)
+        assertEquals("READY_WITHOUT_AUDIO", restored.audioState)
+        // audioProcessingStartedAt (gravado na criação, em PROCESSING) sobrevive intacto.
+        assertEquals(5_000L, restored.audioProcessingStartedAt)
+    }
+
+    // ---- recoverStaleAudioProcessing ----
+
+    @Test
+    fun `recoverStaleAudioProcessing rebaixa PROCESSING mais antigo que o timeout preservando o path`() {
+        val codec = FakeClipIndexCodec()
+        val storage = FakeClipIndexStorage()
+        val store = newStore(clipsStorage = storage, codec = codec, clock = FixedClock(1_000L))
+        val reg = store.registerVideoClip(
+            path = "/a.mp4",
+            timestamp = 1L,
+            audioState = AudioState.PROCESSING,
+        ) as ClipIndexResult.Success
+
+        val recovered = store.recoverStaleAudioProcessing(now = 1_000L + 120_000L + 1L, timeoutMs = 120_000L)
+
+        assertEquals(listOf(reg.id!!), recovered)
+        val entry = store.findVideoClipById(reg.id)!!
+        assertEquals("READY_WITHOUT_AUDIO", entry.audioState)
+        assertEquals("/a.mp4", entry.path)
+    }
+
+    @Test
+    fun `recoverStaleAudioProcessing mantem PROCESSING recente intacto`() {
+        val codec = FakeClipIndexCodec()
+        val storage = FakeClipIndexStorage()
+        val store = newStore(clipsStorage = storage, codec = codec, clock = FixedClock(1_000L))
+        val reg = store.registerVideoClip(
+            path = "/a.mp4",
+            timestamp = 1L,
+            audioState = AudioState.PROCESSING,
+        ) as ClipIndexResult.Success
+
+        val recovered = store.recoverStaleAudioProcessing(now = 1_000L + 60_000L, timeoutMs = 120_000L)
+
+        assertTrue(recovered.isEmpty())
+        assertEquals("PROCESSING", store.findVideoClipById(reg.id!!)!!.audioState)
+        assertEquals(1, storage.writeCount) // apenas o write do registro inicial, nenhum write da varredura
+    }
+
+    // ---- corrida vencedor unico (AtomicBoolean) ----
+
+    @Test
+    fun `duas resolucoes concorrentes guardadas por um unico AtomicBoolean mutam o indice uma so vez`() {
+        val codec = FakeClipIndexCodec()
+        val storage = FakeClipIndexStorage()
+        val store = newStore(clipsStorage = storage, codec = codec)
+        val reg = store.registerVideoClip(
+            path = "/a.mp4",
+            timestamp = 1L,
+            audioState = AudioState.PROCESSING,
+        ) as ClipIndexResult.Success
+        val writesBeforeRace = storage.writeCount
+
+        val resolved = AtomicBoolean(false)
+        val barrier = CyclicBarrier(2)
+        // Simula maybeMuxClipAudio: lado do timeout rebaixa para
+        // READY_WITHOUT_AUDIO; lado da thread de mux (sucesso tardio)
+        // promove para READY_WITH_AUDIO — só um dos dois pode vencer.
+        val timeoutThread = Thread {
+            barrier.await()
+            if (resolved.compareAndSet(false, true)) {
+                store.updateAudioState(reg.id!!, AudioState.READY_WITHOUT_AUDIO)
+            }
+        }
+        val lateSuccessThread = Thread {
+            barrier.await()
+            if (resolved.compareAndSet(false, true)) {
+                store.updateClipFile(reg.id!!, "/a_av.mp4", 1_200L, 4_050L, AudioState.READY_WITH_AUDIO)
+            }
+        }
+        timeoutThread.start()
+        lateSuccessThread.start()
+        timeoutThread.join()
+        lateSuccessThread.join()
+
+        assertEquals(1, storage.writeCount - writesBeforeRace)
+        val entry = store.findVideoClipById(reg.id!!)!!
+        assertTrue(
+            (entry.audioState == "READY_WITHOUT_AUDIO" && entry.path == "/a.mp4") ||
+                (entry.audioState == "READY_WITH_AUDIO" && entry.path == "/a_av.mp4"),
+        )
+    }
+
+    // ---- promoção concorrente com exclusão ----
+
+    @Test
+    fun `promocao concorrente com exclusao pelo id nao recria a entrada`() {
+        val codec = FakeClipIndexCodec()
+        val storage = FakeClipIndexStorage()
+        val store = newStore(clipsStorage = storage, codec = codec) // instancia unica compartilhada
+        val reg = store.registerVideoClip(
+            path = "/a.mp4",
+            timestamp = 1L,
+            audioState = AudioState.PROCESSING,
+        ) as ClipIndexResult.Success
+
+        val barrier = CyclicBarrier(2)
+        val promoteThread = Thread {
+            barrier.await()
+            store.updateClipFile(reg.id!!, "/a_av.mp4", 1_200L, 4_050L, AudioState.READY_WITH_AUDIO)
+        }
+        val deleteThread = Thread {
+            barrier.await()
+            store.deleteById(reg.id!!)
+        }
+        promoteThread.start()
+        deleteThread.start()
+        promoteThread.join()
+        deleteThread.join()
+
+        val entries = codec.decode(storage.readRaw())
+        assertEquals(0, entries.count { it.id == reg.id })
     }
 }

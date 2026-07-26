@@ -32,6 +32,7 @@ import androidx.core.content.ContextCompat
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Foreground service for Modo Captura da Sessão (SOCIAL-U2B rework).
@@ -632,8 +633,31 @@ class ScreenCaptureService : Service() {
             )
 
             if (stopOk && exists && size > 0L && durationMs > 0L) {
-                registerClip(file!!)
-                Log.d(TAG, "clip registered in index path=${file.absolutePath}")
+                // AUDIO-CAPTURE-U2.6: eligibility decided once, up front —
+                // an ineligible/silent/blocked candidate is registered
+                // directly as READY_WITHOUT_AUDIO and never enters
+                // PROCESSING at all (no register-then-downgrade churn).
+                val muxer = ClipAudioMuxer()
+                val silenceDetected = audioRecorderForMux?.wasSilenceDetected() ?: true
+                val muxTimelineEligible = muxer.isTimelineEligible(durationMs, realSessionDurationMs)
+                val audioCandidateEligible = ClipAudioMuxer.computeAudioCandidateEligible(
+                    hasAudioCandidate = finalAacFileForMux != null,
+                    silenceDetected = silenceDetected,
+                    muxTimelineEligible = muxTimelineEligible,
+                )
+                Log.d(
+                    TAG,
+                    "audio candidate eligibility hasAudio=${finalAacFileForMux != null} " +
+                        "silenceDetected=$silenceDetected muxTimelineEligible=$muxTimelineEligible " +
+                        "audioCandidateEligible=$audioCandidateEligible",
+                )
+
+                val clipId = registerClip(
+                    file = file!!,
+                    durationMs = durationMs,
+                    audioState = if (audioCandidateEligible) AudioState.PROCESSING else AudioState.READY_WITHOUT_AUDIO,
+                )
+                Log.d(TAG, "clip registered in index path=${file.absolutePath} id=$clipId")
                 // Uses the clip's actual measured duration, not the
                 // requested cap — an early-but-valid stop (see BUGFIX-U1
                 // above) records less than videoDurationMs, and the toast
@@ -641,19 +665,22 @@ class ScreenCaptureService : Service() {
                 val seconds = (durationMs / 1_000L).toInt().coerceAtLeast(1)
                 notifyToast(getString(R.string.capture_video_saved_with_duration, seconds))
 
-                // AUDIO-CAPTURE-U2.5: best-effort AV mux attempt — debug
-                // builds only, and only once the video is already confirmed
-                // valid/registered above. Never affects the already-saved
-                // MP4/registration; any outcome here is contained entirely
-                // inside ClipAudioMuxer/maybeMuxClipAudio.
-                if (isDebuggableBuild() && finalAacFileForMux != null) {
+                // AUDIO-CAPTURE-U2.6: mux only starts when the clip actually
+                // has an id AND was eligible — "se registerClip falhar ou
+                // não retornar ID, não iniciar mux". Debug builds only; any
+                // outcome from here on is contained entirely inside
+                // ClipAudioMuxer/maybeMuxClipAudio/promoteClip and never
+                // affects the already-saved MP4/registration by itself.
+                if (isDebuggableBuild() && audioCandidateEligible && clipId != null) {
+                    val muxTimeoutMs = ClipAudioMuxer.computeMuxTimeoutMs(realSessionDurationMs)
                     maybeMuxClipAudio(
+                        clipId = clipId,
                         videoFile = file,
-                        audioFile = finalAacFileForMux,
-                        videoDurationMs = durationMs,
+                        audioFile = finalAacFileForMux!!,
                         realSessionDurationMs = realSessionDurationMs,
                         videoStartElapsedMs = videoStartElapsedMsForMux,
                         audioStartElapsedMs = audioStartElapsedMsForMux,
+                        muxTimeoutMs = muxTimeoutMs,
                     )
                 }
             } else {
@@ -726,62 +753,176 @@ class ScreenCaptureService : Service() {
      * Registers the clip in apex_clips/index.json via the single
      * ClipIndexStore coordinator, with a "type": "video" marker so Flutter's
      * gallery service can merge it with the screenshot index. Best-effort —
-     * a registration failure never affects the already-saved MP4.
+     * a registration failure never affects the already-saved MP4. Returns
+     * the new entry's id, or null if registration failed (in which case the
+     * caller must not attempt a mux — AUDIO-CAPTURE-U2.6).
      */
-    private fun registerClip(file: File) {
-        when (val result = clipIndexStore.registerVideoClip(file.absolutePath, System.currentTimeMillis())) {
-            is ClipIndexResult.Success ->
-                Log.d(TAG, "clip registered in index id=${result.id} path=${result.path}")
-            is ClipIndexResult.Failure ->
+    private fun registerClip(file: File, durationMs: Long, audioState: AudioState): String? {
+        val result = clipIndexStore.registerVideoClip(
+            path = file.absolutePath,
+            timestamp = System.currentTimeMillis(),
+            audioState = audioState,
+            sizeBytes = file.length(),
+            durationMs = durationMs,
+        )
+        return when (result) {
+            is ClipIndexResult.Success -> {
+                Log.d(TAG, "clip registered in index id=${result.id} path=${result.path} audioState=$audioState")
+                result.id
+            }
+            is ClipIndexResult.Failure -> {
                 Log.e(TAG, "Failed to update clip index: ${result.reason}")
-            ClipIndexResult.NotFound -> Unit // not a possible outcome for a register call
+                null
+            }
+            ClipIndexResult.NotFound -> null // not a possible outcome for a register call
         }
     }
 
     /**
-     * AUDIO-CAPTURE-U2.5: gates on timeline eligibility, then runs
-     * [ClipAudioMuxer] on a dedicated thread and joins it with a bounded
-     * timeout — this call blocks stopVideoRecording() until the mux finishes
-     * or the timeout elapses, keeping the service "alive" for it instead of
-     * letting teardown race an unbounded background attempt. Any outcome is
-     * best-effort/logged only; never affects the already-registered clip,
-     * the index, or the original MP4/WAV/M4A files.
+     * AUDIO-CAPTURE-U2.6: runs [ClipAudioMuxer] on a dedicated thread and
+     * joins it with an adaptive timeout (see
+     * [ClipAudioMuxer.computeMuxTimeoutMs]) — this call blocks
+     * stopVideoRecording() until the mux finishes or the timeout elapses,
+     * keeping the service "alive" for it instead of letting teardown race an
+     * unbounded background attempt. [clipId] is already registered as
+     * PROCESSING by the caller; every exit path here — success, failure,
+     * timeout, or a late finish after timeout — resolves it to a terminal
+     * audioState exactly once, via [resolved] (see [resolveMuxOutcome]).
+     * Never re-registers or recreates the entry.
      */
     private fun maybeMuxClipAudio(
+        clipId: String,
         videoFile: File,
         audioFile: File,
-        videoDurationMs: Long,
         realSessionDurationMs: Long,
         videoStartElapsedMs: Long,
         audioStartElapsedMs: Long,
+        muxTimeoutMs: Long,
     ) {
-        val muxer = ClipAudioMuxer()
-        if (!muxer.isTimelineEligible(videoDurationMs, realSessionDurationMs)) {
-            Log.e(
-                TAG,
-                "capture blocked or unavailable — reason=video_timeline_not_mux_eligible " +
-                    "videoDurationMs=$videoDurationMs realSessionDurationMs=$realSessionDurationMs",
-            )
-            return
-        }
+        val resolved = AtomicBoolean(false)
+        val muxStartElapsedMs = SystemClock.elapsedRealtime()
         val thread = Thread(
             {
-                runCatching {
-                    muxer.muxSynchronously(videoFile, audioFile, videoStartElapsedMs, audioStartElapsedMs)
-                }.onFailure { e ->
+                val outcome: MuxResult = try {
+                    ClipAudioMuxer().muxSynchronously(videoFile, audioFile, videoStartElapsedMs, audioStartElapsedMs)
+                } catch (e: Exception) {
                     Log.e(TAG, "ClipAudioMuxer threw unexpectedly: ${e.message}", e)
+                    MuxResult.Failure("av_mux_unexpected_error")
                 }
+                resolveMuxOutcome(resolved, clipId, videoFile, outcome)
             },
             "ApexClipAudioMuxerThread",
         )
         thread.start()
-        thread.join(ClipAudioMuxer.MUX_THREAD_JOIN_TIMEOUT_MS)
+        thread.join(muxTimeoutMs)
+        val elapsedMs = SystemClock.elapsedRealtime() - muxStartElapsedMs
         if (thread.isAlive) {
             Log.e(
                 TAG,
                 "capture blocked or unavailable — reason=av_mux_thread_timeout " +
-                    "waitedMs=${ClipAudioMuxer.MUX_THREAD_JOIN_TIMEOUT_MS}",
+                    "elapsedMs=$elapsedMs timeoutMs=$muxTimeoutMs videoSizeBytes=${videoFile.length()} " +
+                    "realSessionDurationMs=$realSessionDurationMs",
             )
+            // AUDIO-CAPTURE-U2.6: the winner is decided BEFORE any final
+            // index mutation — if this side wins, the still-running thread
+            // will later lose its own compareAndSet and only clean up its
+            // orphaned output, never touching the index again for this id.
+            if (resolved.compareAndSet(false, true)) {
+                clipIndexStore.updateAudioState(clipId, AudioState.READY_WITHOUT_AUDIO)
+            }
+        } else {
+            Log.d(
+                TAG,
+                "mux thread finished elapsedMs=$elapsedMs timeoutMs=$muxTimeoutMs " +
+                    "videoSizeBytes=${videoFile.length()} realSessionDurationMs=$realSessionDurationMs",
+            )
+        }
+    }
+
+    /**
+     * AUDIO-CAPTURE-U2.6: single resolution point for a mux attempt — called
+     * either from the mux thread itself (normal completion) or, via the
+     * shared [resolved] flag, effectively overridden by
+     * [maybeMuxClipAudio]'s own timeout branch if that one wins the race
+     * first. Whichever side wins [resolved].compareAndSet performs the
+     * terminal index mutation; the loser never touches the index for this
+     * [clipId] again — a late [MuxResult.Success] after losing the race only
+     * deletes its own orphaned output file.
+     */
+    private fun resolveMuxOutcome(resolved: AtomicBoolean, clipId: String, originalVideoFile: File, outcome: MuxResult) {
+        if (!resolved.compareAndSet(false, true)) {
+            if (outcome is MuxResult.Success) {
+                val deleted = runCatching { outcome.outputFile.delete() }.getOrDefault(false)
+                Log.e(
+                    TAG,
+                    "capture blocked or unavailable — reason=av_mux_late_success_after_timeout " +
+                        "path=${outcome.outputFile.absolutePath} orphanDeleted=$deleted",
+                )
+            }
+            return
+        }
+        when (outcome) {
+            is MuxResult.Success -> promoteClip(clipId, originalVideoFile, outcome)
+            is MuxResult.Failure -> {
+                Log.e(TAG, "capture blocked or unavailable — reason=${outcome.reason}")
+                clipIndexStore.updateAudioState(clipId, AudioState.READY_WITHOUT_AUDIO)
+            }
+        }
+    }
+
+    /**
+     * AUDIO-CAPTURE-U2.6: promotes [clipId] to the muxed `_av.mp4`, re-reads
+     * the index to confirm the write actually landed, and only then deletes
+     * the original MP4. If the confirmation read doesn't match (or the
+     * promotion write itself failed), performs a full rollback back to the
+     * original path/size/duration/READY_WITHOUT_AUDIO — never leaves the
+     * entry pointing at the wrong file, and never deletes the original MP4
+     * outside the confirmed-success path.
+     */
+    private fun promoteClip(clipId: String, originalVideoFile: File, success: MuxResult.Success) {
+        val before = clipIndexStore.findVideoClipById(clipId)
+        val promoteResult = clipIndexStore.updateClipFile(
+            id = clipId,
+            path = success.outputFile.absolutePath,
+            sizeBytes = success.sizeBytes,
+            durationMs = success.durationMs,
+            audioState = AudioState.READY_WITH_AUDIO,
+        )
+        if (promoteResult !is ClipIndexResult.Success) {
+            Log.e(TAG, "capture blocked or unavailable — reason=av_index_promote_failed id=$clipId")
+            // mutate() only writes on Success, so nothing was persisted for
+            // this id — path is still the original; just clear PROCESSING.
+            clipIndexStore.updateAudioState(clipId, AudioState.READY_WITHOUT_AUDIO)
+            return
+        }
+
+        val confirmed = clipIndexStore.findVideoClipById(clipId)
+        val confirmedOk = confirmed != null &&
+            confirmed.path == success.outputFile.absolutePath &&
+            confirmed.audioState == AudioState.READY_WITH_AUDIO.name &&
+            confirmed.size == success.sizeBytes &&
+            confirmed.durationMs == success.durationMs &&
+            success.outputFile.exists()
+
+        if (confirmedOk) {
+            val deleted = runCatching { originalVideoFile.delete() }.getOrDefault(false)
+            Log.d(
+                TAG,
+                "AV promotion confirmed id=$clipId path=${success.outputFile.absolutePath} originalDeleted=$deleted",
+            )
+        } else {
+            Log.e(TAG, "capture blocked or unavailable — reason=av_index_confirm_mismatch id=$clipId")
+            val rollbackResult = clipIndexStore.updateClipFile(
+                id = clipId,
+                path = before?.path ?: originalVideoFile.absolutePath,
+                sizeBytes = before?.size,
+                durationMs = before?.durationMs,
+                audioState = AudioState.READY_WITHOUT_AUDIO,
+            )
+            if (rollbackResult !is ClipIndexResult.Success) {
+                Log.e(TAG, "capture blocked or unavailable — reason=av_index_rollback_failed id=$clipId")
+            }
+            // Original MP4 is never deleted on this path.
         }
     }
 
