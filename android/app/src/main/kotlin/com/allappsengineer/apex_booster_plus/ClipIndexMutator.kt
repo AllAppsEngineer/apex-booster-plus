@@ -9,6 +9,21 @@ import java.util.UUID
 
 enum class AudioState { PROCESSING, READY_WITH_AUDIO, READY_WITHOUT_AUDIO }
 
+// AUDIO-FALLBACK-UX-U1.1: only meaningful on a terminal READY_WITHOUT_AUDIO
+// entry — null on PROCESSING/READY_WITH_AUDIO, and on any legacy entry
+// written before this field existed (ClipIndexCodec reads it as absent, not
+// as a specific reason). SOURCE_SILENT_OR_UNAVAILABLE is the one reason
+// Flutter's fallback UX (AUDIO-FALLBACK-UX-U1.1) surfaces to the user — the
+// others describe device/permission/pipeline conditions the user can't act
+// on by switching to the phone's screen recorder.
+enum class AudioOutcomeReason {
+    SOURCE_SILENT_OR_UNAVAILABLE,
+    PERMISSION_DENIED,
+    API_UNSUPPORTED,
+    TIMELINE_INELIGIBLE,
+    PROCESSING_FAILURE,
+}
+
 enum class ClipKind { SCREENSHOT, VIDEO }
 
 data class ClipEntry(
@@ -18,6 +33,7 @@ data class ClipEntry(
     val id: String? = null,
     val audioState: String? = null,
     val audioProcessingStartedAt: Long? = null,
+    val audioOutcomeReason: String? = null,
     // AUDIO-CAPTURE-U2.6: bytes/duration of the file currently at [path].
     // Set at registration for video clips and rewritten by
     // updateClipFile whenever [path] itself changes (promotion/rollback).
@@ -47,6 +63,7 @@ object ClipIndexMutator {
         now: Long,
         sizeBytes: Long?,
         durationMs: Long?,
+        audioOutcomeReason: AudioOutcomeReason? = null,
     ): Pair<List<ClipEntry>, ClipIndexResult> {
         val id = UUID.randomUUID().toString()
         val entry = ClipEntry(
@@ -61,6 +78,9 @@ object ClipIndexMutator {
             audioProcessingStartedAt = if (audioState == AudioState.PROCESSING) now else null,
             size = sizeBytes,
             durationMs = durationMs,
+            // AUDIO-FALLBACK-UX-U1.1: only meaningful when born directly as
+            // READY_WITHOUT_AUDIO — a PROCESSING birth has no reason yet.
+            audioOutcomeReason = if (audioState == AudioState.READY_WITHOUT_AUDIO) audioOutcomeReason?.name else null,
         )
         return (entries + entry) to ClipIndexResult.Success(id = id, path = path)
     }
@@ -102,6 +122,7 @@ object ClipIndexMutator {
         id: String,
         newState: AudioState,
         now: Long,
+        audioOutcomeReason: AudioOutcomeReason? = null,
     ): Pair<List<ClipEntry>, ClipIndexResult> {
         val target = entries.firstOrNull { it.id == id }
             ?: return entries to ClipIndexResult.NotFound
@@ -110,7 +131,15 @@ object ClipIndexMutator {
         } else {
             target.audioProcessingStartedAt
         }
-        val updated = target.copy(audioState = newState.name, audioProcessingStartedAt = processingStartedAt)
+        // AUDIO-FALLBACK-UX-U1.1: reason always reflects the state just
+        // written — null whenever the caller doesn't pass one (PROCESSING,
+        // READY_WITH_AUDIO), never carried over from a previous state.
+        val reason = if (newState == AudioState.READY_WITHOUT_AUDIO) audioOutcomeReason?.name else null
+        val updated = target.copy(
+            audioState = newState.name,
+            audioProcessingStartedAt = processingStartedAt,
+            audioOutcomeReason = reason,
+        )
         val updatedEntries = entries.map { if (it === target) updated else it }
         return updatedEntries to ClipIndexResult.Success(id = target.id, path = target.path)
     }
@@ -132,14 +161,17 @@ object ClipIndexMutator {
         sizeBytes: Long?,
         durationMs: Long?,
         audioState: AudioState,
+        audioOutcomeReason: AudioOutcomeReason? = null,
     ): Pair<List<ClipEntry>, ClipIndexResult> {
         val target = entries.firstOrNull { it.id == id }
             ?: return entries to ClipIndexResult.NotFound
+        val reason = if (audioState == AudioState.READY_WITHOUT_AUDIO) audioOutcomeReason?.name else null
         val updated = target.copy(
             path = path,
             size = sizeBytes,
             durationMs = durationMs,
             audioState = audioState.name,
+            audioOutcomeReason = reason,
         )
         val updatedEntries = entries.map { if (it === target) updated else it }
         return updatedEntries to ClipIndexResult.Success(id = target.id, path = path)
@@ -172,7 +204,10 @@ object ClipIndexMutator {
         val staleIdSet = staleIds.toSet()
         val updated = entries.map { entry ->
             if (entry.id != null && entry.id in staleIdSet) {
-                entry.copy(audioState = AudioState.READY_WITHOUT_AUDIO.name)
+                entry.copy(
+                    audioState = AudioState.READY_WITHOUT_AUDIO.name,
+                    audioOutcomeReason = AudioOutcomeReason.PROCESSING_FAILURE.name,
+                )
             } else {
                 entry
             }

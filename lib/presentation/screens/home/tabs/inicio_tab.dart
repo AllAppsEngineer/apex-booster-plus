@@ -9,10 +9,12 @@ import 'package:apex_booster_plus/core/i18n/app_strings.dart';
 import 'package:apex_booster_plus/data/datasources/installed_apps_datasource.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_game_library_repository.dart';
 import 'package:apex_booster_plus/data/repositories/shared_preferences_session_repository.dart';
+import 'package:apex_booster_plus/data/services/audio_fallback_notice_service.dart';
 import 'package:apex_booster_plus/domain/entities/gfx_profile.dart';
 import 'package:apex_booster_plus/domain/entities/session_record.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_background.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_feature_card.dart';
+import 'package:apex_booster_plus/presentation/widgets/social/audio_fallback_notice_sheet.dart';
 import 'package:apex_booster_plus/presentation/screens/home/home_screen.dart'
     show homeTabNotifier;
 
@@ -25,13 +27,19 @@ class InicioTab extends StatefulWidget {
   State<InicioTab> createState() => _InicioTabState();
 }
 
-class _InicioTabState extends State<InicioTab> {
+class _InicioTabState extends State<InicioTab> with WidgetsBindingObserver {
   bool _loading = true;
   int _gameCount = 0;
   int _sessionCount = 0;
   SessionRecord? _lastSession;
   Uint8List? _lastIconBytes;
   bool _scanning = false;
+
+  // AUDIO-FALLBACK-UX-U1.1: guards against the sheet firing twice when
+  // didUpdateWidget (tab regains focus) and didChangeAppLifecycleState
+  // (app resumed) land close together — both funnel through the same
+  // method, and this flag is set synchronously before the first await.
+  bool _checkingAudioFallback = false;
 
   static const int _tabLibrary = 1;
   static const int _tabPrepare = 2;
@@ -42,7 +50,9 @@ class _InicioTabState extends State<InicioTab> {
   void initState() {
     super.initState();
     debugPrint('[PERF-STARTUP] InicioTab init started');
+    WidgetsBinding.instance.addObserver(this);
     _loadData();
+    _maybeShowAudioFallbackNotice();
     debugPrint('[PERF-STARTUP] InicioTab init ended');
   }
 
@@ -51,7 +61,49 @@ class _InicioTabState extends State<InicioTab> {
     super.didUpdateWidget(oldWidget);
     if (widget.isActive && !oldWidget.isActive) {
       _loadData();
+      _maybeShowAudioFallbackNotice();
     }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _maybeShowAudioFallbackNotice();
+    }
+  }
+
+  Future<void> _maybeShowAudioFallbackNotice() async {
+    if (_checkingAudioFallback) return;
+    _checkingAudioFallback = true;
+    try {
+      final notice = await AudioFallbackNoticeService().checkPending();
+      if (notice == null || !mounted) return;
+      // Marked seen before the sheet is even shown — a concurrent trigger
+      // racing this same check must never show it twice for this clip.
+      await AudioFallbackNoticeService().markSeen(notice.clipId);
+      if (!mounted) return;
+      await showAudioFallbackNoticeSheet(
+        context,
+        languageNotifier.value,
+        onOpenStudio: _openApexStudioGlobal,
+      );
+    } finally {
+      _checkingAudioFallback = false;
+    }
+  }
+
+  // AUDIO-FALLBACK-UX-U1.1 correção 5: abre o Studio global (sem gameId
+  // aproximado) — '/share-studio/default' é a rota-sentinela já documentada
+  // para "Studio sem jogo vinculado" (ver SOCIAL-U2A design doc).
+  void _openApexStudioGlobal() {
+    if (!mounted) return;
+    context.push('/share-studio/default');
   }
 
   void _goToTab(int index) {

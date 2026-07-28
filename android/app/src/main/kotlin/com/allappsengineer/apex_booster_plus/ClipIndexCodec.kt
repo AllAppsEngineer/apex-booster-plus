@@ -18,7 +18,10 @@ interface ClipIndexCodec {
 
 class JsonClipIndexCodec : ClipIndexCodec {
     private val knownKeys =
-        setOf("path", "timestamp", "type", "id", "audioState", "audioProcessingStartedAt", "size", "durationMs")
+        setOf(
+            "path", "timestamp", "type", "id", "audioState", "audioProcessingStartedAt", "size", "durationMs",
+            "audioOutcomeReason",
+        )
 
     override fun decode(raw: String?): List<ClipEntry> {
         if (raw.isNullOrBlank()) return emptyList()
@@ -52,6 +55,11 @@ class JsonClipIndexCodec : ClipIndexCodec {
                         if (obj.has("audioProcessingStartedAt")) obj.optLong("audioProcessingStartedAt") else null,
                     size = if (obj.has("size")) obj.optLong("size") else null,
                     durationMs = if (obj.has("durationMs")) obj.optLong("durationMs") else null,
+                    // AUDIO-FALLBACK-UX-U1.1: absent on every entry written
+                    // before this field existed — decode leaves it null
+                    // rather than guessing a reason, per "entradas antigas
+                    // sem o campo continuam legíveis".
+                    audioOutcomeReason = if (obj.has("audioOutcomeReason")) obj.optString("audioOutcomeReason") else null,
                     unknownFields = unknown,
                 ),
             )
@@ -71,6 +79,7 @@ class JsonClipIndexCodec : ClipIndexCodec {
             entry.audioProcessingStartedAt?.let { obj.put("audioProcessingStartedAt", it) }
             entry.size?.let { obj.put("size", it) }
             entry.durationMs?.let { obj.put("durationMs", it) }
+            entry.audioOutcomeReason?.let { obj.put("audioOutcomeReason", it) }
             for ((key, value) in entry.unknownFields) {
                 obj.put(key, toJson(value))
             }

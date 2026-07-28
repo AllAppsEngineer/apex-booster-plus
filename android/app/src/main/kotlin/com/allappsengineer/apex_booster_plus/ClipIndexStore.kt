@@ -35,8 +35,11 @@ class ClipIndexStore(
         audioState: AudioState = AudioState.READY_WITHOUT_AUDIO,
         sizeBytes: Long? = null,
         durationMs: Long? = null,
+        audioOutcomeReason: AudioOutcomeReason? = null,
     ): ClipIndexResult = mutate(clipsStorage) { entries ->
-        ClipIndexMutator.insertVideoClip(entries, path, timestamp, audioState, clock.nowMillis(), sizeBytes, durationMs)
+        ClipIndexMutator.insertVideoClip(
+            entries, path, timestamp, audioState, clock.nowMillis(), sizeBytes, durationMs, audioOutcomeReason,
+        )
     }
 
     fun registerScreenshot(path: String, timestamp: Long): ClipIndexResult =
@@ -50,9 +53,13 @@ class ClipIndexStore(
     fun deleteByPath(kind: ClipKind, path: String): ClipIndexResult =
         mutate(storageFor(kind)) { entries -> ClipIndexMutator.deleteByPath(entries, path) }
 
-    fun updateAudioState(id: String, newState: AudioState): ClipIndexResult =
+    fun updateAudioState(
+        id: String,
+        newState: AudioState,
+        audioOutcomeReason: AudioOutcomeReason? = null,
+    ): ClipIndexResult =
         mutate(clipsStorage) { entries ->
-            ClipIndexMutator.updateAudioState(entries, id, newState, clock.nowMillis())
+            ClipIndexMutator.updateAudioState(entries, id, newState, clock.nowMillis(), audioOutcomeReason)
         }
 
     /**
@@ -61,9 +68,16 @@ class ClipIndexStore(
      * confirmation fails) — the only entry point that changes an existing
      * entry's path. See [ClipIndexMutator.updateClipFile].
      */
-    fun updateClipFile(id: String, path: String, sizeBytes: Long?, durationMs: Long?, audioState: AudioState): ClipIndexResult =
+    fun updateClipFile(
+        id: String,
+        path: String,
+        sizeBytes: Long?,
+        durationMs: Long?,
+        audioState: AudioState,
+        audioOutcomeReason: AudioOutcomeReason? = null,
+    ): ClipIndexResult =
         mutate(clipsStorage) { entries ->
-            ClipIndexMutator.updateClipFile(entries, id, path, sizeBytes, durationMs, audioState)
+            ClipIndexMutator.updateClipFile(entries, id, path, sizeBytes, durationMs, audioState, audioOutcomeReason)
         }
 
     /**

@@ -93,6 +93,36 @@ void main() {
       expect(result.first.id, isNull);
     });
 
+    test('parses audioState and audioOutcomeReason when present', () async {
+      final file = await writeCaptureFile('apex_clip_1.mp4');
+      await writeIndex([
+        {
+          'path': file.path,
+          'timestamp': 1000,
+          'type': 'video',
+          'audioState': 'READY_WITHOUT_AUDIO',
+          'audioOutcomeReason': 'SOURCE_SILENT_OR_UNAVAILABLE',
+        },
+      ]);
+
+      final result = await makeService().listCaptures();
+
+      expect(result.first.audioState, 'READY_WITHOUT_AUDIO');
+      expect(result.first.audioOutcomeReason, 'SOURCE_SILENT_OR_UNAVAILABLE');
+    });
+
+    test('leaves audioState and audioOutcomeReason null for legacy entries', () async {
+      final file = await writeCaptureFile('apex_clip_1.mp4');
+      await writeIndex([
+        {'path': file.path, 'timestamp': 1000, 'type': 'video'},
+      ]);
+
+      final result = await makeService().listCaptures();
+
+      expect(result.first.audioState, isNull);
+      expect(result.first.audioOutcomeReason, isNull);
+    });
+
     test('drops entries whose file no longer exists on disk', () async {
       await writeIndex([
         {'path': '${captureDir.path}/missing.png', 'timestamp': 1000},

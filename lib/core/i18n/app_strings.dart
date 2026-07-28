@@ -2312,10 +2312,13 @@ class AppStrings {
     AppLanguage.es   => 'Seleccionar imagen',
   };
 
+  // AUDIO-FALLBACK-UX-U1.1 correção 6: rótulo explícito — este seletor já
+  // existente (image_picker.pickVideo/galeria) é o caminho de importação de
+  // gravações feitas pelo gravador de tela do sistema.
   String get apexStudioPickVideo => switch (lang) {
-    AppLanguage.ptBr => 'Selecionar vídeo',
-    AppLanguage.en   => 'Select video',
-    AppLanguage.es   => 'Seleccionar video',
+    AppLanguage.ptBr => 'Importar vídeo da galeria',
+    AppLanguage.en   => 'Import video from gallery',
+    AppLanguage.es   => 'Importar video de la galería',
   };
 
   String get apexStudioVideoLabel => switch (lang) {
@@ -2436,6 +2439,33 @@ class AppStrings {
     AppLanguage.ptBr => 'Selecionar captura',
     AppLanguage.en   => 'Select capture',
     AppLanguage.es   => 'Seleccionar captura',
+  };
+
+  String get audioFallbackNoticeTitle => switch (lang) {
+    AppLanguage.ptBr => 'Áudio interno não disponível nesta gravação',
+    AppLanguage.en   => 'Internal audio not available for this recording',
+    AppLanguage.es   => 'Audio interno no disponible en esta grabación',
+  };
+
+  String get audioFallbackNoticeBody => switch (lang) {
+    AppLanguage.ptBr =>
+        'O Apex não recebeu áudio interno deste jogo. Isso pode acontecer quando o jogo bloqueia a captura, está sem som ou utiliza uma fonte de áudio incompatível. Para gravar com som, use o gravador de tela do celular. Depois, volte ao Apex Studio, importe o vídeo e compartilhe normalmente.',
+    AppLanguage.en   =>
+        "Apex didn't receive internal audio from this game. This can happen when the game blocks capture, has no sound, or uses an incompatible audio source. To record with sound, use your phone's screen recorder. Then come back to Apex Studio, import the video and share it normally.",
+    AppLanguage.es   =>
+        'Apex no recibió audio interno de este juego. Esto puede pasar cuando el juego bloquea la captura, no tiene sonido o usa una fuente de audio incompatible. Para grabar con sonido, usa el grabador de pantalla del celular. Luego vuelve a Apex Studio, importa el video y compártelo normalmente.',
+  };
+
+  String get audioFallbackNoticeOpenStudio => switch (lang) {
+    AppLanguage.ptBr => 'ABRIR APEX STUDIO',
+    AppLanguage.en   => 'OPEN APEX STUDIO',
+    AppLanguage.es   => 'ABRIR APEX STUDIO',
+  };
+
+  String get audioFallbackNoticeDismiss => switch (lang) {
+    AppLanguage.ptBr => 'ENTENDI',
+    AppLanguage.en   => 'GOT IT',
+    AppLanguage.es   => 'ENTENDIDO',
   };
 
   String get apexStudioCapturesEmpty => switch (lang) {

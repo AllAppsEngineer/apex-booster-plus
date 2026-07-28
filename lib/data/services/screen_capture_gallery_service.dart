@@ -9,12 +9,20 @@ class CapturedScreenshot {
   final DateTime capturedAt;
   final bool isVideo;
   final String? id;
+  // AUDIO-FALLBACK-UX-U1.1: mirrors ClipEntry.audioState/audioOutcomeReason
+  // (Kotlin/ClipIndexMutator) verbatim — null on screenshots, on legacy
+  // entries written before either field existed, and on entries not yet
+  // resolved to a terminal state.
+  final String? audioState;
+  final String? audioOutcomeReason;
 
   const CapturedScreenshot({
     required this.path,
     required this.capturedAt,
     this.isVideo = false,
     this.id,
+    this.audioState,
+    this.audioOutcomeReason,
   });
 }
 
@@ -94,11 +102,16 @@ class ScreenCaptureGalleryService {
         if (path is! String || timestamp is! int) continue;
         if (!await File(path).exists()) continue;
         final id = item['id'];
+        final audioState = item['audioState'];
+        final audioOutcomeReason = item['audioOutcomeReason'];
         result.add(CapturedScreenshot(
           path: path,
           capturedAt: DateTime.fromMillisecondsSinceEpoch(timestamp),
           isVideo: item['type'] == 'video',
           id: id is String ? id : null,
+          audioState: audioState is String ? audioState : null,
+          audioOutcomeReason:
+              audioOutcomeReason is String ? audioOutcomeReason : null,
         ));
       }
       return result;

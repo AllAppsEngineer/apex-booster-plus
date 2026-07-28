@@ -419,6 +419,119 @@ class ClipIndexStoreTest {
         assertNull(entry.audioProcessingStartedAt)
     }
 
+    // ---- audioOutcomeReason (AUDIO-FALLBACK-UX-U1.1) ----
+
+    @Test
+    fun `registerVideoClip READY_WITHOUT_AUDIO grava o motivo informado`() {
+        val codec = FakeClipIndexCodec()
+        val storage = FakeClipIndexStorage()
+        val store = newStore(clipsStorage = storage, codec = codec)
+
+        store.registerVideoClip(
+            path = "/a.mp4",
+            timestamp = 1L,
+            audioState = AudioState.READY_WITHOUT_AUDIO,
+            audioOutcomeReason = AudioOutcomeReason.SOURCE_SILENT_OR_UNAVAILABLE,
+        )
+
+        assertEquals(
+            "SOURCE_SILENT_OR_UNAVAILABLE",
+            codec.decode(storage.readRaw()).single().audioOutcomeReason,
+        )
+    }
+
+    @Test
+    fun `registerVideoClip PROCESSING ignora motivo informado`() {
+        val codec = FakeClipIndexCodec()
+        val storage = FakeClipIndexStorage()
+        val store = newStore(clipsStorage = storage, codec = codec)
+
+        store.registerVideoClip(
+            path = "/a.mp4",
+            timestamp = 1L,
+            audioState = AudioState.PROCESSING,
+            audioOutcomeReason = AudioOutcomeReason.SOURCE_SILENT_OR_UNAVAILABLE,
+        )
+
+        assertNull(codec.decode(storage.readRaw()).single().audioOutcomeReason)
+    }
+
+    @Test
+    fun `entrada legada sem audioOutcomeReason permanece nula`() {
+        val codec = FakeClipIndexCodec()
+        val legacy = ClipEntry(
+            path = "/legacy.mp4", timestamp = 10L, type = "video", id = "legacy-id",
+            audioState = AudioState.READY_WITHOUT_AUDIO.name,
+        )
+        val storage = FakeClipIndexStorage(initial = codec.seed(listOf(legacy)))
+        val store = newStore(clipsStorage = storage, codec = codec)
+
+        assertNull(store.findVideoClipById("legacy-id")!!.audioOutcomeReason)
+    }
+
+    @Test
+    fun `updateAudioState para READY_WITHOUT_AUDIO grava o motivo informado`() {
+        val codec = FakeClipIndexCodec()
+        val storage = FakeClipIndexStorage()
+        val store = newStore(clipsStorage = storage, codec = codec)
+        val reg = store.registerVideoClip(
+            path = "/a.mp4", timestamp = 1L, audioState = AudioState.PROCESSING,
+        ) as ClipIndexResult.Success
+
+        store.updateAudioState(reg.id!!, AudioState.READY_WITHOUT_AUDIO, AudioOutcomeReason.PROCESSING_FAILURE)
+
+        assertEquals("PROCESSING_FAILURE", store.findVideoClipById(reg.id)!!.audioOutcomeReason)
+    }
+
+    @Test
+    fun `updateAudioState para READY_WITH_AUDIO nunca grava motivo`() {
+        val codec = FakeClipIndexCodec()
+        val storage = FakeClipIndexStorage()
+        val store = newStore(clipsStorage = storage, codec = codec)
+        val reg = store.registerVideoClip(
+            path = "/a.mp4", timestamp = 1L, audioState = AudioState.PROCESSING,
+        ) as ClipIndexResult.Success
+
+        store.updateAudioState(reg.id!!, AudioState.READY_WITH_AUDIO)
+
+        assertNull(store.findVideoClipById(reg.id)!!.audioOutcomeReason)
+    }
+
+    @Test
+    fun `updateClipFile de rollback grava PROCESSING_FAILURE`() {
+        val codec = FakeClipIndexCodec()
+        val storage = FakeClipIndexStorage()
+        val store = newStore(clipsStorage = storage, codec = codec)
+        val reg = store.registerVideoClip(
+            path = "/a.mp4", timestamp = 1L, audioState = AudioState.PROCESSING,
+        ) as ClipIndexResult.Success
+
+        store.updateClipFile(
+            id = reg.id!!,
+            path = "/a.mp4",
+            sizeBytes = 1_000L,
+            durationMs = 4_000L,
+            audioState = AudioState.READY_WITHOUT_AUDIO,
+            audioOutcomeReason = AudioOutcomeReason.PROCESSING_FAILURE,
+        )
+
+        assertEquals("PROCESSING_FAILURE", store.findVideoClipById(reg.id)!!.audioOutcomeReason)
+    }
+
+    @Test
+    fun `recoverStaleAudioProcessing grava PROCESSING_FAILURE ao rebaixar`() {
+        val codec = FakeClipIndexCodec()
+        val storage = FakeClipIndexStorage()
+        val store = newStore(clipsStorage = storage, codec = codec, clock = FixedClock(1_000L))
+        val reg = store.registerVideoClip(
+            path = "/a.mp4", timestamp = 1L, audioState = AudioState.PROCESSING,
+        ) as ClipIndexResult.Success
+
+        store.recoverStaleAudioProcessing(now = 1_000L + 120_000L + 1L, timeoutMs = 120_000L)
+
+        assertEquals("PROCESSING_FAILURE", store.findVideoClipById(reg.id!!)!!.audioOutcomeReason)
+    }
+
     // ---- updateClipFile / rollback ----
 
     @Test

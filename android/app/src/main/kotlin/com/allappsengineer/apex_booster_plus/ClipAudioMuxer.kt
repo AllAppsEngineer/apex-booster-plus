@@ -93,6 +93,34 @@ class ClipAudioMuxer {
         ): Boolean = hasAudioCandidate && !silenceDetected && muxTimelineEligible
 
         /**
+         * AUDIO-FALLBACK-UX-U1.1: classifies WHY a clip is registered
+         * directly as READY_WITHOUT_AUDIO (never entering PROCESSING) — the
+         * upfront-ineligible branch in ScreenCaptureService. Checked in order
+         * of specificity: a device/permission condition always explains the
+         * outcome better than "the source was silent" when more than one is
+         * true. Pure — no I/O, unit-testable without Robolectric, same as
+         * [computeAudioCandidateEligible].
+         *
+         * Only called when [computeAudioCandidateEligible] already returned
+         * false for the same inputs, so at least one of the first four
+         * conditions holds; the trailing branch is a defensive fallback, not
+         * a reachable case from that caller.
+         */
+        fun computeAudioOutcomeReason(
+            apiSupported: Boolean,
+            permissionGranted: Boolean,
+            hasAudioCandidate: Boolean,
+            silenceDetected: Boolean,
+            muxTimelineEligible: Boolean,
+        ): AudioOutcomeReason = when {
+            !apiSupported -> AudioOutcomeReason.API_UNSUPPORTED
+            !permissionGranted -> AudioOutcomeReason.PERMISSION_DENIED
+            !muxTimelineEligible -> AudioOutcomeReason.TIMELINE_INELIGIBLE
+            !hasAudioCandidate || silenceDetected -> AudioOutcomeReason.SOURCE_SILENT_OR_UNAVAILABLE
+            else -> AudioOutcomeReason.SOURCE_SILENT_OR_UNAVAILABLE
+        }
+
+        /**
          * AUDIO-CAPTURE-U2.7: release-only cleanup of a mux attempt's own
          * `_av.mp4.part` — in debug it is always preserved for diagnosis,
          * matching the previous (pre-U2.7) behavior for every build. Safe to

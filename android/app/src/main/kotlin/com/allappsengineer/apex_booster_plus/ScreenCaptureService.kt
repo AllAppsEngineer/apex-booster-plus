@@ -171,6 +171,17 @@ class ScreenCaptureService : Service() {
     // doc comment. Never allowed to affect [recording]/[mediaRecorder].
     private var internalAudioRecorder: InternalAudioRecorder? = null
 
+    // AUDIO-FALLBACK-UX-U1.1: snapshot of the two device/permission
+    // conditions InternalAudioRecorder.start() itself gates on, taken at the
+    // same call site — needed later in stopVideoRecording() to classify WHY
+    // an ineligible clip has no audio (see ClipAudioMuxer.computeAudioOutcomeReason),
+    // since InternalAudioRecorder exposes no "why" beyond a null AAC file.
+    // Defaults to true/true so a session that skips the audio-recorder start
+    // entirely (should never happen for MODE_VIDEO) never falsely reports a
+    // device/permission problem.
+    private var lastAudioApiSupported: Boolean = true
+    private var lastAudioPermissionGranted: Boolean = true
+
     // AUDIO-CAPTURE-U1 (POC): release-build gate. Checked at runtime via
     // ApplicationInfo.FLAG_DEBUGGABLE instead of BuildConfig.DEBUG — this
     // project doesn't enable Gradle's buildConfig feature, and turning it on
@@ -514,6 +525,12 @@ class ScreenCaptureService : Service() {
                 this,
                 Manifest.permission.RECORD_AUDIO,
             ) == PackageManager.PERMISSION_GRANTED
+            // AUDIO-FALLBACK-UX-U1.1: recorded here, alongside the same two
+            // conditions InternalAudioRecorder.start() gates on internally —
+            // read back in stopVideoRecording() to classify an ineligible
+            // clip's audioOutcomeReason.
+            lastAudioApiSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+            lastAudioPermissionGranted = hasRecordAudioPermission
             val audioOutputDir = File(getExternalFilesDir(Environment.DIRECTORY_MUSIC), "apex_audio_poc")
             val audioRecorder = InternalAudioRecorder()
             internalAudioRecorder = audioRecorder
@@ -682,10 +699,23 @@ class ScreenCaptureService : Service() {
                         "audioCandidateEligible=$audioCandidateEligible",
                 )
 
+                // AUDIO-FALLBACK-UX-U1.1: only meaningful for the ineligible
+                // branch below — computed unconditionally here (cheap, pure)
+                // so registerClip's audioState/reason pairing is decided in
+                // one place, matching the existing audioCandidateEligible check.
+                val ineligibilityReason = ClipAudioMuxer.computeAudioOutcomeReason(
+                    apiSupported = lastAudioApiSupported,
+                    permissionGranted = lastAudioPermissionGranted,
+                    hasAudioCandidate = finalAacFileForMux != null,
+                    silenceDetected = silenceDetected,
+                    muxTimelineEligible = muxTimelineEligible,
+                )
+
                 val clipId = registerClip(
                     file = file!!,
                     durationMs = durationMs,
                     audioState = if (audioCandidateEligible) AudioState.PROCESSING else AudioState.READY_WITHOUT_AUDIO,
+                    audioOutcomeReason = if (audioCandidateEligible) null else ineligibilityReason,
                 )
                 Log.d(TAG, "clip registered in index id=$clipId" + releaseSafeDetail(isDebuggableBuild(), "path", file.absolutePath))
 
@@ -788,13 +818,19 @@ class ScreenCaptureService : Service() {
      * the new entry's id, or null if registration failed (in which case the
      * caller must not attempt a mux — AUDIO-CAPTURE-U2.6).
      */
-    private fun registerClip(file: File, durationMs: Long, audioState: AudioState): String? {
+    private fun registerClip(
+        file: File,
+        durationMs: Long,
+        audioState: AudioState,
+        audioOutcomeReason: AudioOutcomeReason? = null,
+    ): String? {
         val result = clipIndexStore.registerVideoClip(
             path = file.absolutePath,
             timestamp = System.currentTimeMillis(),
             audioState = audioState,
             sizeBytes = file.length(),
             durationMs = durationMs,
+            audioOutcomeReason = audioOutcomeReason,
         )
         return when (result) {
             is ClipIndexResult.Success -> {
@@ -877,7 +913,7 @@ class ScreenCaptureService : Service() {
             // (success, failure, or — for a late finisher after this branch
             // already won — its own late-arrival branch there).
             if (resolved.compareAndSet(false, true)) {
-                clipIndexStore.updateAudioState(clipId, AudioState.READY_WITHOUT_AUDIO)
+                clipIndexStore.updateAudioState(clipId, AudioState.READY_WITHOUT_AUDIO, AudioOutcomeReason.PROCESSING_FAILURE)
                 notifyFinalSaveOutcome(withAudio = false)
             }
         } else {
@@ -936,7 +972,7 @@ class ScreenCaptureService : Service() {
             }
             is MuxResult.Failure -> {
                 Log.e(TAG, "capture blocked or unavailable — reason=${outcome.reason}")
-                clipIndexStore.updateAudioState(clipId, AudioState.READY_WITHOUT_AUDIO)
+                clipIndexStore.updateAudioState(clipId, AudioState.READY_WITHOUT_AUDIO, AudioOutcomeReason.PROCESSING_FAILURE)
                 if (!diagnosticsEnabled) runCatching { audioFile.delete() }
                 notifyFinalSaveOutcome(withAudio = false)
             }
@@ -972,7 +1008,7 @@ class ScreenCaptureService : Service() {
             Log.e(TAG, "capture blocked or unavailable — reason=av_index_promote_failed id=$clipId")
             // mutate() only writes on Success, so nothing was persisted for
             // this id — path is still the original; just clear PROCESSING.
-            clipIndexStore.updateAudioState(clipId, AudioState.READY_WITHOUT_AUDIO)
+            clipIndexStore.updateAudioState(clipId, AudioState.READY_WITHOUT_AUDIO, AudioOutcomeReason.PROCESSING_FAILURE)
             return false
         }
 
@@ -999,6 +1035,7 @@ class ScreenCaptureService : Service() {
                 sizeBytes = before?.size,
                 durationMs = before?.durationMs,
                 audioState = AudioState.READY_WITHOUT_AUDIO,
+                audioOutcomeReason = AudioOutcomeReason.PROCESSING_FAILURE,
             )
             if (rollbackResult !is ClipIndexResult.Success) {
                 Log.e(TAG, "capture blocked or unavailable — reason=av_index_rollback_failed id=$clipId")

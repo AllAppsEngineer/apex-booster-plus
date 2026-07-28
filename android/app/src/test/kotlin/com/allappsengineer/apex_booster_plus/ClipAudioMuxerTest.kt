@@ -61,6 +61,78 @@ class ClipAudioMuxerTest {
         )
     }
 
+    // ---- computeAudioOutcomeReason (AUDIO-FALLBACK-UX-U1.1) ----
+
+    @Test
+    fun `sdk nao suportado vence qualquer outra condicao`() {
+        assertEquals(
+            AudioOutcomeReason.API_UNSUPPORTED,
+            ClipAudioMuxer.computeAudioOutcomeReason(
+                apiSupported = false,
+                permissionGranted = false,
+                hasAudioCandidate = false,
+                silenceDetected = true,
+                muxTimelineEligible = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `permissao negada vence timeline e silencio quando sdk suportado`() {
+        assertEquals(
+            AudioOutcomeReason.PERMISSION_DENIED,
+            ClipAudioMuxer.computeAudioOutcomeReason(
+                apiSupported = true,
+                permissionGranted = false,
+                hasAudioCandidate = false,
+                silenceDetected = true,
+                muxTimelineEligible = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `timeline inelegivel vence silencio quando sdk e permissao ok`() {
+        assertEquals(
+            AudioOutcomeReason.TIMELINE_INELIGIBLE,
+            ClipAudioMuxer.computeAudioOutcomeReason(
+                apiSupported = true,
+                permissionGranted = true,
+                hasAudioCandidate = true,
+                silenceDetected = true,
+                muxTimelineEligible = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `candidato silencioso com sdk permissao e timeline ok resulta em source silent or unavailable`() {
+        assertEquals(
+            AudioOutcomeReason.SOURCE_SILENT_OR_UNAVAILABLE,
+            ClipAudioMuxer.computeAudioOutcomeReason(
+                apiSupported = true,
+                permissionGranted = true,
+                hasAudioCandidate = true,
+                silenceDetected = true,
+                muxTimelineEligible = true,
+            ),
+        )
+    }
+
+    @Test
+    fun `sem candidato de audio com sdk permissao e timeline ok resulta em source silent or unavailable`() {
+        assertEquals(
+            AudioOutcomeReason.SOURCE_SILENT_OR_UNAVAILABLE,
+            ClipAudioMuxer.computeAudioOutcomeReason(
+                apiSupported = true,
+                permissionGranted = true,
+                hasAudioCandidate = false,
+                silenceDetected = false,
+                muxTimelineEligible = true,
+            ),
+        )
+    }
+
     // ---- computeMuxTimeoutMs ----
 
     @Test
