@@ -25,10 +25,14 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <!-- ScreenCaptureService: MediaProjection foreground service (SOCIAL-U2B) -->
+        <!-- ScreenCaptureService: MediaProjection foreground service (SOCIAL-U2B).
+             AUDIO-CAPTURE-U2.7: microphone type added — startForeground() only
+             declares it (ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE) for
+             video sessions where RECORD_AUDIO was actually granted; screenshot
+             sessions and video sessions without audio use mediaProjection only. -->
         <service
             android:name=".ScreenCaptureService"
-            android:foregroundServiceType="mediaProjection"
+            android:foregroundServiceType="mediaProjection|microphone"
             android:exported="false" />
 
         <!-- FileProvider: shares captured screenshots via content:// URI (SOCIAL-U2B) -->
@@ -62,6 +66,10 @@
     <!-- Required for MediaProjection foreground capture service (SOCIAL-U2B) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <!-- AUDIO-CAPTURE-U2.7: required alongside FOREGROUND_SERVICE_MEDIA_PROJECTION
+         whenever the foreground service declares the microphone type for a
+         video session with internal audio capture. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <!-- AUDIO-CAPTURE-U1 (POC): required by AudioRecord even when configured
          with AudioPlaybackCaptureConfiguration (internal app-audio capture) —
          the physical microphone is never read in that configuration, this is

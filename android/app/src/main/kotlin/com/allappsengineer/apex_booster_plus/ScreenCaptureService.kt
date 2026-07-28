@@ -92,6 +92,28 @@ class ScreenCaptureService : Service() {
         @Volatile
         var instance: ScreenCaptureService? = null
             private set
+
+        // AUDIO-CAPTURE-U2.7: MainActivity passes this extra with the
+        // MediaProjection consent result so onStartCommand() knows, before
+        // its own startForeground() call, whether RECORD_AUDIO was already
+        // granted for this session — required to declare the MICROPHONE
+        // foreground service type up front (never added to a running FGS
+        // after the fact).
+        const val EXTRA_AUDIO_PERMISSION_GRANTED = "audio_permission_granted"
+
+        /**
+         * AUDIO-CAPTURE-U2.7: pure — which foregroundServiceType flags to
+         * pass to startForeground(). [audioRequested] must reflect whether
+         * RECORD_AUDIO was actually granted for this session (video mode
+         * only) — screenshot sessions and denied/never-asked video sessions
+         * always resolve to MEDIA_PROJECTION only.
+         */
+        fun foregroundServiceTypeFor(audioRequested: Boolean): Int =
+            if (audioRequested) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+            } else {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            }
     }
 
     private var mediaProjection: MediaProjection? = null
@@ -174,6 +196,14 @@ class ScreenCaptureService : Service() {
     fun getMode(): String = sessionMode
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // AUDIO-CAPTURE-U2.7: read before the very first startForeground()
+        // call below — MICROPHONE can only be declared on that call, never
+        // added to an already-running foreground service afterwards. Set by
+        // MainActivity only for video sessions where RECORD_AUDIO was
+        // already resolved (order: permission -> MediaProjection consent ->
+        // this service).
+        val audioRequested = intent?.getBooleanExtra(EXTRA_AUDIO_PERMISSION_GRANTED, false) ?: false
+
         // 1. Foreground notification first — required before touching MediaProjection APIs.
         createNotificationChannel()
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
@@ -184,7 +214,7 @@ class ScreenCaptureService : Service() {
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+            startForeground(NOTIFICATION_ID, notification, foregroundServiceTypeFor(audioRequested))
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
@@ -401,8 +431,8 @@ class ScreenCaptureService : Service() {
         }
         Log.d(
             TAG,
-            "outputPath=${file.absolutePath} measuredWidth=$liveW measuredHeight=$liveH " +
-                "videoWidth=$videoW videoHeight=$videoH rotation=$rotation",
+            "measuredWidth=$liveW measuredHeight=$liveH videoWidth=$videoW videoHeight=$videoH rotation=$rotation" +
+                releaseSafeDetail(isDebuggableBuild(), "outputPath", file.absolutePath),
         )
 
         val recorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -470,26 +500,26 @@ class ScreenCaptureService : Service() {
         recordingFile = file
         recording = true
 
-        // AUDIO-CAPTURE-U1 (POC): started right after the video recorder is
+        // AUDIO-CAPTURE-U2.7: started right after the video recorder is
         // confirmed running, reusing the same MediaProjection instance.
-        // Wrapped defensively — this experiment must never be able to affect
-        // video recording, which is already armed and running above this line.
-        // Gated to debug builds only: in release, InternalAudioRecorder is
-        // never instantiated/started, no apex_audio_poc directory is created,
-        // no WAV is produced — the video pipeline is untouched either way.
-        if (isDebuggableBuild()) {
-            runCatching {
-                val hasRecordAudioPermission = ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.RECORD_AUDIO,
-                ) == PackageManager.PERMISSION_GRANTED
-                val audioOutputDir = File(getExternalFilesDir(Environment.DIRECTORY_MUSIC), "apex_audio_poc")
-                val audioRecorder = InternalAudioRecorder()
-                internalAudioRecorder = audioRecorder
-                audioRecorder.start(projection, hasRecordAudioPermission, audioOutputDir)
-            }.onFailure { e ->
-                Log.e(TAG, "InternalAudioRecorder POC threw unexpectedly: ${e.message}", e)
-            }
+        // Wrapped defensively — this must never be able to affect video
+        // recording, which is already armed and running above this line.
+        // Runs in every build now — isSupported()/hasRecordAudioPermission
+        // inside InternalAudioRecorder.start() are the real production
+        // gates (API 29+, permission granted). isDebuggableBuild() here only
+        // controls retention of diagnostic artifacts (WAV, a failed
+        // .m4a.part) — see InternalAudioRecorder's own diagnosticsEnabled doc.
+        runCatching {
+            val hasRecordAudioPermission = ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.RECORD_AUDIO,
+            ) == PackageManager.PERMISSION_GRANTED
+            val audioOutputDir = File(getExternalFilesDir(Environment.DIRECTORY_MUSIC), "apex_audio_poc")
+            val audioRecorder = InternalAudioRecorder()
+            internalAudioRecorder = audioRecorder
+            audioRecorder.start(projection, hasRecordAudioPermission, audioOutputDir, isDebuggableBuild())
+        }.onFailure { e ->
+            logFallbackError(TAG, isDebuggableBuild(), "InternalAudioRecorder threw unexpectedly: ${e.message}", e)
         }
 
         updateNotification(getString(R.string.capture_notification_recording_text))
@@ -657,21 +687,19 @@ class ScreenCaptureService : Service() {
                     durationMs = durationMs,
                     audioState = if (audioCandidateEligible) AudioState.PROCESSING else AudioState.READY_WITHOUT_AUDIO,
                 )
-                Log.d(TAG, "clip registered in index path=${file.absolutePath} id=$clipId")
-                // Uses the clip's actual measured duration, not the
-                // requested cap — an early-but-valid stop (see BUGFIX-U1
-                // above) records less than videoDurationMs, and the toast
-                // must reflect what was really saved.
-                val seconds = (durationMs / 1_000L).toInt().coerceAtLeast(1)
-                notifyToast(getString(R.string.capture_video_saved_with_duration, seconds))
+                Log.d(TAG, "clip registered in index id=$clipId" + releaseSafeDetail(isDebuggableBuild(), "path", file.absolutePath))
 
-                // AUDIO-CAPTURE-U2.6: mux only starts when the clip actually
+                // AUDIO-CAPTURE-U2.7: mux only starts when the clip actually
                 // has an id AND was eligible — "se registerClip falhar ou
-                // não retornar ID, não iniciar mux". Debug builds only; any
-                // outcome from here on is contained entirely inside
+                // não retornar ID, não iniciar mux". Runs in every build now;
+                // any outcome from here on is contained entirely inside
                 // ClipAudioMuxer/maybeMuxClipAudio/promoteClip and never
-                // affects the already-saved MP4/registration by itself.
-                if (isDebuggableBuild() && audioCandidateEligible && clipId != null) {
+                // affects the already-saved MP4/registration by itself. The
+                // single terminal toast (notifyFinalSaveOutcome) is always
+                // fired by whichever branch resolves the clip's final
+                // audioState — here directly when ineligible, or from inside
+                // maybeMuxClipAudio/resolveMuxOutcome otherwise.
+                if (audioCandidateEligible && clipId != null) {
                     val muxTimeoutMs = ClipAudioMuxer.computeMuxTimeoutMs(realSessionDurationMs)
                     maybeMuxClipAudio(
                         clipId = clipId,
@@ -681,7 +709,10 @@ class ScreenCaptureService : Service() {
                         videoStartElapsedMs = videoStartElapsedMsForMux,
                         audioStartElapsedMs = audioStartElapsedMsForMux,
                         muxTimeoutMs = muxTimeoutMs,
+                        diagnosticsEnabled = isDebuggableBuild(),
                     )
+                } else {
+                    notifyFinalSaveOutcome(withAudio = false)
                 }
             } else {
                 Log.e(
@@ -767,7 +798,11 @@ class ScreenCaptureService : Service() {
         )
         return when (result) {
             is ClipIndexResult.Success -> {
-                Log.d(TAG, "clip registered in index id=${result.id} path=${result.path} audioState=$audioState")
+                Log.d(
+                    TAG,
+                    "clip registered in index id=${result.id} audioState=$audioState" +
+                        releaseSafeDetail(isDebuggableBuild(), "path", result.path),
+                )
                 result.id
             }
             is ClipIndexResult.Failure -> {
@@ -798,18 +833,25 @@ class ScreenCaptureService : Service() {
         videoStartElapsedMs: Long,
         audioStartElapsedMs: Long,
         muxTimeoutMs: Long,
+        diagnosticsEnabled: Boolean,
     ) {
         val resolved = AtomicBoolean(false)
         val muxStartElapsedMs = SystemClock.elapsedRealtime()
         val thread = Thread(
             {
                 val outcome: MuxResult = try {
-                    ClipAudioMuxer().muxSynchronously(videoFile, audioFile, videoStartElapsedMs, audioStartElapsedMs)
+                    ClipAudioMuxer().muxSynchronously(
+                        videoFile,
+                        audioFile,
+                        videoStartElapsedMs,
+                        audioStartElapsedMs,
+                        diagnosticsEnabled,
+                    )
                 } catch (e: Exception) {
-                    Log.e(TAG, "ClipAudioMuxer threw unexpectedly: ${e.message}", e)
+                    logFallbackError(TAG, diagnosticsEnabled, "ClipAudioMuxer threw unexpectedly: ${e.message}", e)
                     MuxResult.Failure("av_mux_unexpected_error")
                 }
-                resolveMuxOutcome(resolved, clipId, videoFile, outcome)
+                resolveMuxOutcome(resolved, clipId, videoFile, audioFile, diagnosticsEnabled, outcome)
             },
             "ApexClipAudioMuxerThread",
         )
@@ -827,8 +869,16 @@ class ScreenCaptureService : Service() {
             // index mutation — if this side wins, the still-running thread
             // will later lose its own compareAndSet and only clean up its
             // orphaned output, never touching the index again for this id.
+            // AUDIO-CAPTURE-U2.7: never deletes audioFile (the M4A) here —
+            // the mux thread may still be reading it via MediaExtractor.
+            // Ownership of that cleanup belongs entirely to
+            // resolveMuxOutcome, which only runs after the thread's own
+            // ClipAudioMuxer.muxSynchronously() call has fully returned
+            // (success, failure, or — for a late finisher after this branch
+            // already won — its own late-arrival branch there).
             if (resolved.compareAndSet(false, true)) {
                 clipIndexStore.updateAudioState(clipId, AudioState.READY_WITHOUT_AUDIO)
+                notifyFinalSaveOutcome(withAudio = false)
             }
         } else {
             Log.d(
@@ -848,24 +898,47 @@ class ScreenCaptureService : Service() {
      * terminal index mutation; the loser never touches the index for this
      * [clipId] again — a late [MuxResult.Success] after losing the race only
      * deletes its own orphaned output file.
+     *
+     * AUDIO-CAPTURE-U2.7: this is also the ONLY place [audioFile] (the M4A)
+     * is ever deleted in release — every path through this function runs
+     * after [ClipAudioMuxer.muxSynchronously] has already returned on this
+     * same thread, i.e. after it released its MediaExtractor/MediaMuxer
+     * instances, so the file is guaranteed not to be in use anymore. Also
+     * the single call site for the terminal toast on this side of the race
+     * — the timeout branch in [maybeMuxClipAudio] fires its own toast only
+     * when IT wins the race, never both.
      */
-    private fun resolveMuxOutcome(resolved: AtomicBoolean, clipId: String, originalVideoFile: File, outcome: MuxResult) {
+    private fun resolveMuxOutcome(
+        resolved: AtomicBoolean,
+        clipId: String,
+        originalVideoFile: File,
+        audioFile: File,
+        diagnosticsEnabled: Boolean,
+        outcome: MuxResult,
+    ) {
         if (!resolved.compareAndSet(false, true)) {
             if (outcome is MuxResult.Success) {
                 val deleted = runCatching { outcome.outputFile.delete() }.getOrDefault(false)
                 Log.e(
                     TAG,
-                    "capture blocked or unavailable — reason=av_mux_late_success_after_timeout " +
-                        "path=${outcome.outputFile.absolutePath} orphanDeleted=$deleted",
+                    "capture blocked or unavailable — reason=av_mux_late_success_after_timeout orphanDeleted=$deleted" +
+                        releaseSafeDetail(diagnosticsEnabled, "path", outcome.outputFile.absolutePath),
                 )
             }
+            if (!diagnosticsEnabled) runCatching { audioFile.delete() }
             return
         }
         when (outcome) {
-            is MuxResult.Success -> promoteClip(clipId, originalVideoFile, outcome)
+            is MuxResult.Success -> {
+                val confirmedOk = promoteClip(clipId, originalVideoFile, outcome, diagnosticsEnabled)
+                if (!diagnosticsEnabled) runCatching { audioFile.delete() }
+                notifyFinalSaveOutcome(withAudio = confirmedOk)
+            }
             is MuxResult.Failure -> {
                 Log.e(TAG, "capture blocked or unavailable — reason=${outcome.reason}")
                 clipIndexStore.updateAudioState(clipId, AudioState.READY_WITHOUT_AUDIO)
+                if (!diagnosticsEnabled) runCatching { audioFile.delete() }
+                notifyFinalSaveOutcome(withAudio = false)
             }
         }
     }
@@ -877,9 +950,16 @@ class ScreenCaptureService : Service() {
      * promotion write itself failed), performs a full rollback back to the
      * original path/size/duration/READY_WITHOUT_AUDIO — never leaves the
      * entry pointing at the wrong file, and never deletes the original MP4
-     * outside the confirmed-success path.
+     * outside the confirmed-success path. Returns whether the promotion was
+     * confirmed (true) or rolled back (false) — AUDIO-CAPTURE-U2.7: the
+     * caller uses this to fire the correct terminal toast.
      */
-    private fun promoteClip(clipId: String, originalVideoFile: File, success: MuxResult.Success) {
+    private fun promoteClip(
+        clipId: String,
+        originalVideoFile: File,
+        success: MuxResult.Success,
+        diagnosticsEnabled: Boolean,
+    ): Boolean {
         val before = clipIndexStore.findVideoClipById(clipId)
         val promoteResult = clipIndexStore.updateClipFile(
             id = clipId,
@@ -893,7 +973,7 @@ class ScreenCaptureService : Service() {
             // mutate() only writes on Success, so nothing was persisted for
             // this id — path is still the original; just clear PROCESSING.
             clipIndexStore.updateAudioState(clipId, AudioState.READY_WITHOUT_AUDIO)
-            return
+            return false
         }
 
         val confirmed = clipIndexStore.findVideoClipById(clipId)
@@ -908,7 +988,8 @@ class ScreenCaptureService : Service() {
             val deleted = runCatching { originalVideoFile.delete() }.getOrDefault(false)
             Log.d(
                 TAG,
-                "AV promotion confirmed id=$clipId path=${success.outputFile.absolutePath} originalDeleted=$deleted",
+                "AV promotion confirmed id=$clipId originalDeleted=$deleted" +
+                    releaseSafeDetail(diagnosticsEnabled, "path", success.outputFile.absolutePath),
             )
         } else {
             Log.e(TAG, "capture blocked or unavailable — reason=av_index_confirm_mismatch id=$clipId")
@@ -924,6 +1005,25 @@ class ScreenCaptureService : Service() {
             }
             // Original MP4 is never deleted on this path.
         }
+        return confirmedOk
+    }
+
+    /**
+     * AUDIO-CAPTURE-U2.7: single source of the terminal user-facing message
+     * for a video capture — replaces the old "Vídeo concluído" toast that
+     * used to fire immediately after registration, before the mux outcome
+     * was even known. Called exactly once per session, from whichever
+     * branch resolves the clip to its final audioState (ineligible upfront,
+     * confirmed promotion, rollback, mux failure, or mux timeout) — never
+     * duplicated inline at each call site.
+     */
+    private fun notifyFinalSaveOutcome(withAudio: Boolean) {
+        notifyToast(
+            getString(
+                if (withAudio) R.string.capture_video_saved_with_audio
+                else R.string.capture_video_saved_without_audio,
+            ),
+        )
     }
 
     private fun notifyToast(text: String) {

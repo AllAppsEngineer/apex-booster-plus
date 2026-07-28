@@ -546,6 +546,26 @@ class ClipIndexStoreTest {
         )
     }
 
+    // ---- allVideoClipPaths (AUDIO-CAPTURE-U2.7: protege orfaos do sweep) ----
+
+    @Test
+    fun `allVideoClipPaths retorna os paths de todas as entradas de video independente do audioState`() {
+        val codec = FakeClipIndexCodec()
+        val storage = FakeClipIndexStorage()
+        val store = newStore(clipsStorage = storage, codec = codec)
+        store.registerVideoClip(path = "/a.mp4", timestamp = 1L, audioState = AudioState.READY_WITHOUT_AUDIO)
+        store.registerVideoClip(path = "/b.mp4", timestamp = 2L, audioState = AudioState.PROCESSING)
+        store.registerVideoClip(path = "/c_av.mp4", timestamp = 3L, audioState = AudioState.READY_WITH_AUDIO)
+
+        assertEquals(setOf("/a.mp4", "/b.mp4", "/c_av.mp4"), store.allVideoClipPaths())
+    }
+
+    @Test
+    fun `allVideoClipPaths de indice vazio retorna conjunto vazio`() {
+        val store = newStore()
+        assertTrue(store.allVideoClipPaths().isEmpty())
+    }
+
     // ---- promoção concorrente com exclusão ----
 
     @Test

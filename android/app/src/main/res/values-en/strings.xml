@@ -6,6 +6,7 @@
     <string name="capture_error_text">Error capturing screen.</string>
     <string name="capture_notification_recording_text">Recording session video...</string>
     <string name="capture_recording_text">Recording...</string>
-    <string name="capture_video_saved_with_duration">%1$d-second video completed</string>
+    <string name="capture_video_saved_with_audio">Saved with internal audio.</string>
+    <string name="capture_video_saved_without_audio">Saved without internal audio.</string>
     <string name="capture_video_error_text">Error recording video.</string>
 </resources>

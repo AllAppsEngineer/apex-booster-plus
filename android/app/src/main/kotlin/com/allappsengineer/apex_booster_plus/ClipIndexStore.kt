@@ -77,6 +77,17 @@ class ClipIndexStore(
     }
 
     /**
+     * AUDIO-CAPTURE-U2.7: read-only snapshot of every path currently
+     * referenced by apex_clips/index.json, regardless of audioState — the
+     * protected set the release-only orphan artifact sweep
+     * (OrphanAudioArtifactCleanup) checks candidates against before deleting
+     * anything.
+     */
+    fun allVideoClipPaths(): Set<String> = synchronized(lock) {
+        codec.decode(clipsStorage.readRaw()).map { it.path }.toSet()
+    }
+
+    /**
      * AUDIO-CAPTURE-U2.6: startup recovery sweep — demotes any entry stuck
      * in PROCESSING (crash, kill, or an unresolved mux) for at least
      * [timeoutMs] back to READY_WITHOUT_AUDIO. Returns the recovered ids.

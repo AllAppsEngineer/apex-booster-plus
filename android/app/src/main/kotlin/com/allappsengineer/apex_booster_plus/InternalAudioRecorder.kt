@@ -98,6 +98,18 @@ class InternalAudioRecorder {
         // estimate the duration contributed by the last encoded frame, since
         // MediaExtractor exposes sample *start* times, not durations.
         private const val AAC_FRAME_SAMPLE_COUNT = 1_024L
+
+        /**
+         * AUDIO-CAPTURE-U2.7: pure RMS-based silence decision, extracted out
+         * of the (now debug-only) WAV finalize path so eligibility for the
+         * mux — which must run in every build — never depends on whether the
+         * diagnostic WAV file was written this session.
+         */
+        fun computeSilenceDetected(totalSamples: Long, sumSquares: Double): Boolean {
+            if (totalSamples <= 0L) return true
+            val rms = sqrt(sumSquares / totalSamples)
+            return rms < SILENCE_RMS_THRESHOLD
+        }
     }
 
     @Volatile
@@ -188,13 +200,23 @@ class InternalAudioRecorder {
     private var aacPart: File? = null
     private var aacFinal: File? = null
 
-    // AUDIO-CAPTURE-U2.6: set by finalizeWavFile() before finalizeAndRelease()
-    // returns; read via wasSilenceDetected() by the caller afterwards.
-    // Defaults to true (conservative "unknown/blocked" reading) so a WAV
-    // finalize that bails out early (e.g. rename failure) is never mistaken
-    // for confirmed non-silent audio.
+    // AUDIO-CAPTURE-U2.7: set by finalizeAndRelease() (via
+    // computeSilenceDetected()) before it returns; read via
+    // wasSilenceDetected() by the caller afterwards. Defaults to true
+    // (conservative "unknown/blocked" reading) so a session that never
+    // reaches that point is never mistaken for confirmed non-silent audio.
+    // Independent of whether the (debug-only) WAV file is written this
+    // session — see computeSilenceDetected().
     @Volatile
     private var lastRecordingSilent = true
+
+    // AUDIO-CAPTURE-U2.7: true keeps the raw WAV (.wav/.wav.part) and a
+    // failed .m4a.part around for manual inspection, exactly like today;
+    // false (release) means the WAV is never written at all, and a stray
+    // .m4a.part is deleted once the AAC encoder thread has fully joined.
+    // Set once per session at the top of start().
+    @Volatile
+    private var diagnosticsEnabled = false
 
     /** API 29 (Android 10) is the platform floor for AudioPlaybackCaptureConfiguration. */
     fun isSupported(): Boolean {
@@ -215,11 +237,21 @@ class InternalAudioRecorder {
      * Best-effort end to end: every failure branch logs a clear
      * "capture blocked or unavailable — reason=..." line and returns, so the
      * caller's video recording is never affected by anything that happens here.
+     *
+     * [diagnosticsEnabled] (AUDIO-CAPTURE-U2.7) controls only retention of
+     * diagnostic artifacts (raw WAV, a failed .m4a.part) — it never gates
+     * whether the production pipeline (PCM capture, AAC encode) runs at all.
      */
-    fun start(projection: MediaProjection, hasRecordAudioPermission: Boolean, outputDir: File) {
+    fun start(
+        projection: MediaProjection,
+        hasRecordAudioPermission: Boolean,
+        outputDir: File,
+        diagnosticsEnabled: Boolean,
+    ) {
         stopRequested = false
         finalized = false
         audioStartElapsedMs = -1L
+        this.diagnosticsEnabled = diagnosticsEnabled
         if (!isSupported()) {
             Log.d(TAG, "capture blocked or unavailable — reason=unsupported_sdk")
             return
@@ -236,7 +268,7 @@ class InternalAudioRecorder {
                 .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
                 .build()
         } catch (e: Exception) {
-            Log.e(TAG, "capture blocked or unavailable — reason=config_build_failed: ${e.message}", e)
+            logFallbackError(TAG, diagnosticsEnabled, "capture blocked or unavailable — reason=config_build_failed: ${e.message}", e)
             return
         }
 
@@ -260,7 +292,7 @@ class InternalAudioRecorder {
                 .setAudioPlaybackCaptureConfig(config)
                 .build()
         } catch (e: Exception) {
-            Log.e(TAG, "capture blocked or unavailable — reason=audio_record_build_failed: ${e.message}", e)
+            logFallbackError(TAG, diagnosticsEnabled, "capture blocked or unavailable — reason=audio_record_build_failed: ${e.message}", e)
             return
         }
 
@@ -273,20 +305,29 @@ class InternalAudioRecorder {
             return
         }
 
-        Log.d(
-            TAG,
-            "AudioRecord initialized sampleRate=$SAMPLE_RATE channelConfig=$CHANNEL_CONFIG " +
-                "encoding=$AUDIO_ENCODING minBufferSize=$minBufferSize",
-        )
+        // RELEASE-LOG-HARDENING-D1: debug-only detail — sampleRate/channelConfig/
+        // encoding/minBufferSize are internal tuning constants with no support
+        // value in release, unlike the terminal start/stop/result lines.
+        if (diagnosticsEnabled) {
+            Log.d(
+                TAG,
+                "AudioRecord initialized sampleRate=$SAMPLE_RATE channelConfig=$CHANNEL_CONFIG " +
+                    "encoding=$AUDIO_ENCODING minBufferSize=$minBufferSize",
+            )
+        }
 
         val dirReady = try {
             outputDir.exists() || outputDir.mkdirs()
         } catch (e: Exception) {
-            Log.e(TAG, "capture blocked or unavailable — reason=output_dir_create_failed: ${e.message}", e)
+            logFallbackError(TAG, diagnosticsEnabled, "capture blocked or unavailable — reason=output_dir_create_failed: ${e.message}", e)
             false
         }
         if (!dirReady) {
-            Log.e(TAG, "capture blocked or unavailable — reason=output_dir_create_failed dir=${outputDir.absolutePath}")
+            Log.e(
+                TAG,
+                "capture blocked or unavailable — reason=output_dir_create_failed" +
+                    releaseSafeDetail(diagnosticsEnabled, "dir", outputDir.absolutePath),
+            )
             runCatching { record.release() }
             return
         }
@@ -304,7 +345,7 @@ class InternalAudioRecorder {
         try {
             record.startRecording()
         } catch (e: Exception) {
-            Log.e(TAG, "capture blocked or unavailable — reason=start_recording_failed: ${e.message}", e)
+            logFallbackError(TAG, diagnosticsEnabled, "capture blocked or unavailable — reason=start_recording_failed: ${e.message}", e)
             runCatching { record.release() }
             return
         }
@@ -348,7 +389,7 @@ class InternalAudioRecorder {
         aacThread.start()
 
         val thread = Thread(
-            { readLoop(record, minBufferSize, part, aacFreeSlots, aacWorkQueue) },
+            { readLoop(record, minBufferSize, part, diagnosticsEnabled, aacFreeSlots, aacWorkQueue) },
             "ApexAudioCaptureThread",
         )
         readThread = thread
@@ -379,6 +420,7 @@ class InternalAudioRecorder {
         record: AudioRecord,
         minBufferSize: Int,
         part: File,
+        diagnosticsEnabled: Boolean,
         aacFreeSlots: ArrayBlockingQueue<AacPcmSlot>,
         aacWorkQueue: ArrayBlockingQueue<AacPcmSlot>,
     ) {
@@ -392,10 +434,16 @@ class InternalAudioRecorder {
         var negativeCount = 0
         var lastNegativeCode = 0
 
+        // AUDIO-CAPTURE-U2.7: the raw WAV is a debug-only diagnostic artifact
+        // — in release this stream is never opened, so no .wav/.wav.part is
+        // ever created. RMS/sample accounting below runs unconditionally
+        // either way, so silence detection never depends on it.
         var out: FileOutputStream? = null
         try {
-            out = FileOutputStream(part)
-            out.write(buildWavHeader(0)) // provisional header, patched on finalizeAndRelease()
+            if (diagnosticsEnabled) {
+                out = FileOutputStream(part)
+                out.write(buildWavHeader(0)) // provisional header, patched on finalizeAndRelease()
+            }
 
             while (recording) {
                 val read = record.read(buffer, 0, buffer.size)
@@ -425,8 +473,10 @@ class InternalAudioRecorder {
                 }
                 // Only the valid, frame-aligned samples from this call —
                 // never the full (possibly stale-tailed) buffer.
-                out.write(pcmBytes.array(), 0, validShorts * 2)
-                bytesWritten += validShorts * 2
+                if (out != null) {
+                    out.write(pcmBytes.array(), 0, validShorts * 2)
+                    bytesWritten += validShorts * 2
+                }
 
                 // AUDIO-CAPTURE-U2.3: best-effort, non-blocking handoff of an
                 // independent copy of this same validated chunk to the AAC
@@ -443,7 +493,9 @@ class InternalAudioRecorder {
                 reads++
                 if (rms > peakRmsLocal) peakRmsLocal = rms
 
-                if (reads % LOG_EVERY_N_READS == 0) {
+                // RELEASE-LOG-HARDENING-D1: this periodic per-buffer readout is
+                // debug-only diagnostic noise — never emitted in release.
+                if (diagnosticsEnabled && reads % LOG_EVERY_N_READS == 0) {
                     val silent = rms < SILENCE_RMS_THRESHOLD
                     Log.d(
                         TAG,
@@ -453,7 +505,7 @@ class InternalAudioRecorder {
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "capture blocked or unavailable — reason=pcm_write_failed: ${e.message}", e)
+            logFallbackError(TAG, diagnosticsEnabled, "capture blocked or unavailable — reason=pcm_write_failed: ${e.message}", e)
         } finally {
             runCatching { out?.flush() }
             runCatching { out?.close() }
@@ -809,7 +861,7 @@ class InternalAudioRecorder {
         val renamed = try {
             part.renameTo(final)
         } catch (e: Exception) {
-            Log.e(TAG, "capture blocked or unavailable — reason=aac_rename_failed: ${e.message} (aac)", e)
+            logFallbackError(TAG, diagnosticsEnabled, "capture blocked or unavailable — reason=aac_rename_failed: ${e.message} (aac)", e)
             false
         }
         if (!renamed) {
@@ -819,8 +871,9 @@ class InternalAudioRecorder {
 
         Log.d(
             TAG,
-            "AAC saved path=${final.absolutePath} bytes=${final.length()} " +
-                "framesQueued=$totalPcmFramesQueued expectedDurationUs=$expectedDurationUs",
+            "AAC saved bytes=${final.length()} expectedDurationUs=$expectedDurationUs" +
+                releaseSafeDetail(diagnosticsEnabled, "path", final.absolutePath) +
+                releaseSafeDetail(diagnosticsEnabled, "framesQueued", totalPcmFramesQueued),
         )
     }
 
@@ -868,8 +921,8 @@ class InternalAudioRecorder {
         } else {
             Log.e(
                 TAG,
-                "capture blocked or unavailable — reason=read_thread_timeout waitedMs=$THREAD_JOIN_TIMEOUT_MS " +
-                    "path=${partFile?.absolutePath}",
+                "capture blocked or unavailable — reason=read_thread_timeout waitedMs=$THREAD_JOIN_TIMEOUT_MS" +
+                    releaseSafeDetail(diagnosticsEnabled, "path", partFile?.absolutePath),
             )
             runCatching { record?.release() }
             thread?.join(THREAD_JOIN_RETRY_TIMEOUT_MS)
@@ -879,7 +932,9 @@ class InternalAudioRecorder {
                     TAG,
                     "capture blocked or unavailable — reason=read_thread_still_alive " +
                         "waitedMs=${THREAD_JOIN_TIMEOUT_MS + THREAD_JOIN_RETRY_TIMEOUT_MS} " +
-                        "path=${partFile?.absolutePath} size=${partFile?.length() ?: -1} — preserving .wav.part",
+                        "size=${partFile?.length() ?: -1}" +
+                        releaseSafeDetail(diagnosticsEnabled, "path", partFile?.absolutePath) +
+                        " — preserving .wav.part",
                 )
                 readThread = null
                 return
@@ -891,12 +946,22 @@ class InternalAudioRecorder {
             Log.e(
                 TAG,
                 "capture blocked or unavailable — reason=pcm_stream_not_confirmed_closed " +
-                    "path=${partFile?.absolutePath} size=${partFile?.length() ?: -1} — preserving .wav.part",
+                    "size=${partFile?.length() ?: -1}" +
+                    releaseSafeDetail(diagnosticsEnabled, "path", partFile?.absolutePath) +
+                    " — preserving .wav.part",
             )
             return
         }
 
-        finalizeWavFile()
+        // AUDIO-CAPTURE-U2.7: computed unconditionally from the same
+        // accumulators finalizeWavFile() used to read internally — silence
+        // detection must keep working in release, where the WAV below is
+        // never written.
+        lastRecordingSilent = computeSilenceDetected(totalSamples, sumSquares)
+
+        if (diagnosticsEnabled) {
+            finalizeWavFile()
+        }
 
         // AUDIO-CAPTURE-U2.3: bounded wait for the AAC encoder thread — never
         // indefinite. requestStop()/the capture-thread join above already
@@ -911,11 +976,24 @@ class InternalAudioRecorder {
                 invalidateAac("aac_thread_timeout")
                 Log.e(
                     TAG,
-                    "capture blocked or unavailable — reason=aac_thread_timeout waitedMs=$AAC_THREAD_JOIN_TIMEOUT_MS " +
-                        "path=${aacPart?.absolutePath} (aac) — preserving .m4a.part",
+                    "capture blocked or unavailable — reason=aac_thread_timeout waitedMs=$AAC_THREAD_JOIN_TIMEOUT_MS" +
+                        releaseSafeDetail(diagnosticsEnabled, "path", aacPart?.absolutePath) +
+                        " (aac) — preserving .m4a.part",
                 )
+                // AUDIO-CAPTURE-U2.7: the thread may still be inside
+                // MediaCodec/MediaMuxer teardown — never delete .m4a.part
+                // here. A release-only startup sweep (see
+                // OrphanAudioArtifactCleanup) reclaims it later, once this
+                // whole process (and any thread it held) is gone for good.
             } else {
                 validateAndPromoteAac()
+                if (!diagnosticsEnabled && getFinalizedAacFileOrNull() == null) {
+                    // AUDIO-CAPTURE-U2.7: release-only. The AAC thread has
+                    // fully joined and released its MediaCodec/MediaMuxer
+                    // above, so deleting a stray .m4a.part left by a failed
+                    // validation is safe here.
+                    runCatching { aacPart?.delete() }
+                }
             }
         }
 
@@ -943,19 +1021,23 @@ class InternalAudioRecorder {
     }
 
     /**
-     * AUDIO-CAPTURE-U2.6: true unless [finalizeWavFile] confirmed genuine
-     * non-silent audio. Conservative by default — any early bailout inside
-     * [finalizeWavFile] (rename failure, size mismatch, etc.) leaves this at
-     * its default `true`, so the caller never treats an unverified
-     * recording as "not silent". Safe to call at any time.
+     * AUDIO-CAPTURE-U2.7: true unless [computeSilenceDetected] (called from
+     * [finalizeAndRelease], independent of the debug-only WAV path) confirmed
+     * genuine non-silent audio. Conservative by default — a session that
+     * never reaches that point leaves this at its default `true`, so the
+     * caller never treats an unverified recording as "not silent". Safe to
+     * call at any time.
      */
     fun wasSilenceDetected(): Boolean = lastRecordingSilent
 
     /**
-     * Patches the provisional WAV header with real RIFF/data sizes and
-     * renames .wav.part -> .wav — but only when the patch and the resulting
-     * file size are verifiably correct. Any failure preserves the .wav.part
-     * for diagnosis instead of deleting it.
+     * AUDIO-CAPTURE-U2.7: debug-only diagnostic artifact — never called when
+     * diagnosticsEnabled is false. Patches the provisional WAV header with
+     * real RIFF/data sizes and renames .wav.part -> .wav — but only when the
+     * patch and the resulting file size are verifiably correct. Any failure
+     * preserves the .wav.part for diagnosis instead of deleting it. Silence
+     * detection itself is decided independently by [computeSilenceDetected],
+     * already called before this runs.
      */
     private fun finalizeWavFile() {
         val part = partFile
@@ -1029,9 +1111,10 @@ class InternalAudioRecorder {
             return
         }
 
+        // AUDIO-CAPTURE-U2.7: silence itself is decided by computeSilenceDetected()
+        // in finalizeAndRelease(), before this method is even called — kept
+        // here only to log the same RMS figure alongside the WAV artifact.
         val overallRms = if (totalSamples > 0) sqrt(sumSquares / totalSamples) else 0.0
-        val silenceDetected = totalSamples == 0L || overallRms < SILENCE_RMS_THRESHOLD
-        lastRecordingSilent = silenceDetected
         val durationMs = if (totalSamples > 0) {
             (totalSamples.toDouble() / CHANNEL_COUNT / SAMPLE_RATE * 1000).toLong()
         } else {
@@ -1044,7 +1127,7 @@ class InternalAudioRecorder {
                 "sampleRate=$SAMPLE_RATE channels=$CHANNEL_COUNT minBufferSize=$minBufferSizeUsed " +
                 "overallRmsLevel=${"%.1f".format(overallRms)} peakRmsLevel=${"%.1f".format(peakRms)} " +
                 "negativeReadCodes=$negativeReadCount lastNegativeReadCode=$lastNegativeReadCode " +
-                "silenceDetected=$silenceDetected",
+                "silenceDetected=$lastRecordingSilent",
         )
     }
 }

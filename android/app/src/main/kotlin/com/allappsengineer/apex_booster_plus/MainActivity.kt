@@ -54,21 +54,30 @@ class MainActivity : FlutterFragmentActivity() {
     // Activity Result launcher for MediaProjection consent dialog.
     private lateinit var captureResultLauncher: ActivityResultLauncher<Intent>
 
-    // AUDIO-CAPTURE-U1 (POC): fire-and-forget RECORD_AUDIO request — the
-    // video session arms regardless of the outcome (audio is best-effort,
-    // never allowed to block or gate video capture).
+    // AUDIO-CAPTURE-U2.7: requested BEFORE the MediaProjection consent dialog
+    // for video sessions — best-effort/fire-and-forget (a denial just means
+    // InternalAudioRecorder no-ops later; video is never blocked or gated by
+    // this). Order is load-bearing: RECORD_AUDIO must be resolved before
+    // consent, and consent before the foreground service starts, so
+    // ScreenCaptureService.onStartCommand() knows whether to declare the
+    // MICROPHONE foreground service type on its very first startForeground()
+    // call — that type can never be added to an already-running FGS.
     private lateinit var audioPermissionLauncher: ActivityResultLauncher<String>
 
-    // AUDIO-CAPTURE-U1 (POC): release-build gate. Checked at runtime via
+    // AUDIO-CAPTURE-U2.7: still used to gate diagnostic-artifact retention
+    // (see InternalAudioRecorder/ClipAudioMuxer's diagnosticsEnabled) and the
+    // release-only orphan sweep below — no longer gates whether RECORD_AUDIO
+    // is ever requested at all. Checked at runtime via
     // ApplicationInfo.FLAG_DEBUGGABLE instead of BuildConfig.DEBUG — this
-    // project doesn't enable Gradle's buildConfig feature, and turning it on
-    // just for this diagnostic POC is out of scope for this checkpoint.
+    // project doesn't enable Gradle's buildConfig feature.
     private fun isDebuggableBuild(): Boolean =
         (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
     // AUDIO-CAPTURE-U2.6: entries left in PROCESSING for at least this long
     // (crash, kill, or an unresolved mux) are demoted to READY_WITHOUT_AUDIO
-    // by the startup recovery sweep below.
+    // by the startup recovery sweep below. AUDIO-CAPTURE-U2.7: also the
+    // minimum age for the orphan artifact sweep below (same constant — both
+    // exist to reclaim state stuck since at least the same crash/kill).
     private val staleAudioProcessingTimeoutMs = 120_000L
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
@@ -77,11 +86,27 @@ class MainActivity : FlutterFragmentActivity() {
         // AUDIO-CAPTURE-U2.6: startup recovery sweep — never recreates a
         // deleted entry, never re-triggers a mux; pure index cleanup, safe
         // to run unconditionally (a no-op when nothing is stale).
+        val clipIndexStore = ClipIndexStore.getInstance(applicationContext)
         runCatching {
-            val recoveredIds = ClipIndexStore.getInstance(applicationContext)
+            val recoveredIds = clipIndexStore
                 .recoverStaleAudioProcessing(System.currentTimeMillis(), staleAudioProcessingTimeoutMs)
             if (recoveredIds.isNotEmpty()) {
                 android.util.Log.d("AudioProcessingRecovery", "recovered stale PROCESSING ids=$recoveredIds")
+            }
+        }
+
+        // AUDIO-CAPTURE-U2.7: release-only — reclaims WAV/M4A/.part artifacts
+        // orphaned by a crash or kill in a previous process. Debug builds
+        // skip this entirely so every artifact stays available for manual
+        // inspection, exactly like before this checkpoint.
+        if (!isDebuggableBuild()) {
+            runCatching {
+                OrphanAudioArtifactCleanup.sweep(
+                    context = applicationContext,
+                    protectedPaths = clipIndexStore.allVideoClipPaths(),
+                    nowMillis = System.currentTimeMillis(),
+                    minAgeMs = staleAudioProcessingTimeoutMs,
+                )
             }
         }
 
@@ -92,11 +117,23 @@ class MainActivity : FlutterFragmentActivity() {
                 "InternalAudioRecorder",
                 "permission ${if (granted) "granted" else "denied"} (runtime request result)",
             )
+            // AUDIO-CAPTURE-U2.7: proceed to MediaProjection consent
+            // regardless of outcome — RECORD_AUDIO is best-effort and must
+            // never block or delay the video session itself.
+            proceedToProjectionConsent()
         }
         captureResultLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result: ActivityResult ->
             if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+                // AUDIO-CAPTURE-U2.7: RECORD_AUDIO was already resolved
+                // (granted, denied, or not applicable) before this consent
+                // dialog was even shown — see armSession/proceedToProjectionConsent.
+                // Screenshot sessions never request audio.
+                val audioGranted = pendingSessionMode == ScreenCaptureService.MODE_VIDEO &&
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) ==
+                    PackageManager.PERMISSION_GRANTED
+
                 // Arm the session service — it stays idle/armed until captureNow() is
                 // triggered later from the native A+ mini-menu. No capture happens
                 // here, no overlay is hidden, no task is moved to background.
@@ -105,31 +142,26 @@ class MainActivity : FlutterFragmentActivity() {
                     putExtra(ScreenCaptureService.EXTRA_RESULT_DATA, result.data)
                     putExtra(ScreenCaptureService.EXTRA_SESSION_MODE, pendingSessionMode)
                     putExtra(ScreenCaptureService.EXTRA_VIDEO_DURATION_MS, pendingVideoDurationMs)
+                    putExtra(ScreenCaptureService.EXTRA_AUDIO_PERMISSION_GRANTED, audioGranted)
                 }
                 startForegroundService(serviceIntent)
                 pendingCaptureResult?.success(true)
                 pendingCaptureResult = null
-
-                // AUDIO-CAPTURE-U1 (POC): requested only AFTER the video
-                // session has already armed — never racing the MediaProjection
-                // consent activity-result flow above with a second one.
-                // Best-effort/fire-and-forget: a denial here just means
-                // InternalAudioRecorder no-ops later, video is unaffected.
-                // Gated to debug builds only — release must never show this
-                // dialog or touch RECORD_AUDIO for this diagnostic POC.
-                if (isDebuggableBuild() &&
-                    pendingSessionMode == ScreenCaptureService.MODE_VIDEO &&
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
-                    PackageManager.PERMISSION_GRANTED
-                ) {
-                    audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                }
             } else {
                 // User denied or cancelled — clean shutdown, no retry.
                 pendingCaptureResult?.success(false)
                 pendingCaptureResult = null
             }
         }
+    }
+
+    // AUDIO-CAPTURE-U2.7: extracted so armSession can call it directly when
+    // RECORD_AUDIO is already resolved (granted, or not applicable for
+    // screenshot mode), and audioPermissionLauncher's callback can call it
+    // after the permission dialog resolves either way.
+    private fun proceedToProjectionConsent() {
+        val mpm = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        captureResultLauncher.launch(mpm.createScreenCaptureIntent())
     }
 
     override fun onNewIntent(intent: android.content.Intent) {
@@ -464,9 +496,21 @@ class MainActivity : FlutterFragmentActivity() {
                         .firstOrNull { it == requestedMs }
                         ?: ScreenCaptureService.DEFAULT_VIDEO_DURATION_MS
                     pendingCaptureResult = result
-                    // Resolved in captureResultLauncher once consent is granted or denied.
-                    val mpm = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-                    captureResultLauncher.launch(mpm.createScreenCaptureIntent())
+                    // AUDIO-CAPTURE-U2.7: order is load-bearing — RECORD_AUDIO
+                    // must be resolved (video mode only) BEFORE the
+                    // MediaProjection consent dialog is even shown, so
+                    // ScreenCaptureService knows the outcome before it starts
+                    // its foreground service. Screenshot sessions and video
+                    // sessions with permission already granted skip straight
+                    // to consent.
+                    if (pendingSessionMode == ScreenCaptureService.MODE_VIDEO &&
+                        ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
+                        PackageManager.PERMISSION_GRANTED
+                    ) {
+                        audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    } else {
+                        proceedToProjectionConsent()
+                    }
                 }
                 "disarmSession" -> {
                     ScreenCaptureService.instance?.stopSession()
