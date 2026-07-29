@@ -25,6 +25,7 @@ import androidx.media3.common.util.UnstableApi
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.StandardMethodCodec
 import java.io.ByteArrayOutputStream
 import java.io.File
 
@@ -205,13 +206,26 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        // APP-PICKER-PERF-U1: getInstalledApplications(), getLaunchIntentForPackage(),
+        // getApplicationLabel() (below) and getApplicationIcon() (in "getAppIcon")
+        // are PackageManager calls that can block for several seconds on the
+        // first cold invocation after a process start, on devices with many
+        // installed packages. Running this channel on a Flutter-managed
+        // background TaskQueue (instead of the default platform/main thread)
+        // keeps that blocking work off the UI thread. MethodChannel.Result
+        // callbacks are safe to invoke from this queue — the engine marshals
+        // the reply back itself; this is the officially supported pattern for
+        // background platform channels, no extra thread-hopping needed.
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
-            "com.allappsengineer.apex_booster_plus/apps"
+            "com.allappsengineer.apex_booster_plus/apps",
+            StandardMethodCodec.INSTANCE,
+            flutterEngine.dartExecutor.binaryMessenger.makeBackgroundTaskQueue()
         ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "getInstalledApps" -> {
                     try {
+                        val startNanos = System.nanoTime()
                         val pm = packageManager
                         val selfPkg = packageName
                         val apps = pm.getInstalledApplications(0)
@@ -236,6 +250,13 @@ class MainActivity : FlutterFragmentActivity() {
                                 )
                             }
                             .sortedBy { it["appName"] as String }
+                        if (isDebuggableBuild()) {
+                            val durationMs = (System.nanoTime() - startNanos) / 1_000_000
+                            android.util.Log.d(
+                                "InstalledAppsPerf",
+                                "getInstalledApps count=${apps.size} durationMs=$durationMs",
+                            )
+                        }
                         result.success(apps)
                     } catch (e: Exception) {
                         result.error("GET_APPS_ERROR", e.message, null)
@@ -292,15 +313,21 @@ class MainActivity : FlutterFragmentActivity() {
                         result.error("INVALID_URL", "url must be a non-empty https URL", null)
                         return@setMethodCallHandler
                     }
-                    try {
-                        val intent = Intent(Intent.ACTION_VIEW, uri)
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        startActivity(intent)
-                        result.success(null)
-                    } catch (e: ActivityNotFoundException) {
-                        result.error("ACTIVITY_NOT_FOUND", "No app can open this URL", null)
-                    } catch (e: Exception) {
-                        result.error("OPEN_URL_ERROR", e.message, null)
+                    // APP-PICKER-PERF-U1: this channel's handler runs on a background
+                    // TaskQueue (see channel construction above), but openUrl starts an
+                    // Activity and belongs on the UI thread like before — the handler
+                    // itself does not reply again after scheduling this.
+                    runOnUiThread {
+                        try {
+                            val intent = Intent(Intent.ACTION_VIEW, uri)
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            startActivity(intent)
+                            result.success(null)
+                        } catch (e: ActivityNotFoundException) {
+                            result.error("ACTIVITY_NOT_FOUND", "No app can open this URL", null)
+                        } catch (e: Exception) {
+                            result.error("OPEN_URL_ERROR", e.message, null)
+                        }
                     }
                 }
 
@@ -310,17 +337,22 @@ class MainActivity : FlutterFragmentActivity() {
                         result.error("INVALID_PACKAGE", "packageName is required", null)
                         return@setMethodCallHandler
                     }
-                    try {
-                        val intent = packageManager.getLaunchIntentForPackage(pkg)
-                        if (intent == null) {
-                            result.error("APP_NOT_FOUND", "No launcher intent for $pkg", null)
-                        } else {
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            startActivity(intent)
-                            result.success(null)
+                    // APP-PICKER-PERF-U1: same reasoning as openUrl above — launchApp
+                    // starts an Activity and belongs on the UI thread; the handler
+                    // itself does not reply again after scheduling this.
+                    runOnUiThread {
+                        try {
+                            val intent = packageManager.getLaunchIntentForPackage(pkg)
+                            if (intent == null) {
+                                result.error("APP_NOT_FOUND", "No launcher intent for $pkg", null)
+                            } else {
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                startActivity(intent)
+                                result.success(null)
+                            }
+                        } catch (e: Exception) {
+                            result.error("LAUNCH_ERROR", e.message, null)
                         }
-                    } catch (e: Exception) {
-                        result.error("LAUNCH_ERROR", e.message, null)
                     }
                 }
 
