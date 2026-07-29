@@ -54,6 +54,15 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+            // RELEASE-HARDENING-U1: o Flutter Gradle Plugin (FlutterPlugin.kt)
+            // ja aplica isMinifyEnabled=true e isShrinkResources=true ao
+            // buildType "release" por padrao, junto com proguardFiles(
+            // proguard-android-optimize.txt, flutter_proguard_rules.pro,
+            // proguard-rules.pro). Estes valores sao explicitados aqui apenas
+            // para auditoria/visibilidade — nao alteram o comportamento do
+            // build, que ja era este antes desta mudanca.
+            isMinifyEnabled = true
+            isShrinkResources = true
         }
     }
 }
