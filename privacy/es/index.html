@@ -54,6 +54,12 @@
     font-weight: 700;
     margin: 40px 0 12px;
   }
+  .policy h3 {
+    color: #F5F5F5;
+    font-size: 0.98rem;
+    font-weight: 700;
+    margin: 20px 0 8px;
+  }
   .policy p { color: #C7C7C7; margin-bottom: 12px; font-size: 0.96rem; }
   .policy ul { margin: 0 0 12px 1.2em; }
   .policy li { color: #C7C7C7; margin-bottom: 6px; font-size: 0.96rem; }
@@ -65,6 +71,7 @@
     border-radius: 12px;
     overflow: hidden;
     margin-bottom: 16px;
+    overflow-x: auto;
   }
   .policy table { width: 100%; border-collapse: collapse; }
   .policy th, .policy td {
@@ -76,6 +83,16 @@
   }
   .policy thead th { color: #F5F5F5; font-weight: 600; background: rgba(255, 255, 255, 0.03); }
   .policy tr:last-child td { border-bottom: none; }
+
+  .note {
+    background: rgba(34, 197, 94, 0.06);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+    color: #C7C7C7;
+  }
 
   .back-link {
     display: inline-block;
@@ -117,7 +134,7 @@
       <a class="back-link" href="../../">&larr; Volver al inicio</a>
 
       <h1>Política de Privacidad — Apex Booster+</h1>
-      <p class="updated">Última actualización: 4 de junio de 2026</p>
+      <p class="updated">Última actualización: 28 de julio de 2026 (v2 — incluye captura de pantalla, audio interno del juego, Apex Studio y desbloqueo único)</p>
       <nav class="lang-switch" aria-label="Selector de idioma">
         <a href="../">Português</a>
         <span class="lang-sep">|</span>
@@ -131,12 +148,11 @@
       <p><strong>Desarrollador / Responsable:</strong> AllAppsEngineer</p>
       <p><strong>Contacto oficial:</strong> <a href="mailto:alessandro.lopes.adm@gmail.com" style="color:#22C55E;">alessandro.lopes.adm@gmail.com</a></p>
 
-      <h2>2. Datos Almacenados Localmente</h2>
+      <h2>2. Datos Almacenados Localmente en el Dispositivo</h2>
       <p>
-        Apex Booster+ <strong>no posee servidor propio</strong> y
-        <strong>no envía datos personales a servidores externos</strong>.
-        Todos los datos a continuación se almacenan exclusivamente en el
-        dispositivo del usuario, mediante <code>SharedPreferences</code> de Android:
+        Apex Booster+ <strong>no posee servidor propio</strong>. Los datos a continuación se
+        almacenan exclusivamente en tu dispositivo, mediante <code>SharedPreferences</code> de
+        Android, y <strong>nunca salen de él</strong>:
       </p>
       <div class="table-wrap">
         <table>
@@ -150,6 +166,9 @@
             <tr><td>Historial de sesiones</td><td>Mostrar sesiones anteriores y métricas locales</td></tr>
             <tr><td>Idioma seleccionado</td><td>Mantener la preferencia de idioma entre sesiones</td></tr>
             <tr><td>Indicador de incorporación completada</td><td>Evitar mostrar el tutorial nuevamente al reabrir la app</td></tr>
+            <tr><td>Preferencia de Modo Baja Distracción</td><td>Reducir animaciones, brillo y haptics cuando el usuario lo activa</td></tr>
+            <tr><td>Estado del Botón Flotante Apex (activado/desactivado)</td><td>Recordar si el usuario eligió mantener activo el atajo de captura</td></tr>
+            <tr><td>Estado local del desbloqueo único</td><td>Caché del estado de la compra — ver sección 8</td></tr>
           </tbody>
         </table>
       </div>
@@ -158,38 +177,104 @@
       <h2>3. Lecturas Locales del Dispositivo</h2>
       <p>La app realiza las siguientes lecturas <strong>locales</strong> con fines informativos:</p>
       <ul>
-        <li><strong>RAM disponible y total:</strong> lectura de la memoria del dispositivo para mostrar el resumen de la sesión.</li>
-        <li><strong>Latencia básica de red (Apex Ping):</strong> prueba de conectividad propia de la app para evaluar la calidad de la conexión durante la sesión. No representa ni promete el ping real de servidores de juegos externos.</li>
+        <li><strong>RAM disponible y total:</strong> lectura de la memoria del dispositivo para mostrar el resumen de la sesión. Nunca sale del dispositivo.</li>
+        <li><strong>Latencia básica de red (Apex Ping):</strong> la app envía una solicitud de red simple (HTTP HEAD) a un endpoint público de verificación de conectividad de Google (<code>clients3.google.com/generate_204</code>, con <code>connectivitycheck.gstatic.com/generate_204</code> como alternativa) únicamente para medir el tiempo de respuesta. Ningún dato personal se envía en esta solicitud además de los encabezados HTTP estándar del sistema, y el resultado (un número en milisegundos) se usa solo para mostrarlo en pantalla — no representa ni promete el ping real de servidores de juegos externos. Ningún video, audio, captura de pantalla, clip, preferencia, dato de la biblioteca de juegos o contenido ingresado por el usuario se envía en esta solicitud. Como en cualquier conexión de red, la dirección IP y los metadatos estándar de la conexión pueden ser observados por la infraestructura de destino; la retención de esos datos por parte del tercero (Google) no está controlada ni confirmada por Apex Booster+.</li>
         <li><strong>Estado del Modo Enfoque / No Molestar (DND):</strong> se verifica solo cuando el usuario concede el permiso de acceso a la política de notificaciones. No se activa automáticamente.</li>
       </ul>
-      <p>Estas lecturas <strong>nunca se envían a ningún servidor</strong>.</p>
+      <p>Estas lecturas <strong>no generan ningún dato personal enviado a un servidor</strong> — la única comunicación de red de la app es la verificación de latencia mencionada.</p>
 
-      <h2>4. Uso de Internet</h2>
-      <p>
-        La app utiliza el permiso de <strong>internet</strong> exclusivamente para la
-        prueba básica de latencia y conectividad mencionada anteriormente (Apex Ping).
-        No se realiza ninguna otra comunicación de red. La app <strong>no recopila,
-        transmite ni almacena</strong> datos en servidores externos.
-      </p>
-
-      <h2>5. Aplicaciones Instaladas</h2>
+      <h2>4. Aplicaciones Instaladas</h2>
       <p>Para permitir que el usuario seleccione juegos de su biblioteca de apps instaladas, Apex Booster+ puede mostrar las apps ejecutables disponibles en el dispositivo.</p>
       <ul>
-        <li><strong>Sin acceso irrestricto:</strong> la app no solicita permiso de acceso irrestricto a la lista completa de apps del sistema.</li>
+        <li><strong>Sin acceso irrestricto:</strong> la app no solicita permiso de acceso irrestricto a la lista completa de apps del sistema (sin <code>QUERY_ALL_PACKAGES</code>).</li>
         <li><strong>Sin envío externo:</strong> la lista de apps instaladas <strong>nunca se envía a servidores</strong>.</li>
         <li><strong>Control del usuario:</strong> el usuario decide qué apps agregar a la biblioteca. La app no realiza escaneos automáticos ni exporta estos datos.</li>
       </ul>
 
-      <h2>6. Datos No Recopilados</h2>
+      <h2>5. Apex Studio — Captura de Pantalla, Clips de Video y Medios de la Galería</h2>
+      <p>
+        <strong>Apex Studio</strong> es la función de creación de contenido social de la app.
+        Ofrece tres formas de obtener medios, todas iniciadas explícitamente por el usuario:
+      </p>
+
+      <h3>5.1 Importación desde la galería</h3>
+      <p>
+        El usuario puede seleccionar voluntariamente una imagen o video ya existente en el
+        dispositivo, mediante el selector de medios nativo de Android (<code>image_picker</code>).
+        El archivo se lee solo en memoria, durante la sesión, para la vista previa y composición
+        de la tarjeta — nunca se envía a servidores y no se guarda en las preferencias de la app.
+      </p>
+
+      <h3>5.2 Captura de pantalla y clips de video (Botón Flotante Apex)</h3>
+      <p>
+        Con el <strong>Botón Flotante Apex</strong> activado (opcional — ver sección 7), el
+        usuario puede capturar una captura de pantalla o grabar un clip de video corto (10 a 60
+        segundos) de su propia sesión de juego. Esta función usa la API MediaProjection de
+        Android, que exige confirmación explícita del usuario en una pantalla de consentimiento
+        del propio sistema operativo antes de que comience cualquier captura, y mantiene una
+        notificación persistente mientras la captura está activa.
+      </p>
+      <ul>
+        <li><strong>Audio interno del juego (opcional, solo en videos):</strong> cuando está disponible, la app puede capturar el audio reproducido por el propio juego/app durante la grabación (API <code>AudioPlaybackCaptureConfiguration</code>, Android 10 o superior). Esto <strong>no es el micrófono del dispositivo</strong> — no se capta ninguna voz ni sonido ambiente. El permiso <code>RECORD_AUDIO</code> es exigido por la API de Android para esta función aunque sea audio interno de la app, debido a una particularidad de la plataforma; el micrófono físico nunca se lee en esta configuración.</li>
+        <li><strong>Cuando el audio no está disponible:</strong> algunos juegos bloquean la captura de audio interno por política propia. En esos casos, el video se guarda normalmente sin audio, y la app muestra un aviso que orienta al usuario a grabar externamente (con el grabador de pantalla del propio dispositivo) e importar el video mediante la galería (sección 5.1), si desea un clip con audio.</li>
+        <li><strong>Almacenamiento:</strong> las capturas y clips se guardan en una carpeta específica de Apex Booster+ dentro del almacenamiento propio de la app (no en una galería pública compartida), con un índice local (<code>index.json</code>) usado solo para listar los archivos dentro de Apex Studio.</li>
+        <li><strong>Transmisión:</strong> ninguna. Ninguna captura, clip o audio se envía jamás a servidores bajo ninguna circunstancia.</li>
+      </ul>
+
+      <h2>6. Exportación y Compartición</h2>
+      <p>
+        Apex Studio permite componer una tarjeta visual (imagen o video con marco Apex) a partir
+        de los medios seleccionados o capturados. Toda la composición — incluida la exportación de
+        video — ocurre <strong>localmente en el dispositivo</strong>, sin ninguna etapa de
+        procesamiento en servidor.
+      </p>
+      <ul>
+        <li><strong>Compartición siempre manual:</strong> la publicación solo ocurre cuando el usuario toca "Compartir" y elige el destino en la hoja de compartición nativa de Android. Apex Booster+ <strong>nunca publica ni postea automáticamente</strong> en ninguna red social.</li>
+        <li><strong>Acceso temporal y restringido:</strong> el archivo exportado se pone a disposición de la app de destino elegida por el usuario mediante un <code>FileProvider</code> con permiso temporal — ninguna otra app tiene acceso a él.</li>
+      </ul>
+
+      <h2>7. Botón Flotante Apex (SYSTEM_ALERT_WINDOW)</h2>
+      <p>
+        El Botón Flotante Apex es un atajo visual opcional que se muestra sobre otras apps
+        durante la sesión de juego, usado exclusivamente para abrir rápidamente la captura de
+        pantalla/video descrita en la sección 5.
+      </p>
+      <ul>
+        <li><strong>Opt-in explícito:</strong> desactivado por defecto. Solo se solicita cuando el usuario activa la función en Configuración, con una explicación previa dentro de la app antes de abrir la pantalla de permisos del sistema.</li>
+        <li><strong>Reversible en cualquier momento:</strong> el usuario puede desactivar el botón en Configuración, lo que elimina el atajo de la pantalla de inmediato.</li>
+        <li><strong>Sin recopilación de datos:</strong> el botón no lee, registra ni transmite nada por sí solo — solo abre el flujo de captura descrito anteriormente.</li>
+      </ul>
+
+      <h2>8. Desbloqueo Único (Google Play Billing)</h2>
+      <p>
+        Apex Booster+ usa el modelo <strong>free install + desbloqueo único</strong> (sin
+        suscripción, sin anuncios). La compra se procesa enteramente mediante la biblioteca
+        oficial <strong>Google Play Billing</strong>, que se comunica directamente con los
+        servidores de Google Play — Apex Booster+ <strong>nunca ve ni almacena</strong> números de
+        tarjeta, datos bancarios ni información de pago.
+      </p>
+      <ul>
+        <li><strong>Lo que la app recibe:</strong> solo una confirmación de Google Play que indica si la compra se completó o se restauró. Esta confirmación se usa para desbloquear la experiencia completa y se refleja localmente como un valor booleano (comprado/no comprado) en el <code>SharedPreferences</code> del dispositivo.</li>
+        <li><strong>Sin historial de transacciones en la app:</strong> Apex Booster+ no mantiene un registro de montos, fechas de facturación ni método de pago — ese historial se encuentra exclusivamente en la cuenta de Google Play del usuario.</li>
+      </ul>
+
+      <h2>9. Datos No Recopilados</h2>
       <p>Apex Booster+ <strong>no recopila</strong> ninguno de los siguientes datos:</p>
       <ul>
         <li>Nombre, correo electrónico o cualquier identificador personal del usuario.</li>
         <li>Ubicación precisa o aproximada.</li>
-        <li>Contactos, fotos, videos o archivos personales.</li>
-        <li>Mensajes, llamadas o datos de comunicación.</li>
+        <li>Contactos, mensajes, llamadas o datos de comunicación.</li>
+        <li>Audio del micrófono físico o de conversaciones.</li>
+        <li>Números de tarjeta, datos bancarios o de pago.</li>
+        <li>Datos biométricos o identificadores publicitarios.</li>
       </ul>
+      <p>
+        Las fotos, videos y el audio interno del juego <strong>solo se acceden cuando el propio
+        usuario activa, de forma explícita, la importación desde la galería o la captura descrita
+        en la sección 5</strong> — nunca automáticamente, y nunca se envían fuera del dispositivo.
+      </p>
 
-      <h2>7. Compartición de Datos</h2>
+      <h2>10. Compartición de Datos con Terceros</h2>
       <p>Apex Booster+ <strong>no vende, alquila ni comparte datos personales</strong> con anunciantes, socios o terceros. No existe:</p>
       <ul>
         <li>SDK de anuncios.</li>
@@ -197,8 +282,15 @@
         <li>Seguimiento de comportamiento con fines publicitarios.</li>
         <li>Cookies o tecnologías de rastreo.</li>
       </ul>
+      <p>
+        La biblioteca oficial de Google Play Billing (usada solo para el desbloqueo único,
+        sección 8) incluye, como parte de su propio funcionamiento interno, componentes estándar
+        de Google Play Services para el diagnóstico de la propia biblioteca. Estos componentes no
+        son configurados ni usados por el código de Apex Booster+ para ningún fin de análisis,
+        publicidad o seguimiento del usuario.
+      </p>
 
-      <h2>8. Permisos Utilizados</h2>
+      <h2>11. Permisos Utilizados</h2>
       <div class="table-wrap">
         <table>
           <thead>
@@ -207,27 +299,69 @@
           <tbody>
             <tr><td>Internet</td><td>Prueba básica de latencia y conectividad (Apex Ping)</td></tr>
             <tr><td>Acceso al Modo Enfoque / No Molestar</td><td>Modo Enfoque Gamer — solo cuando el usuario concede el permiso</td></tr>
+            <tr><td>Mostrar sobre otras apps (SYSTEM_ALERT_WINDOW)</td><td>Botón Flotante Apex — solo tras activación explícita en Configuración (sección 7)</td></tr>
+            <tr><td>Servicio en primer plano / captura de pantalla (FOREGROUND_SERVICE, FOREGROUND_SERVICE_MEDIA_PROJECTION)</td><td>Mantiene la captura de pantalla/video visible al usuario mediante una notificación persistente mientras está activa</td></tr>
+            <tr><td>Servicio en primer plano — micrófono (FOREGROUND_SERVICE_MICROPHONE)</td><td>Declarada solo durante una grabación de video con audio interno del juego (sección 5.2) — nunca para captar el micrófono físico</td></tr>
+            <tr><td>Grabar audio (RECORD_AUDIO)</td><td>Exigida por la API de Android para la captura de audio interno del juego (sección 5.2); el micrófono físico nunca se lee</td></tr>
+            <tr><td>Estado de red / Wake lock / Facturación (ACCESS_NETWORK_STATE, WAKE_LOCK, com.android.vending.BILLING)</td><td>Incluidas por la biblioteca oficial Google Play Billing (sección 8) para el funcionamiento de la compra — no usadas directamente por el código de la app</td></tr>
           </tbody>
         </table>
       </div>
-      <p>No se solicitan permisos sensibles adicionales en esta versión.</p>
+      <p>Ningún otro permiso sensible se solicita en esta versión. La app no solicita acceso permanente a la galería, ubicación, contactos o cámara.</p>
 
-      <h2>9. Límites y Avisos Importantes</h2>
+      <h2>12. Retención y Eliminación de Datos</h2>
+      <ul>
+        <li><strong>Biblioteca, historial y preferencias:</strong> "Borrar historial" en Configuración elimina las sesiones guardadas; desinstalar la app borra todos los datos locales de <code>SharedPreferences</code>.</li>
+        <li><strong>Capturas de pantalla y clips de video:</strong> pueden eliminarse individualmente por el usuario dentro de Apex Studio; desinstalar la app elimina toda la carpeta asociada.</li>
+        <li><strong>Medios importados de la galería:</strong> se descartan de la memoria de la app en cuanto se cierra la pantalla del Studio; el archivo original permanece solo donde el usuario ya lo tenía guardado (galería del sistema), fuera del control de Apex Booster+.</li>
+        <li><strong>Estado de desbloqueo:</strong> se elimina al desinstalar la app; puede restaurarse en cualquier momento mediante el botón "Restaurar compra", que consulta nuevamente a Google Play.</li>
+      </ul>
+      <p>Como Apex Booster+ no posee servidor propio, no hay retención de datos fuera del dispositivo del usuario.</p>
+
+      <h2>13. Límites y Avisos Importantes</h2>
       <ul>
         <li>Apex Booster+ <strong>no modifica automáticamente juegos de terceros</strong>.</li>
         <li>La app <strong>no promete una mejora real de FPS, GPU, resolución, ping o rendimiento</strong> de juegos externos.</li>
         <li>Las métricas mostradas (RAM, latencia Apex) son <strong>locales e informativas</strong> — no representan una alteración automática del dispositivo o de los juegos.</li>
         <li>El Modo Enfoque Gamer activa el No Molestar de Android solo cuando el usuario concede el permiso explícitamente.</li>
+        <li>La captura de pantalla, el audio interno y el botón flotante son funciones de expresión gamer y organización personal — no una ventaja competitiva en el juego.</li>
       </ul>
 
-      <h2>10. Contacto</h2>
+      <h2>14. Seguridad de los Datos</h2>
+      <p>
+        Los datos de preferencias e historial están protegidos por el sandbox de app de Android y
+        por el cifrado del sistema de archivos del dispositivo. Las capturas de pantalla y clips
+        se guardan en una carpeta específica de la app, no accesible a otras apps sin el permiso
+        explícito del usuario. Las dos únicas comunicaciones de red de la app — la prueba de
+        latencia (sección 3) y el procesamiento de compra mediante Google Play Billing (sección
+        8) — usan la conexión cifrada estándar (HTTPS/TLS) del sistema operativo.
+      </p>
+
+      <h2>15. Menores de Edad</h2>
+      <p>
+        Apex Booster+ no está dirigido a menores de 13 años y no recopila conscientemente datos de
+        menores.
+      </p>
+
+      <h2>16. Contacto</h2>
       <p>
         Para consultas, solicitudes relacionadas con los datos almacenados localmente
         en su dispositivo o cualquier cuestión sobre privacidad, póngase en contacto:
       </p>
       <p><strong>Correo electrónico:</strong> <a href="mailto:alessandro.lopes.adm@gmail.com" style="color:#22C55E;">alessandro.lopes.adm@gmail.com</a></p>
 
-      <h2>11. Cambios en esta Política</h2>
+      <h2>17. Cambios en esta Política</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Versión</th><th>Fecha</th><th>Cambio</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>v1</td><td>04/06/2026</td><td>Publicación inicial</td></tr>
+            <tr><td>v2</td><td>28/07/2026</td><td>Se agregaron secciones sobre captura de pantalla, audio interno del juego, botón flotante, exportación de video y desbloqueo único; se corrigieron referencias desactualizadas que describían estas funciones como "futuras" cuando ya estaban implementadas; se actualizó la tabla de permisos.</td></tr>
+          </tbody>
+        </table>
+      </div>
       <p>
         Esta política puede actualizarse periódicamente para reflejar cambios en
         la aplicación. La fecha de "Última actualización" en la parte superior de
