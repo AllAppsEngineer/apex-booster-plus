@@ -2781,50 +2781,128 @@ class AppStrings {
     AppLanguage.es   => '$seconds segundos',
   };
 
-  // Consent sheet
-  String get captureConsentTitle => switch (lang) {
-    AppLanguage.ptBr => 'Captura Flutuante Apex',
-    AppLanguage.en   => 'Apex Floating Capture',
-    AppLanguage.es   => 'Captura Flotante Apex',
+  // ─── Capture Disclosure — CAPTURE-DISCLOSURE-U1 ─────────────────────────────
+  // Divulgação exibida após a escolha de modo/duração e antes de qualquer
+  // diálogo nativo (RECORD_AUDIO, MediaProjection). Ver docs/claude/social.md.
+
+  String get captureDisclosureTitleVideo => switch (lang) {
+    AppLanguage.ptBr => 'Antes de gravar',
+    AppLanguage.en   => 'Before recording',
+    AppLanguage.es   => 'Antes de grabar',
   };
 
-  String get captureConsentBody => switch (lang) {
+  String get captureDisclosureTitleScreenshot => switch (lang) {
+    AppLanguage.ptBr => 'Antes de capturar a tela',
+    AppLanguage.en   => 'Before capturing the screen',
+    AppLanguage.es   => 'Antes de capturar la pantalla',
+  };
+
+  String get captureDisclosureVideoScreen => switch (lang) {
     AppLanguage.ptBr =>
-        'Use o botão flutuante para acessar rapidamente suas mídias durante '
-        'a sessão gamer. Você escolhe o print ou vídeo que deseja usar no '
-        'Apex Studio. Nada é capturado ou compartilhado automaticamente.',
+        'A tela ou o app que você selecionar a seguir será gravado em vídeo.',
     AppLanguage.en =>
-        'Use the floating button to quickly access your media during gaming '
-        'sessions. You choose the screenshot or video to use in Apex Studio. '
-        'Nothing is captured or shared automatically.',
+        'The screen or app you select next will be recorded on video.',
     AppLanguage.es =>
-        'Usa el botón flotante para acceder rápidamente a tus medios durante '
-        'la sesión gamer. Tú eliges la captura o el video que quieres usar en '
-        'Apex Studio. Nada se captura ni comparte automáticamente.',
+        'La pantalla o la app que selecciones a continuación será grabada '
+        'en video.',
   };
 
-  String get captureConsentPermNote => switch (lang) {
+  String get captureDisclosureScreenshotScreen => switch (lang) {
     AppLanguage.ptBr =>
-        'Este recurso precisa de permissão para exibir sobre outros apps.',
+        'A tela ou o app que você selecionar a seguir será capturado em '
+        'uma imagem.',
     AppLanguage.en =>
-        'This feature needs permission to display over other apps.',
+        'The screen or app you select next will be captured as an image.',
     AppLanguage.es =>
-        'Esta función necesita permiso para mostrarse sobre otras apps.',
+        'La pantalla o la app que selecciones a continuación será '
+        'capturada como una imagen.',
   };
 
-  String get captureConsentActivate => switch (lang) {
-    AppLanguage.ptBr => 'Ativar',
-    AppLanguage.en   => 'Activate',
-    AppLanguage.es   => 'Activar',
-  };
-
-  String get captureConsentPermDenied => switch (lang) {
+  String get captureDisclosureAudioAttempt => switch (lang) {
     AppLanguage.ptBr =>
-        'Permissão necessária. Ative em Configurações › Apps › Aparência na tela.',
+        'Para tentar capturar o áudio interno, o Android exige que o Apex '
+        'solicite a permissão de áudio. Este recurso não grava o '
+        'microfone nem a sua voz.',
     AppLanguage.en =>
-        'Permission required. Enable it in Settings › Apps › Appear on screen.',
+        'To try to capture internal audio, Android requires Apex to '
+        'request audio permission. This feature does not record your '
+        'microphone or voice.',
     AppLanguage.es =>
-        'Permiso necesario. Actívalo en Configuración › Apps › Aparecer en pantalla.',
+        'Para intentar capturar el audio interno, Android exige que Apex '
+        'solicite el permiso de audio. Esta función no graba el '
+        'micrófono ni tu voz.',
+  };
+
+  String get captureDisclosureAudioUnavailable => switch (lang) {
+    AppLanguage.ptBr =>
+        'Alguns jogos podem não disponibilizar esse áudio — isso não '
+        'depende do Apex.',
+    AppLanguage.en =>
+        "Some games may not make that audio available — this is outside "
+        "Apex's control.",
+    AppLanguage.es =>
+        'Algunos juegos pueden no ofrecer ese audio — esto no depende de '
+        'Apex.',
+  };
+
+  String get captureDisclosureAudioFallback => switch (lang) {
+    AppLanguage.ptBr =>
+        'Nesses casos, o vídeo é salvo sem som, e o Apex vai orientar o '
+        'uso do gravador de tela nativo do aparelho e a importação do '
+        'resultado pelo Apex Studio.',
+    AppLanguage.en =>
+        "In those cases, the video is saved without sound, and Apex will "
+        "guide you to use your device's native screen recorder and import "
+        'the result via Apex Studio.',
+    AppLanguage.es =>
+        'En esos casos, el video se guarda sin sonido, y Apex te '
+        'orientará a usar el grabador de pantalla nativo del dispositivo '
+        'e importar el resultado mediante Apex Studio.',
+  };
+
+  String get captureDisclosureStorage => switch (lang) {
+    AppLanguage.ptBr =>
+        'As capturas são salvas localmente no aparelho por padrão. O '
+        'Apex não envia seus vídeos ou áudios para servidores próprios.',
+    AppLanguage.en =>
+        'Captures are saved locally on your device by default. Apex does '
+        'not send your videos or audio to its own servers.',
+    AppLanguage.es =>
+        'Las capturas se guardan localmente en el dispositivo de forma '
+        'predeterminada. Apex no envía tus videos ni audios a servidores '
+        'propios.',
+  };
+
+  String get captureDisclosureExport => switch (lang) {
+    AppLanguage.ptBr =>
+        'Exportar ou compartilhar só acontece quando você decide fazer isso.',
+    AppLanguage.en => 'Exporting or sharing only happens when you choose to.',
+    AppLanguage.es =>
+        'Exportar o compartir solo ocurre cuando tú decides hacerlo.',
+  };
+
+  String get captureDisclosureFloatingButton => switch (lang) {
+    AppLanguage.ptBr =>
+        'O botão flutuante é opcional, e sua permissão é independente da '
+        'gravação — você pode gravar sem ativá-lo.',
+    AppLanguage.en =>
+        "The floating button is optional, and its permission is "
+        'independent from recording — you can record without enabling it.',
+    AppLanguage.es =>
+        'El botón flotante es opcional, y su permiso es independiente de '
+        'la grabación — puedes grabar sin activarlo.',
+  };
+
+  String get captureDisclosurePrivacyLink => switch (lang) {
+    AppLanguage.ptBr => 'Ver Política de Privacidade',
+    AppLanguage.en   => 'View Privacy Policy',
+    AppLanguage.es   => 'Ver Política de Privacidad',
+  };
+
+  String get captureDisclosureContinue => switch (lang) {
+    AppLanguage.ptBr => 'Entendi e continuar',
+    AppLanguage.en   => 'Got it, continue',
+    AppLanguage.es   => 'Entendido, continuar',
   };
 
   // Mini-overlay (cópia espelho; overlay engine usa strings hardcoded por engine separada)

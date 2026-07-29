@@ -7,6 +7,7 @@ import 'package:apex_booster_plus/core/i18n/app_strings.dart';
 import 'package:apex_booster_plus/data/services/screen_capture_service.dart';
 import 'package:apex_booster_plus/presentation/services/floating_capture_service.dart';
 import 'package:apex_booster_plus/presentation/widgets/apex_badge.dart';
+import 'package:apex_booster_plus/presentation/widgets/social/capture_disclosure_sheet.dart';
 
 // ─── Botão Flutuante — SOCIAL-U2A-NATIVE ─────────────────────────────────────
 
@@ -170,6 +171,15 @@ class _FloatingCaptureCardState extends State<FloatingCaptureCard>
       if (!mounted || chosen == null) return;
       durationSeconds = chosen;
     }
+
+    // CAPTURE-DISCLOSURE-U1: divulgação clara de gravação/áudio/armazenamento
+    // exibida antes de qualquer diálogo nativo (RECORD_AUDIO, MediaProjection).
+    // Cancelar aqui aborta o fluxo inteiro sem chamar armSession() e sem
+    // persistir confirmação; já confirmada em uma versão anterior, o método
+    // retorna true sem reexibir a folha.
+    final disclosed =
+        await CaptureDisclosureSheet.maybeShow(context, mode: mode);
+    if (!mounted || !disclosed) return;
 
     // Arma a MediaProjection (Modo Captura da Sessão) ANTES de exibir o
     // overlay — o botão A+ só deve existir quando a sessão está armada.
