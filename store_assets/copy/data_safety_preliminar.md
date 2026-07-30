@@ -1,7 +1,7 @@
 # Data Safety — Respostas Preliminares
 
-**Versão:** v3 — corrige critério de "coleta" e detalha Apex Ping/Billing (revisão pós-aprovação PRIVACY-SYNC-U1)
-**Data:** 28/07/2026
+**Versão:** v4 — remove o Billing interno do app (MONETIZATION-PAID-U1): Apex Booster+ passa a ser aplicativo pago para download, sem compra in-app
+**Data:** 30/07/2026
 **Revisão obrigatória antes de submissão à Play Store:** sim — ver seção "Itens pendentes de confirmação" ao final.
 
 > Este documento é preliminar/interno. As respostas finais devem ser
@@ -23,7 +23,7 @@ Sim" apenas por serem acessados pelo app — critério incorreto. A partir
 desta versão:
 
 - **Coletado: Não** — processamento e armazenamento exclusivamente locais, sem qualquer transmissão para fora do dispositivo. Aplica-se a: capturas de tela, áudio interno do jogo, vídeos importados da galeria, clipes armazenados, `index.json`, `SharedPreferences`, histórico de sessões.
-- **Coletado: Sim** — reservado para os casos em que existe transmissão real para fora do dispositivo (ver Apex Ping abaixo) ou quando isso não pode ser descartado sem confirmação adicional (ver Billing abaixo).
+- **Coletado: Sim** — reservado para os casos em que existe transmissão real para fora do dispositivo (ver Apex Ping abaixo) ou quando isso não pode ser descartado sem confirmação adicional.
 
 Esses recursos continuam descritos em detalhe na Política de Privacidade
 (`privacy/index.html` e equivalentes EN/ES, seções 5–8), que tem um padrão de
@@ -50,7 +50,7 @@ interna para o formulário.
 | Card/vídeo exportado (Apex Studio, `Media3 Transformer`) | Composição local a partir dos itens acima | Gerar arquivo pronto para compartilhamento manual | Arquivo local; acesso temporário via `FileProvider` ao app de destino escolhido pelo usuário | Nenhuma pelo código do app — se o usuário optar por compartilhar, a transmissão final é feita pelo app de destino que ele mesmo escolhe na folha nativa do Android, fora da visibilidade e do controle do Apex Booster+ | Até o usuário excluir ou desinstalar | Excluir manualmente; desinstalar | **Coletado: Não** (processamento local); compartilhamento, quando ocorre, é ação do próprio usuário via mecanismo do sistema operacional, não uma transmissão iniciada pelo app |
 | Estado do Modo Foco / Não Perturbe (DND) | `ACCESS_NOTIFICATION_POLICY`, opt-in | Ativar Modo Foco Gamer | Estado do sistema, não persistido pelo app além de refletir a UI | Nenhuma | N/A | Revogar permissão nas configurações do Android | **Coletado: Não** (processamento local) |
 | **Apex Ping (latência de rede)** | Ver seção dedicada abaixo | Ver seção dedicada abaixo | Ver seção dedicada abaixo | **Sim — real** | Ver seção dedicada abaixo | N/A | **PENDENTE DE CONFIRMAÇÃO** — ver seção dedicada |
-| **Confirmação de compra (desbloqueio único)** | Ver seção dedicada abaixo | Ver seção dedicada abaixo | Ver seção dedicada abaixo | A confirmar | Ver seção dedicada abaixo | "Restaurar compra"; desinstalar | **PENDENTE DE CONFIRMAÇÃO** — ver seção dedicada |
+| **Histórico de compras** | N/A — sem Billing interno | N/A | N/A | Nenhuma (código do app) | N/A | N/A | **Não aplicável** — app pago para download, sem compra in-app (MONETIZATION-PAID-U1; ver seção dedicada) |
 
 ---
 
@@ -76,38 +76,39 @@ carregar dados pessoais no payload.
 
 ---
 
-## Confirmação de compra (desbloqueio único) — PENDENTE DE CONFIRMAÇÃO
+## Histórico de compras — RESOLVIDO (MONETIZATION-PAID-U1, 30/07/2026)
 
-**Não marcar automaticamente "Coletado: Sim" apenas pela presença da Google
-Play Billing Library.** A classificação depende de fatos que não foram
-totalmente verificados nesta sessão.
+> **Histórico:** esta seção documentava um item **PENDENTE DE CONFIRMAÇÃO**
+> sobre `com.android.billingclient:billing:7.1.1` (via `in_app_purchase`),
+> com quatro perguntas em aberto sobre o que `PurchaseService` lia do objeto
+> `PurchaseDetails` e como o Google Play Console classificaria "Purchase
+> history" para o produto `apex_full_unlock`. Essas perguntas ficam
+> preservadas abaixo como registro — todas se tornaram **inaplicáveis**, não
+> respondidas, porque o Billing interno foi removido do código nesta fase.
 
-| Campo | Situação atual (o que o código mostra) |
-|---|---|
-| **Biblioteca e versão** | `com.android.billingclient:billing:7.1.1` (confirmado via `gradlew :app:dependencies`), consumida pelo plugin Flutter `in_app_purchase`/`in_app_purchase_android`. |
-| **O que o app lê do objeto de compra** | `PurchaseService._handlePurchaseUpdates` (`lib/core/billing/purchase_service.dart`) só lê `purchase.productID`, `purchase.status` e `purchase.pendingCompletePurchase`. |
-| **O que o objeto de compra contém além disso** | `PurchaseDetails` da biblioteca também expõe `purchaseID`, `transactionDate` e `verificationData` (recibo assinado) — presentes em memória durante o callback, mas **não lidos, persistidos nem retransmitidos pelo código do Apex**. |
-| **O que é persistido localmente** | Apenas um valor booleano (`apex_unlock_purchased`) em `SharedPreferences`, via `ApexUnlockCacheService`. Nenhum campo do `PurchaseDetails` é salvo. |
-| **Transmissão feita pelo próprio código do app** | Nenhuma chamada de rede própria (`PurchaseService` não usa `HttpClient` nem qualquer API de rede diretamente) — toda comunicação com os servidores do Google Play é feita internamente pela biblioteca oficial, fora do código do Apex. |
-| **Transmissão feita pela biblioteca do Google (fora do controle do app)** | A biblioteca Play Billing necessariamente comunica com os servidores do Google Play para validar/consultar compras — isso é inerente ao funcionamento de qualquer app que venda um produto in-app; não configura um servidor próprio do Apex Booster+. |
+**Situação atual:** o Apex Booster+ não integra mais `in_app_purchase` nem
+`com.android.billingclient:billing` — confirmado por ausência total em
+`pubspec.lock`, `.flutter-plugins-dependencies`, `gradlew :app:dependencies`
+e no manifest mesclado (debug/release, sem `com.android.vending.BILLING`).
+Os arquivos `lib/core/billing/`, `lib/presentation/screens/unlock/` e o
+cache `ApexUnlockCacheService`/`apex_unlock_purchased` foram deletados. O
+app é pago para download: a compra é processada inteiramente pela Google
+Play na instalação, sem qualquer código de Billing, histórico de transação
+ou entitlement local no app.
 
-### Perguntas em aberto (não resolvidas nesta sessão)
+**Classificação Data Safety:** **Não aplicável / Não coletado** — não há
+mais "Purchase history" a classificar, pois não existe Billing interno.
 
-1. **Quais dados de compra o Apex recebe** — resposta parcial acima (campos lidos vs. campos apenas presentes em memória); falta confirmar se `verificationData`/`purchaseID` chegam a ser inspecionados por qualquer log de debug ainda ativo em builds de desenvolvimento.
-2. **Se ficam somente no dispositivo** — sim, pelo código atual (só o booleano é persistido) — mas isso deve ser reconfirmado se `PurchaseService` for alterado no futuro.
-3. **Se algum token, histórico ou identificador é enviado pelo app para fora do aparelho** — não, pela leitura do código atual (nenhuma chamada de rede própria) — mas esta é uma leitura de código, não uma captura de tráfego de rede real.
-4. **Qual orientação oficial do Google Play se aplica à versão exata 7.1.1 da Billing Library** para fins de declaração de "Purchase history" no formulário Data Safety — **não verificado nesta sessão**; requer consulta direta à documentação/central de ajuda do Google Play Console antes de preencher o formulário oficial.
+<details>
+<summary>Perguntas originais (registro histórico, não mais aplicáveis)</summary>
 
-### O que pode ser afirmado com segurança, independente da classificação final
+1. Quais dados de compra o Apex recebia do `PurchaseDetails` (campos lidos vs. campos apenas presentes em memória).
+2. Se esses dados ficavam somente no dispositivo.
+3. Se algum token, histórico ou identificador de compra era enviado pelo app para fora do aparelho.
+4. Qual orientação oficial do Google Play se aplicava à versão 7.1.1 da Billing Library para fins de "Purchase history".
 
-O Apex Booster+ **não recebe, não vê e não armazena** número de cartão,
-dados bancários, CVV ou qualquer credencial de pagamento, em nenhuma
-circunstância. Isso é garantido pela arquitetura do Google Play Billing (o
-processamento de pagamento ocorre inteiramente entre o usuário e o Google
-Play; o app só recebe um resultado de compra), independentemente de como o
-histórico de compra acabar classificado no formulário Data Safety.
-
-**Classificação preliminar até nova confirmação:** `PENDENTE DE CONFIRMAÇÃO`.
+Nenhuma dessas perguntas precisa mais de resposta: o código e a dependência que as motivavam não existem mais no app.
+</details>
 
 ---
 
@@ -115,10 +116,10 @@ histórico de compra acabar classificado no formulário Data Safety.
 
 | Pergunta Play Console | Resposta preliminar | Justificativa |
 |---|---|---|
-| O app coleta dados dos usuários? | **Não, para os itens processados localmente** (biblioteca, histórico, capturas, clipes, áudio interno, mídia importada). **Pendente de confirmação** para o Apex Ping (transmissão externa real, sem payload de dado pessoal) e para o histórico de compra do desbloqueio único — ver seções dedicadas acima. | Nenhum dos itens locais é transmitido para fora do dispositivo; o Apex Ping e o Billing dependem de confirmação adicional antes de responder com segurança. |
+| O app coleta dados dos usuários? | **Não, para os itens processados localmente** (biblioteca, histórico, capturas, clipes, áudio interno, mídia importada). **Pendente de confirmação** apenas para o Apex Ping (transmissão externa real, sem payload de dado pessoal) — ver seção dedicada acima. Não há mais item de Billing/compra a confirmar (removido, MONETIZATION-PAID-U1). | Nenhum dos itens locais é transmitido para fora do dispositivo; só o Apex Ping depende de confirmação adicional antes de responder com segurança. |
 | O app compartilha dados com terceiros? | **Não** | Sem backend próprio, sem SDK de ads/analytics/atribuição. |
-| O app usa criptografia em trânsito? | **Sim** | TLS/HTTPS padrão do sistema para as duas comunicações de rede que existem (Apex Ping e o fluxo do Google Play Billing). |
-| O app permite exclusão de dados pelo usuário? | **Sim** | "Limpar histórico", exclusão individual de capturas/clipes no Apex Studio, "Restaurar compra", e desinstalação remove tudo o que é local. |
+| O app usa criptografia em trânsito? | **Sim** | TLS/HTTPS padrão do sistema para a única comunicação de rede que existe (Apex Ping). |
+| O app permite exclusão de dados pelo usuário? | **Sim** | "Limpar histórico" e exclusão individual de capturas/clipes no Apex Studio; desinstalação remove tudo o que é local. Não há status de compra interna a restaurar ou excluir. |
 
 ---
 
@@ -126,11 +127,10 @@ histórico de compra acabar classificado no formulário Data Safety.
 
 1. **Republicação do site:** os três arquivos `privacy/index.html`, `privacy/en/index.html` e `privacy/es/index.html` precisam ser enviados (`git push`) para o GitHub Pages.
 2. **Preenchimento real no Play Console:** esta matriz é preliminar/interna — o formulário oficial precisa ser preenchido manualmente com base nela.
-3. **Histórico de compra (Billing):** ver seção dedicada acima — quatro perguntas específicas em aberto, nenhuma resolvida por suposição.
+3. ~~Histórico de compra (Billing)~~ — **RESOLVIDO (MONETIZATION-PAID-U1):** Billing interno removido do código; item não é mais aplicável (ver seção dedicada acima).
 4. **Cabeçalhos HTTP do Apex Ping:** descritos por inferência do código-fonte, não por captura de tráfego real — recomenda-se validar com uma ferramenta de proxy (ex. mitmproxy) antes da submissão final, se for exigido maior rigor.
 5. **Classificação de IP address no Apex Ping:** não confirmado contra a orientação oficial do Google se a exposição inerente do IP a um endpoint de terceiro exige menção como "identificador de dispositivo" no formulário.
 6. **Divulgação pré-permissão dentro do app (MediaProjection/RECORD_AUDIO):** a folha de consentimento atual (`CaptureConsentSheet`) explica o Botão Flutuante, mas não antecipa os diálogos nativos subsequentes de gravação de tela e microfone. **Mantido como bloqueador documentado para uma microfase de UI separada — não alterado aqui.**
-7. **Teste de compra real em dispositivo** com o produto `apex_full_unlock` configurado no Play Console — não realizado nesta sessão (documentação apenas).
 
 ---
 

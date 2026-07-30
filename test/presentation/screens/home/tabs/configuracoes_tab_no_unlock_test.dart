@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:apex_booster_plus/core/i18n/app_language.dart';
+import 'package:apex_booster_plus/core/i18n/app_strings.dart';
 import 'package:apex_booster_plus/presentation/screens/home/tabs/configuracoes_tab.dart';
 
 Widget _wrapConfig() => MaterialApp(
@@ -76,13 +78,31 @@ void main() {
     _clearOverlayChannel();
   });
 
-  testWidgets('shows the unlock CTA card with title, subtitle and action', (tester) async {
+  testWidgets('does not show any unlock/purchase CTA (MONETIZATION-PAID-U1)', (tester) async {
+    final s = AppStrings(AppLanguage.ptBr);
     await tester.pumpWidget(_wrapConfig());
     await tester.pumpAndSettle();
 
-    expect(find.text('Desbloqueio único'), findsOneWidget);
-    expect(find.text('Compra única, sem assinatura'), findsOneWidget);
-    expect(find.text('Ver desbloqueio'), findsOneWidget);
+    // Legacy unlock card copy must be fully gone from Configurações.
+    expect(find.text('Desbloqueio único'), findsNothing);
+    expect(find.text('Compra única, sem assinatura'), findsNothing);
+    expect(find.text('Ver desbloqueio'), findsNothing);
+    expect(find.text(s.settingsTitle), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('remaining Configurações cards stay accessible without any entitlement check',
+      (tester) async {
+    final s = AppStrings(AppLanguage.ptBr);
+    await tester.pumpWidget(_wrapConfig());
+    await tester.pumpAndSettle();
+
+    expect(find.text(s.focusTitle), findsOneWidget);
+    expect(find.text(s.clearHistoryTitle), findsOneWidget);
+    expect(find.text(s.languageTitle), findsOneWidget);
+    expect(find.text(s.honestBoosterCardTitle), findsOneWidget);
+    expect(find.text(s.lowDistractionTitle), findsOneWidget);
+    expect(find.text('Apex Booster+'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

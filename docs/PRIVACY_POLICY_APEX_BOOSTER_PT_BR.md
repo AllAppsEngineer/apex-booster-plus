@@ -1,6 +1,6 @@
 # Política de Privacidade — Apex Booster+
 
-**Última atualização:** 28 de julho de 2026 (v2 — inclui captura de tela, áudio interno do jogo, Apex Studio e desbloqueio único)
+**Última atualização:** 30 de julho de 2026 (v3 — remove o desbloqueio interno/Google Play Billing: o Apex Booster+ agora é um aplicativo pago para download, com todos os recursos incluídos desde a instalação)
 
 > Este documento é a fonte interna da política publicada em `privacy/index.html`
 > (PT-BR), `privacy/en/index.html` (EN) e `privacy/es/index.html` (ES). As três
@@ -31,7 +31,6 @@ O Apex Booster+ **não possui servidor próprio**. Os dados abaixo ficam armazen
 | Flag de onboarding concluído | Evitar exibir o tutorial na reabertura do app |
 | Preferência de Modo Baixa Distração | Reduzir animações, brilho e haptics quando ativado |
 | Estado do Botão Flutuante Apex (ativado/desativado) | Lembrar se o usuário optou por manter o atalho de captura ativo |
-| Estado local do desbloqueio único | Cache do status de compra — ver seção 8 |
 
 Esses dados **não são sincronizados, vendidos ou compartilhados** com terceiros.
 
@@ -51,7 +50,7 @@ Essas leituras **não geram dado pessoal enviado a servidor** — a única comun
 
 ## 4. Uso de Internet
 
-O app utiliza a permissão `INTERNET` para o teste básico de latência/conectividade (seção 3) e, indiretamente, para o processamento de compra via Google Play Billing (seção 8). Nenhuma outra comunicação de rede é realizada pelo código do app.
+O app utiliza a permissão `INTERNET` apenas para o teste básico de latência/conectividade (seção 3). Nenhuma outra comunicação de rede é realizada pelo código do app. O Apex Booster+ é um aplicativo pago para download — a compra é processada inteiramente pela Google Play na etapa de instalação, fora do código do app (ver seção 9).
 
 ---
 
@@ -119,12 +118,11 @@ O Botão Flutuante Apex é um atalho visual opcional exibido sobre outros apps d
 
 ---
 
-## 9. Desbloqueio Único (Google Play Billing)
+## 9. Modelo Comercial — Aplicativo Pago para Download
 
-O Apex Booster+ usa o modelo **free install + desbloqueio único** (sem assinatura, sem anúncios). A compra é processada inteiramente pela biblioteca oficial **Google Play Billing**, que comunica diretamente com os servidores do Google Play — o app **nunca vê nem armazena** número de cartão, dados bancários ou informações de pagamento.
+O Apex Booster+ é um **aplicativo pago para download na Google Play**: compra única do aplicativo, com todos os recursos disponíveis desde a primeira instalação. Não há assinatura, não há anúncios e **não há nenhuma compra interna, paywall ou desbloqueio processado pelo código do app**.
 
-- **O que o app recebe:** apenas uma confirmação do Google Play informando se a compra foi concluída ou restaurada. Essa confirmação é espelhada localmente em um valor booleano (comprado/não comprado) no `SharedPreferences` do dispositivo.
-- **Sem histórico de transação no app:** o Apex Booster+ não mantém registro de valores, datas de cobrança ou método de pagamento — esse histórico fica exclusivamente na conta Google Play do usuário.
+O pagamento é processado inteiramente pela **Google Play** na etapa de instalação/compra do aplicativo, fora do código do Apex Booster+ — o app **não integra nenhuma biblioteca de Billing, não processa, não vê e não armazena** número de cartão, dados bancários, informações de pagamento ou qualquer estado local de "comprado/desbloqueado". O Apex Booster+ não mantém nenhum registro de valores, datas de cobrança ou método de pagamento — esse histórico fica exclusivamente na conta Google Play do usuário, na loja, fora do app.
 
 ---
 
@@ -138,7 +136,7 @@ Não há:
 - Rastreamento de comportamento para fins publicitários.
 - Postagem ou publicação automática em redes sociais.
 
-A biblioteca oficial Google Play Billing (usada apenas para o desbloqueio único, seção 9) inclui, como parte de seu próprio funcionamento interno, componentes padrão do Google Play Services para diagnóstico da própria biblioteca (confirmado via `gradlew :app:dependencies`: `com.android.billingclient:billing:7.1.1` traz transitivamente `com.google.android.datatransport:*` e `com.google.android.gms:play-services-location/places-placereport`). Esses componentes não são configurados nem usados pelo código do Apex Booster+ para qualquer finalidade de analytics, publicidade ou rastreamento — em particular, a app **não solicita nem declara nenhuma permissão de localização**, o que torna as classes de Play Services Location presentes no bytecode inertes (sem acesso real a dados de localização).
+O Apex Booster+ não integra a biblioteca Google Play Billing nem qualquer outro SDK de compra interna — o app é distribuído como aplicativo pago para download, sem componentes de Billing no código ou nas dependências (confirmado via `gradlew :app:dependencies`: nenhuma referência a `com.android.billingclient:billing` ou aos componentes transitivos do Google Play Services que ela trazia).
 
 ---
 
@@ -146,13 +144,13 @@ A biblioteca oficial Google Play Billing (usada apenas para o desbloqueio único
 
 | Permissão | Finalidade |
 |---|---|
-| `INTERNET` | Teste básico de latência (Apex Ping) e processamento de compra via Google Play Billing |
+| `INTERNET` | Teste básico de latência (Apex Ping) — única comunicação de rede do app |
 | `ACCESS_NOTIFICATION_POLICY` | Modo Foco Gamer (Não Perturbe) — somente quando o usuário concede |
 | `SYSTEM_ALERT_WINDOW` | Botão Flutuante Apex — somente após ativação explícita nas Configurações (seção 8) |
 | `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PROJECTION` | Mantêm a captura de tela/vídeo visível ao usuário via notificação persistente enquanto ativa |
 | `FOREGROUND_SERVICE_MICROPHONE` | Declarada apenas durante uma gravação de vídeo com áudio interno do jogo (seção 6.2) — nunca para captar o microfone físico |
 | `RECORD_AUDIO` | Exigida pela API Android para captura de áudio interno do jogo (seção 6.2); o microfone físico nunca é lido |
-| `ACCESS_NETWORK_STATE`, `WAKE_LOCK`, `com.android.vending.BILLING` | Trazidas pela biblioteca oficial Google Play Billing (seção 9) para o funcionamento da compra — não usadas diretamente pelo código do app |
+| `ACCESS_NETWORK_STATE`, `WAKE_LOCK` | Trazidas pela biblioteca `androidx.media3` (reprodução de vídeo do Apex Studio) — não usadas diretamente pelo código do app |
 
 **Acesso à galeria / mídia:** o Apex Studio utiliza o seletor de mídia nativo do Android (`image_picker`). Esse seletor não requer declaração de permissão de armazenamento adicional. O app **não solicita acesso permanente à galeria**.
 
@@ -165,9 +163,8 @@ Nenhuma outra permissão sensível é solicitada nesta versão.
 - **Biblioteca, histórico e preferências:** "Limpar histórico" em Configurações remove as sessões salvas; desinstalar o app apaga todos os dados locais do `SharedPreferences`.
 - **Capturas de tela e clipes de vídeo:** excluíveis individualmente pelo usuário dentro do Apex Studio; desinstalar o app remove toda a pasta associada.
 - **Mídia importada da galeria:** descartada da memória do app assim que a tela do Studio é fechada.
-- **Status de desbloqueio:** removido ao desinstalar o app; restaurável a qualquer momento pelo botão "Restaurar compra", que consulta novamente o Google Play.
 
-Como o Apex Booster+ não possui servidor próprio, não há retenção de dados fora do dispositivo do usuário.
+Como o Apex Booster+ não possui servidor próprio, não há retenção de dados fora do dispositivo do usuário. O app é pago para download — não há status de compra interna, desbloqueio ou entitlement local para reter ou restaurar.
 
 ---
 
@@ -183,7 +180,7 @@ Como o Apex Booster+ não possui servidor próprio, não há retenção de dados
 
 ## 14. Segurança dos Dados
 
-Os dados de preferências e histórico ficam protegidos pelo sandbox de app do Android e pela criptografia do sistema de arquivos do dispositivo. Capturas de tela e clipes ficam em pasta específica do app, não acessível a outros apps sem permissão explícita do usuário. As duas únicas comunicações de rede do app — teste de latência (seção 3) e processamento de compra via Google Play Billing (seção 9) — usam conexão criptografada padrão (HTTPS/TLS) do sistema operacional.
+Os dados de preferências e histórico ficam protegidos pelo sandbox de app do Android e pela criptografia do sistema de arquivos do dispositivo. Capturas de tela e clipes ficam em pasta específica do app, não acessível a outros apps sem permissão explícita do usuário. A única comunicação de rede do app — o teste de latência (seção 3) — usa conexão criptografada padrão (HTTPS/TLS) do sistema operacional.
 
 ---
 
@@ -207,6 +204,7 @@ Para dúvidas, solicitações de exclusão de dados (aplicável a dados locais n
 |---|---|---|
 | v1 | 04/06/2026 | Publicação inicial (nunca sincronizada 1:1 com o HTML publicado — ver nota abaixo) |
 | v2 | 28/07/2026 | Reescrita completa para sincronizar com o app real: adicionadas seções sobre captura de tela, áudio interno do jogo, botão flutuante, exportação de vídeo e desbloqueio único; corrigidas referências que descreviam esses recursos como "futuros" quando já estavam implementados e validados em aparelho físico; corrigido e-mail de contato divergente do site publicado; tabela de permissões completada com base no manifest mesclado (`AndroidManifest.xml` debug/release) e na árvore de dependências Gradle. |
+| v3 | 30/07/2026 | MONETIZATION-PAID-U1: removido o Billing interno (Google Play Billing / `in_app_purchase`) do código. O Apex Booster+ passa a ser um aplicativo pago para download, sem compras internas, sem paywall e sem estado local de desbloqueio. Seção 9 reescrita; removida a referência a `com.android.vending.BILLING`, ao cache de status de compra e ao botão "Restaurar compra". `ACCESS_NETWORK_STATE`/`WAKE_LOCK` permanecem na tabela de permissões, reatribuídas corretamente a `androidx.media3` (reprodução de vídeo), confirmado via manifest mesclado (debug/release) e árvore de dependências Gradle — nenhum componente de Billing permanece no app. |
 
 **Nota de auditoria (PRIVACY-SYNC-U1):** a versão v1 deste arquivo divergia do HTML publicado em `privacy/index.html` (e-mail de contato diferente, texto ligeiramente diferente) e ambos estavam desatualizados frente ao app real. Esta v2 sincroniza os três arquivos HTML publicados (`privacy/index.html`, `privacy/en/index.html`, `privacy/es/index.html`) e este documento-fonte para que descrevam exatamente o mesmo conteúdo, e para que esse conteúdo reflita o app tal como ele existe hoje.
 
