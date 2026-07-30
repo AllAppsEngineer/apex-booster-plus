@@ -1,7 +1,7 @@
 # Camada Premium Memorável — APEX BOOSTER+
 
 > Arquivo auxiliar de `CLAUDE.md`. Não revoga nem substitui regras do arquivo principal.  
-> Regra comercial preservada: **free install + one-time unlock**.
+> **Regra comercial atual (MONETIZATION-PAID-U0-DOCS, 30/07/2026): app pago para download, compra única na Google Play, todos os recursos — incluindo toda a camada premium descrita abaixo — disponíveis desde a primeira instalação.** Sem anúncios, assinatura, compras internas, paywall ou desbloqueio posterior. *(Histórico: o modelo anterior, "free install + one-time unlock", está substituído; a matriz free/unlock que existia neste documento foi removida — ver nota no fim do arquivo.)*
 
 A camada premium deve fazer o app parecer referência no segmento, não apenas um utilitário correto. Implementar como acréscimo incremental e controlado. Não recomeçar o app, não redesenhar telas congeladas sem aprovação e não transformar placebo visual em promessa técnica.
 
@@ -29,7 +29,7 @@ A camada premium deve fazer o app parecer referência no segmento, não apenas u
 | PREMIUM-U1 | Apex Visual System | Criar tokens/componentes Apex Core, Ring, Pulse, Grid e Status Chips | Design atual | Screenshots Home/Preparar/Resultado e teste de overflow. |
 | PREMIUM-U2 | Apex Ritual Cinematográfico | Refinar Boost Apex em fluxo curto com etapas reais/simbólicas | PREMIUM-U1 | Vídeo ou sequência de screenshots + validação de copy. |
 | PREMIUM-U3 | Apex Result Card | Criar card pós-preparo com jogo, perfil, tempo, status e CTA | PREMIUM-U2 | Screenshot de card e teste de abertura do jogo. |
-| TRUST-U1 | Honest Booster Mode | Criar explicação clara sobre FPS, ping, RAM, unlock e limites técnicos | Strings/i18n | PT-BR/EN/ES validados. |
+| TRUST-U1 | Honest Booster Mode | Criar explicação clara sobre FPS, ping, RAM e limites técnicos do app | Strings/i18n | PT-BR/EN/ES validados. |
 | PROFILE-U1 | Session Profiles | Expandir GFX para perfis Balanced, Focus, Visual, Battery Mindful e Custom | Persistência local | Teste de salvar/carregar por jogo. |
 | RETENTION-U1 | Badges locais | Criar badges de uso, recorrência e variedade | Histórico | Teste de persistência local. |
 | RETENTION-U2 | Resumo Semanal Local | Criar card "Sua semana gamer" | RETENTION-U1 | Dados locais coerentes e copy segura. |
@@ -121,7 +121,7 @@ Não adicionar plugin nativo sem justificar impacto no build, privacidade e test
 |---|---|
 | "O app aumenta FPS?" | "O Apex Booster+ não promete aumento real de FPS. Ele prepara sua sessão com organização, perfis, foco e experiência visual." |
 | "O app reduz ping?" | "Ping depende da rede, servidor e operadora. O Apex Booster+ evita prometer controle sobre isso." |
-| "O que o unlock libera?" | "Temas, ritual premium, perfis avançados, histórico completo, badges, widget e cards." |
+| "O que vem incluído na compra?" | "Tudo: temas, ritual premium, perfis avançados, histórico completo, badges, widget e cards — desde a primeira instalação, sem compras adicionais." |
 | "Por que usar antes de jogar?" | "Para entrar com seus jogos organizados, perfil carregado e uma rotina visual de foco." |
 
 ---
@@ -138,9 +138,11 @@ Não adicionar plugin nativo sem justificar impacto no build, privacidade e test
 
 ---
 
-## Matriz free install vs one-time unlock
+## Matriz free install vs one-time unlock *(HISTÓRICO — substituída, não se aplica mais)*
 
-| Camada | Free install | One-time unlock |
+> Esta matriz descrevia o modelo comercial anterior a 30/07/2026 e é mantida apenas como registro histórico. No modelo atual (app pago para download), **não existe camada gratuita nem camada desbloqueável** — todos os itens abaixo, de Biblioteca a Confiança, ficam disponíveis integralmente desde a primeira instalação, sem distinção de nível.
+
+| Camada | Free install *(histórico)* | One-time unlock *(histórico)* |
 |---|---|---|
 | Biblioteca | Uso essencial e abertura de jogos | Conveniência avançada, favoritos refinados e atalhos. |
 | Preparação | Ritual básico e honesto | Apex Ritual completo e variações visuais premium. |
@@ -190,6 +192,6 @@ Os concorrentes são fortes em promessas simples, mas pouco exploram: narrativa 
 | Resultado final | Normalmente inexistente | Apex Result Card. |
 | Retenção | Poucos motivos emocionais | Badges, streaks e resumo semanal. |
 | Transparência | Claims agressivos | Honest Booster Mode. |
-| Monetização | Ads, assinaturas confusas | free install + one-time unlock claro. |
+| Monetização | Ads, assinaturas confusas | App pago para download, preço único, sem letras miúdas. |
 
 > **Tese final:** o Apex Booster+ não é "game booster" — é o **ritual premium de entrada em jogo no Android**.

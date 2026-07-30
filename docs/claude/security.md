@@ -2,7 +2,9 @@
 
 > Arquivo auxiliar de `CLAUDE.md`. Não revoga nem substitui regras do arquivo principal.
 
-Toda API interna, serviço, integração futura, fluxo de Billing, restore purchase, unlock, métricas, score, sessão, telemetria local ou lógica sensível deve ser projetada contra manipulação, abuso, injeção e vazamento de dados, seguindo controles inspirados no OWASP LLM Top 10. Aplicar com recursos gratuitos do próprio projeto: sem dependência paga sem aprovação.
+> **Atualização de modelo comercial (MONETIZATION-PAID-U0-DOCS, 30/07/2026):** o APEX BOOSTER+ passou a ser um **aplicativo pago para download**, com todos os recursos incluídos desde a instalação — sem Billing interno, sem compras internas, sem desbloqueio posterior. As seções S3 e S4 abaixo, que descrevem controles para Billing/restore/unlock, referem-se ao código legado (`in_app_purchase`, `apex_full_unlock`) cuja remoção está agendada em `MONETIZATION-PAID-U1`. Essas seções permanecem como referência de segurança **caso Billing seja reintroduzido no futuro por nova decisão comercial** — hoje não se aplicam a nenhum fluxo ativo do produto.
+
+Toda API interna, serviço, integração futura, métricas, score, sessão, telemetria local ou lógica sensível deve ser projetada contra manipulação, abuso, injeção e vazamento de dados, seguindo controles inspirados no OWASP LLM Top 10. Aplicar com recursos gratuitos do próprio projeto: sem dependência paga sem aprovação.
 
 ---
 
@@ -35,14 +37,14 @@ Toda API interna, serviço, integração futura, fluxo de Billing, restore purch
 - Mascarar dados sensíveis antes de trafegar, registrar ou usar em contexto de IA.
 - **Nunca commitar:** secrets, keystore, `key.properties`, `google-services.json`, chaves privadas, tokens de API ou credenciais.
 - Política de privacidade deve refletir exatamente os dados usados pelo app.
-- Recibos de compra, status de unlock, IDs de transação, identificadores de dispositivo e dados de diagnóstico não devem aparecer integralmente em UI, prints públicos, logs de produção ou documentação compartilhável.
-- Antes de Firebase, Billing, backend ou Play Console: revisar se dados trafegados estão cobertos pela política de privacidade.
+- *(Histórico — código legado em remoção via `MONETIZATION-PAID-U1`)* Recibos de compra, status de unlock, IDs de transação, identificadores de dispositivo e dados de diagnóstico não devem aparecer integralmente em UI, prints públicos, logs de produção ou documentação compartilhável.
+- Antes de Firebase, backend ou Play Console: revisar se dados trafegados estão cobertos pela política de privacidade.
 
 ---
 
-## S4. Blindagem de APIs, Billing, Métricas e Unlock
+## S4. Blindagem de APIs, Billing, Métricas e Unlock *(histórico — sem Billing ativo no produto)*
 
-Regras preventivas para fases futuras. Aplicar apenas quando houver backend, API remota, Billing, restore, unlock, score, telemetria ou sincronização externa.
+Regras preventivas para fases futuras. Aplicar apenas quando houver backend, API remota, Billing, restore, unlock, score, telemetria ou sincronização externa. Hoje o APEX BOOSTER+ é um app pago para download sem Billing interno; esta seção só volta a ser aplicável se uma futura decisão comercial reintroduzir compras internas.
 
 | Controle | Obrigação |
 |---|---|
@@ -94,7 +96,7 @@ Antes de entregar qualquer trecho que toque APIs, Billing, unlock, restore, mét
 | Internet | Apenas com função real e política correspondente. |
 | Firebase | Sem Analytics; só Crashlytics/Remote Config se aprovado. |
 | Ads/Analytics/Atribuição | Proibidos no MVP. |
-| Billing | Apenas com fase aprovada e Play Console pronto. |
+| Billing interno | Não aplicável — app pago para download, sem compras internas. Código legado em remoção via `MONETIZATION-PAID-U1`. |
 
 Antes da loja: publicar Política de Privacidade em URL pública real e ativar link funcional no app.
 

@@ -39,7 +39,9 @@ Não alterar package, nome Android, launcher icon, splash nativa, identidade vis
 
 ## 3. Verdade de produto e modelo comercial
 
-O produto deve ser vendido como experiência premium de preparação e organização gamer. O modelo comercial oficial é **free install + one-time unlock**, sem anúncios, sem assinatura, sem plano Pro, sem plano Elite e sem SDK de ads/atribuição/analytics no MVP.
+> **Atualização de modelo comercial (MONETIZATION-PAID-U0-DOCS, 30/07/2026):** o modelo comercial oficial deixou de ser "free install + one-time unlock". O **APEX BOOSTER+ é um aplicativo pago para download na Google Play**, com **compra única do aplicativo** e **todos os recursos disponíveis desde a primeira instalação**. Não há anúncios, assinatura, compras internas, paywall ou desbloqueio posterior. Política de atualizações: **atualizações da edição atual incluídas, sem cobrança recorrente** — sem promessa de atualizações vitalícias ou de futuras edições/versões maiores. Esta decisão substitui qualquer menção anterior a "free install + one-time unlock", `BILL-U1`, `apex_full_unlock` ou gating premium neste documento e nos documentos auxiliares — mantidas abaixo apenas como registro histórico quando identificadas como tal.
+
+O produto deve ser vendido como experiência premium de preparação e organização gamer. O modelo comercial oficial é **app pago para download (compra única na Google Play)**, sem anúncios, sem assinatura, sem compras internas, sem plano Pro, sem plano Elite e sem SDK de ads/atribuição/analytics no MVP.
 
 | Permitido afirmar | Proibido afirmar |
 |---|---|
@@ -51,7 +53,7 @@ O produto deve ser vendido como experiência premium de preparação e organiza�
 | Cria ritual gamer antes de jogar. | Desbloqueia performance oculta do Android. |
 | Abre o jogo selecionado. | Aplica boost real no jogo. |
 
-Billing ainda não deve ser implementado sem fase aprovada. Quando a fase de monetização for autorizada, ela deve incluir Play Console configurado, `productId`, license testers, fluxo de compra, restore purchase, verificação no startup, fallback local de desenvolvimento e testes em aparelho.
+**Billing interno (Google Play Billing / `in_app_purchase`) foi descontinuado.** O código de Billing implementado nas fases históricas `BILL-U1A`/`BILL-U1B` (produto `apex_full_unlock`) será removido do repositório na fase aprovada **MONETIZATION-PAID-U1** (auditoria já aprovada em 30/07/2026, execução ainda pendente). Nenhum código de compra interna, desbloqueio posterior ou gating de recurso deve ser reintroduzido sem nova decisão comercial explícita.
 
 ---
 
@@ -66,7 +68,7 @@ O projeto usa Flutter/Dart e deve preservar a arquitetura modular existente. A r
 | Persistência futura | Hive pode ser avaliado para dados estruturados, mas exige fase própria. |
 | Idioma atual | `AppStrings`, `AppLanguage`, `LanguageService`, `languageNotifier`. |
 | Estado/DI | Controllers/serviços atuais; `flutter_bloc`, `get_it` e `injectable` só com fase aprovada. |
-| Billing | `in_app_purchase` apenas em fase aprovada. |
+| Billing | `in_app_purchase` presente como código legado das fases históricas `BILL-U1A`/`BILL-U1B`; remoção aprovada e agendada em `MONETIZATION-PAID-U1`. Não reintroduzir Billing sem nova decisão comercial explícita — o modelo atual é app pago para download. |
 | Firebase | Crashlytics/Remote Config apenas com estratégia, secrets e CI definidos. |
 | Placebo visual | Implementar preferencialmente com recursos leves, CustomPainter, animações Flutter e `flutter_animate` já aceito. |
 
@@ -88,8 +90,8 @@ Estas regras são bloqueantes. Se uma tarefa exigir violação, pare e peça apr
 | 6 | Boost Apex/Apex Boost Mode é preparação visual e semântica; não é otimização técnica real. |
 | 7 | Efeitos placebo são permitidos apenas como estética, ritual e feedback visual. |
 | 8 | Métricas reais devem ficar separadas de indicadores simbólicos/placebo. |
-| 9 | Sem anúncios, assinatura, plano Pro/Elite, tracking ou atribuição no MVP. |
-| 10 | Sem Firebase, Billing, Hive, permissões novas ou dependências sem fase aprovada. |
+| 9 | Sem anúncios, assinatura, plano Pro/Elite, compras internas, paywall, desbloqueio posterior, tracking ou atribuição. App é pago para download, com todos os recursos incluídos desde a instalação. |
+| 10 | Sem Firebase, Billing interno, Hive, permissões novas ou dependências sem fase aprovada. Remoção do Billing legado é a única mudança de Billing aprovada, via `MONETIZATION-PAID-U1`. |
 | 11 | Sem alteração de package, nome Android, launcher icon ou telas congeladas sem aprovação. |
 | 12 | Não commitar automaticamente. Commit só após aprovação explícita. |
 | 13 | `flutter analyze` e `flutter test` passando não significam aprovação visual. |
@@ -130,8 +132,9 @@ As pendências abaixo devem orientar a continuidade. Ver lista completa em [`doc
 | UX premium | Implementar Motion/Placebo Visual controlado | Alta |
 | Boost | Estruturar Boost Engine de 8 etapas honestas | Alta |
 | Resultado | Criar Prep Result e card compartilhável, se aprovado | Média |
-| Billing | Implementar one-time unlock, restore e startup check | Crítica para monetização |
-| Release | AAB release, obfuscation, checklist Play Store, screenshots e testes | Crítica |
+| Monetização | Publicar o app como pago para download na Google Play, preço único, todos os recursos incluídos desde a instalação | Crítica |
+| Billing | Remover Billing interno legado (`in_app_purchase`, `apex_full_unlock`) — `MONETIZATION-PAID-U1` | Crítica (auditoria aprovada, execução pendente) |
+| Release | AAB release, obfuscation, checklist Play Store, listing pago, screenshots e testes | Crítica |
 
 ---
 
@@ -276,7 +279,7 @@ O app deve coletar o mínimo necessário. Ver detalhes em [`docs/claude/security
 | Internet | Apenas com função real e política correspondente. |
 | Firebase | Sem Analytics; só Crashlytics/Remote Config se aprovado. |
 | Ads/Analytics/Atribuição | Proibidos no MVP. |
-| Billing | Apenas com fase aprovada e Play Console pronto. |
+| Billing interno | Não aplicável — app pago para download, sem compras internas. Código legado de Billing será removido em `MONETIZATION-PAID-U1`. |
 
 Antes da loja: publicar Política de Privacidade em URL pública real e ativar link funcional no app.
 
@@ -340,8 +343,10 @@ Ver roadmap completo em [`docs/claude/roadmap.md`](docs/claude/roadmap.md).
 | 4 | PREMIUM-U1 | Apex Visual System. |
 | 5 | PREMIUM-U2 | Apex Ritual Cinematográfico. |
 | 6 | PREMIUM-U3 | Apex Result Card. |
-| 7 | BILL-U1 | One-time unlock, restore e startup check. |
-| 8 | RELEASE-U1 | Build release e submissão Play Store. |
+| 7 | MONETIZATION-PAID-U0-DOCS | Formalizar o modelo de app pago nos documentos de governança (concluída em 30/07/2026). |
+| 8 | MONETIZATION-PAID-U1 | Remover Billing interno legado e confirmar app 100% liberado desde a instalação. |
+| 9 | AUDIT-U-FINAL | Auditoria final pré-listing. |
+| 10 | RELEASE-U1 | Build release, listing pago, manual/assets e submissão Play Store. |
 
 ---
 
@@ -360,8 +365,8 @@ Ver detalhamento completo em [`docs/claude/security.md`](docs/claude/security.md
 - Nunca commitar secrets, keystore, `key.properties` ou `google-services.json`.
 - Sanitizar saídas antes de renderizar, persistir ou logar.
 - Não expor dados sensíveis em telas, logs, commits ou relatórios.
-- HMAC, rate limiting e server-side validation obrigatórios para Billing/unlock (fases futuras).
-- Autoauditoria obrigatória antes de entregar código que toque APIs, Billing ou dados sensíveis.
+- HMAC, rate limiting e server-side validation obrigatórios caso Billing/compra interna seja reintroduzido no futuro (não é o caso hoje — app pago para download, sem Billing interno).
+- Autoauditoria obrigatória antes de entregar código que toque APIs, Billing legado (em remoção) ou dados sensíveis.
 
 ---
 
@@ -375,7 +380,7 @@ Ver detalhamento completo em [`docs/claude/premium.md`](docs/claude/premium.md).
 
 **Fases:** PREMIUM-U1 → PREMIUM-U3, TRUST-U1, PROFILE-U1, RETENTION-U1/U2, CONVENIENCE-U1/U2, SHARE-U1, THEME-U1, ACCESS-U1.
 
-**Modelo:** free demonstra valor; one-time unlock libera experiência completa. Honest Booster Mode nunca fica atrás de paywall.
+**Modelo:** app pago para download; todos os componentes premium listados acima, incluindo Honest Booster Mode, ficam disponíveis desde a primeira instalação — não há paywall interno nem desbloqueio posterior. *(Histórico: modelo anterior a 30/07/2026 era "free demonstra valor; one-time unlock libera experiência completa" — substituído por `MONETIZATION-PAID-U0-DOCS`.)*
 
 ---
 

@@ -5,6 +5,8 @@
 **Status:** versão definitiva consolidada para orientar refinamento, implementação restante, auditoria e preparação de publicação.  
 **Base documental:** escopos oficiais do projeto, guia Claude Code, interações analisadas, parecer de auditoria, `CLAUDE.md` anexado e versão consolidada `CLAUDE_MELHORADO.md`.
 
+> **ATUALIZAÇÃO DE MODELO COMERCIAL — MONETIZATION-PAID-U0-DOCS (30/07/2026):** o modelo comercial oficial deixou de ser **free install + one-time unlock**. O APEX BOOSTER+ é agora um **aplicativo pago para download na Google Play**: compra única do aplicativo, todos os recursos disponíveis desde a primeira instalação, sem anúncios, sem assinatura, sem compras internas, sem paywall e sem desbloqueio posterior. Política de atualizações: **atualizações da edição atual incluídas, sem cobrança recorrente** — sem promessa de atualizações vitalícias ou de futuras edições/versões maiores. Esta atualização substitui toda referência a "free install + one-time unlock", `BILL-U1`, `apex_full_unlock`, gating premium e às matrizes free/unlock presentes neste documento. O Billing interno (`in_app_purchase`) implementado nas fases históricas `BILL-U1A`/`BILL-U1B` será removido do código na fase aprovada `MONETIZATION-PAID-U1` (auditoria aprovada em 30/07/2026, execução pendente). Seções abaixo que descrevem o modelo antigo — incluindo os adendos datados de 2026-06-10 — são preservadas como **registro histórico de decisões substituídas**, sinalizadas onde aparecem.
+
 ---
 
 ## 1. Visão executiva do produto
@@ -24,8 +26,8 @@ O produto não deve ser posicionado como um “otimizador real de FPS” ou como
 | Plataforma inicial | Android |
 | Framework | Flutter 3.x / Dart 3.x |
 | Posicionamento | Gaming Prep, Scan & Launcher |
-| Modelo comercial alvo | **free install + one-time unlock** |
-| Preço alvo | R$ 2,99 Brasil / US$ 2,99 internacional |
+| Modelo comercial alvo | **App pago para download (compra única na Google Play)** *(histórico: era "free install + one-time unlock")* |
+| Preço alvo | R$ 2,99 Brasil / US$ 2,99 internacional — preço de download do app, sem cobrança adicional |
 | Idiomas | Português Brasil, English, Español |
 
 ---
@@ -42,7 +44,7 @@ O documento também incorpora uma diretriz específica para **efeitos placebo vi
 | Definir pendências | Separar obrigatório, recomendado e futuro. |
 | Regular placebo visual | Permitir sensação gamer sem falsa promessa técnica. |
 | Guiar desenvolvimento | Priorizar fases restantes com critérios de aceite. |
-| Preparar publicação | Mapear privacidade, billing, loja, release e auditoria. |
+| Preparar publicação | Mapear privacidade, loja, release e auditoria (Billing interno removido — ver `MONETIZATION-PAID-U1`). |
 
 ---
 
@@ -57,7 +59,7 @@ O APEX BOOSTER+ deve ser desenvolvido como um produto premium desde o início. A
 | Preparação ritualizada | Transformar abrir o jogo em uma sequência gamer envolvente. |
 | Controle local | Salvar biblioteca, idioma, histórico, perfis e preferências no dispositivo. |
 | Privacidade | Evitar tracking, ads, SDKs de atribuição e coleta desnecessária. |
-| Clareza comercial | One-time unlock, sem assinatura, sem anúncios e sem plano Pro/Elite. |
+| Clareza comercial | Compra única do app na Google Play, sem anúncios, sem assinatura, sem compras internas e sem desbloqueio posterior. |
 
 ---
 
@@ -72,7 +74,7 @@ A proposta de valor do app deve ser expressa como: **“Prepare sua sessão, vej
 | Jogador casual competitivo | Quer abrir jogos com praticidade e sensação de foco | Biblioteca, Preparar, Modo Foco e launcher. |
 | Usuário gamer visual | Quer app bonito, moderno e com energia | Motion system, efeitos placebo visuais e UI premium. |
 | Usuário cuidadoso | Quer saber se está tudo pronto antes de jogar | Apex Scan local, métricas reais v1 e disclaimers. |
-| Comprador de baixo ticket | Aceita pagar valor baixo por produto com acabamento | One-time unlock sem anúncios e sem assinatura. |
+| Comprador de baixo ticket | Aceita pagar valor baixo por produto com acabamento | Compra única do app sem anúncios, sem assinatura e sem compras internas. |
 
 ---
 
@@ -108,8 +110,8 @@ As pendências devem ser separadas em quatro grupos. O primeiro grupo é de **pr
 | Pré-store | Publicar Política de Privacidade em URL real e ativar link no Sobre | Crítica | Próximo passo recomendado. |
 | Pré-store | Validação final PT-BR/EN/ES em fluxo completo | Alta | Fase `LANG-U1.6`. |
 | Pré-store | Auditoria repositório/app com logs e evidências | Alta | Rodar checklist e salvar outputs. |
-| Monetização | Implementar one-time unlock via Google Play Billing | Crítica | Exige Play Console, product ID, restore e startup check. |
-| Monetização | Tela/fluxo de desbloqueio | Alta | Deve ser honesto, sem plano Pro/Elite. |
+| Monetização | Publicar o app como pago para download na Google Play, preço único, todos os recursos incluídos desde a instalação | Crítica | Modelo formalizado em `MONETIZATION-PAID-U0-DOCS` (30/07/2026). |
+| Monetização | Remover Billing interno legado (`in_app_purchase`, `apex_full_unlock`, tela de desbloqueio) | Crítica | Fase `MONETIZATION-PAID-U1`, auditoria já aprovada, execução pendente. |
 | Arquitetura | Decidir se Hive será obrigatório antes da loja | Alta | Escopo original exige Hive; app atual usa `shared_preferences`. |
 | Observabilidade | Decidir Crashlytics/Remote Config antes da loja | Alta | Sem Analytics no MVP. |
 | Experiência | Boost Engine estruturado com 8 etapas | Alta | Pode incluir placebo visual, sem falsa otimização. |
@@ -186,7 +188,7 @@ Os requisitos funcionais abaixo organizam o app em módulos. Cada módulo deve t
 | RF-12 | Métricas Reais | RAM e Latência Apex com loading/erro/timeout | Implementado v1. |
 | RF-13 | Boost Engine | Sequência estruturada de 8 etapas | Pendente. |
 | RF-14 | Efeitos placebo | Motion, partículas, anéis, chips simbólicos e sequência cinematográfica | Pendente/refinamento. |
-| RF-15 | Billing | One-time unlock, restore e startup check | Pendente. |
+| RF-15 | Billing | *(Histórico — modelo substituído)* Billing interno legado (`in_app_purchase`, `apex_full_unlock`) a ser removido em `MONETIZATION-PAID-U1`; app é pago para download, sem Billing interno. | Remoção pendente. |
 | RF-16 | Privacidade | Política pública e link funcional no app | Pendente. |
 | RF-17 | Release | Build release, obfuscation, checklist Play Store | Pendente. |
 
@@ -218,7 +220,7 @@ A arquitetura alvo continua sendo limpa e modular, mas o app atual não deve ser
 | Hive | Continua como candidato/possível requisito de persistência estruturada; exige fase própria. |
 | Firebase Crashlytics | Decisão pré-release; se entrar, sem Analytics. |
 | Remote Config | Opcional/recomendado para copy/timings, mas não essencial ao MVP local. |
-| Billing | Obrigatório para monetização real; não implementar sem Play Console pronto. |
+| Billing interno | Descontinuado — app pago para download, sem compras internas. Código legado (`in_app_purchase`) em remoção via `MONETIZATION-PAID-U1`; não reintroduzir sem nova decisão comercial. |
 | Motion System | Deve ser implementado como camada visual controlada. |
 | Placebo visual | Permitido como UI/UX, não como métrica falsa. |
 
@@ -238,14 +240,16 @@ O roadmap deve evitar misturar refinamento visual, loja, monetização e arquite
 | 6 | RESULT-U1 | Criar Prep Result e card compartilhável | Tela de resultado + share opcional. |
 | 7 | DATA-U1 | Decidir Hive vs manter SharedPreferences | Decisão documentada ou migração controlada. |
 | 8 | OBS-U1 | Decidir Crashlytics/Remote Config | Implementação ou justificativa de adiamento. |
-| 9 | BILL-U1 | Implementar one-time unlock | Product ID, restore, startup check e testes. |
-| 10 | RELEASE-U1 | Preparar release Play Store | AAB release, checklist, screenshots, política, testes. |
+| 9 | MONETIZATION-PAID-U0-DOCS | Formalizar modelo de app pago nos documentos de governança | Concluída em 30/07/2026. |
+| 10 | MONETIZATION-PAID-U1 | Remover Billing interno legado (histórico: substitui `BILL-U1`) | Sem Billing interno; app 100% liberado desde a instalação. |
+| 11 | AUDIT-U-FINAL | Auditoria final pré-listing | Checklist e evidências antes da submissão. |
+| 12 | RELEASE-U1 | Preparar release Play Store | AAB release, checklist, listing pago, manual/assets, screenshots, política, testes. |
 
 ---
 
 ## 12. Critérios de aceite finais
 
-O app só deve ser considerado pronto para submissão quando cumprir os critérios abaixo. Caso a equipe decida publicar uma versão interna antes da monetização, os itens de Billing podem ser marcados como “adiados conscientemente”, mas não como concluídos.
+O app só deve ser considerado pronto para submissão quando cumprir os critérios abaixo. A monetização é resolvida na própria listagem paga da Google Play (compra única do app) — não há mais item de Billing interno a concluir antes da submissão, apenas a remoção do código legado (`MONETIZATION-PAID-U1`).
 
 | Critério | Condição de aceite |
 |---|---|
@@ -254,7 +258,7 @@ O app só deve ser considerado pronto para submissão quando cumprir os critéri
 | Política | URL pública real acessível e link funcional dentro do app. |
 | Placebo visual | Efeitos bonitos, leves e honestos, sem promessa falsa. |
 | Métricas reais | Valores reais separados de indicadores simbólicos. |
-| Billing | One-time unlock e restore funcionando, se a versão for comercial. |
+| Monetização | App publicado como pago para download na Google Play, preço definido, sem Billing interno remanescente no código. |
 | Privacidade | Sem ads, sem analytics e sem SDKs proibidos. |
 | Testes | `flutter analyze`, `flutter test` e checker de strings sem bloqueadores. |
 | Release | Build release assinado/obfuscado e checklist Play Store concluído. |
@@ -275,13 +279,13 @@ Alguns recursos podem parecer atraentes, mas devem permanecer fora da versão at
 | AccessibilityService para automação | Alto risco de rejeição e abuso. |
 | Overlay invasivo sobre jogos | Alto risco de permissão sensível e política. |
 | Ads/interstitials | Contrário ao modelo premium. |
-| Plano Pro/Elite/assinatura | Contrário ao modelo **free install + one-time unlock**. |
+| Plano Pro/Elite/assinatura/compras internas/paywall/desbloqueio posterior | Contrário ao modelo de **aplicativo pago para download com todos os recursos incluídos desde a instalação**. |
 
 ---
 
 ## 14. Conclusão
 
-O APEX BOOSTER+ já possui uma base local importante e visualmente orientada para produto. A próxima etapa não é recomeçar, mas consolidar, auditar e completar as peças que transformam o app em produto final: política pública, validação de idiomas, efeitos placebo visuais honestos, Boost Engine estruturado, eventual card de resultado, decisão de persistência, decisão de observabilidade, Billing e preparação de release.
+O APEX BOOSTER+ já possui uma base local importante e visualmente orientada para produto. A próxima etapa não é recomeçar, mas consolidar, auditar e completar as peças que transformam o app em produto final: política pública, validação de idiomas, efeitos placebo visuais honestos, Boost Engine estruturado, eventual card de resultado, decisão de persistência, decisão de observabilidade, remoção do Billing interno legado e preparação de release como app pago para download.
 
 A diretriz definitiva é clara: **o app pode e deve parecer poderoso, vivo e premium, mas nunca deve mentir tecnicamente**. Essa combinação — estética gamer forte com honestidade de produto — é o caminho para um aplicativo vendável, defensável e sustentável na Play Store.
 
@@ -289,10 +293,12 @@ A diretriz definitiva é clara: **o app pode e deve parecer poderoso, vivo e pre
 
 # ADENDO 2026-06-10 — Incorporação das Funcionalidades Inovadoras Pouco Exploradas pelos Concorrentes
 
+> **[HISTÓRICO — 30/07/2026]** Este adendo foi escrito sob o modelo comercial anterior (**free install + one-time unlock**), substituído por `MONETIZATION-PAID-U0-DOCS`: o APEX BOOSTER+ é agora um app pago para download, com todos os recursos — incluindo os descritos como "premium"/"unlock" abaixo — disponíveis desde a primeira instalação. O conteúdo funcional/visual (Apex Visual System, Ritual, Result Card, Session Profiles, Widget, Badges etc.) continua válido como backlog de produto; apenas as referências à camada gratuita vs. desbloqueável e ao Billing devem ser lidas como histórico, não como especificação vigente.
+
 **Autor do adendo:** Manus AI  
 **Natureza do adendo:** acréscimo complementar ao PRD Definitivo, sem remoção, reescrita ou invalidação das seções anteriores.  
 **Documentos incorporados:** `Funcionalidades_Inovadoras_Pouco_Exploradas_pelos_.md` e `Matriz_de_Lacunas_Competitivas_—_APEX_BOOSTER+.md`.  
-**Modelo comercial preservado:** **free install + one-time unlock**.
+**Modelo comercial preservado:** ~~free install + one-time unlock~~ *(histórico — ver nota acima; modelo atual é app pago para download)*.
 
 Este adendo transforma as funcionalidades inovadoras em requisitos de produto formais. Ele deve ser lido como extensão do PRD Definitivo: tudo que já estava definido permanece válido, inclusive as regras de honestidade técnica, a separação entre métricas reais e efeitos placebo, a preservação do app já produzido e a proibição de claims falsos de FPS, ping, CPU, GPU, RAM ou otimização real de jogos terceiros.
 
@@ -444,11 +450,11 @@ O Histórico deve evoluir de registro funcional para narrativa local de uso. Ess
 
 ---
 
-## 24. Matriz Free versus One-time Unlock atualizada
+## 24. Matriz Free versus One-time Unlock atualizada *(HISTÓRICO — substituída, não se aplica mais)*
 
-A versão gratuita deve demonstrar valor real, enquanto o unlock único deve liberar a experiência completa. O modelo **free install + one-time unlock** deve permanecer claro em todas as telas comerciais.
+> Esta matriz e o modelo que descreve foram substituídos por `MONETIZATION-PAID-U0-DOCS` (30/07/2026). No modelo atual, **não há camada gratuita nem camada de desbloqueio**: todo o conteúdo listado abaixo — Biblioteca, Preparação, Perfis, Resultado, Histórico, Visual, Conveniência e Confiança — fica disponível integralmente desde a primeira instalação, pois o app é pago para download.
 
-| Área | Free install | One-time unlock |
+| Área | Free install *(histórico)* | One-time unlock *(histórico)* |
 |---|---|---|
 | Biblioteca | Adicionar, listar, favoritar e abrir jogos conforme escopo atual | Favoritos avançados, ordenação premium e atalhos refinados, se implementados. |
 | Preparação | Ritual básico e honesto | Apex Ritual completo, Apex Core, Apex Ring, haptics opcionais e variações visuais. |
@@ -519,7 +525,7 @@ Com este adendo, o PRD Definitivo passa a orientar não apenas a finalização f
 
 # ANEXO DE RASTREABILIDADE — Documento de Funcionalidades Inovadoras incorporado
 
-> O conteúdo abaixo é mantido como referência interna de rastreabilidade da consolidação. Ele não revoga nem substitui as seções anteriores; apenas preserva a fonte que motivou os acréscimos.
+> O conteúdo abaixo é mantido como referência interna de rastreabilidade da consolidação. Ele não revoga nem substitui as seções anteriores; apenas preserva a fonte que motivou os acréscimos. **[HISTÓRICO — 30/07/2026]** Suas menções a "free install + one-time unlock" refletem o modelo comercial anterior, substituído por `MONETIZATION-PAID-U0-DOCS` (app pago para download).
 
 # Funcionalidades Inovadoras Pouco Exploradas pelos Concorrentes para o Apex Booster+
 
@@ -776,11 +782,11 @@ A matriz abaixo organiza as funcionalidades por retorno esperado e complexidade 
 
 ---
 
-## 16. Como essas inovações reforçam o one-time unlock
+## 16. Como essas inovações reforçam o one-time unlock *(HISTÓRICO — substituída, não se aplica mais)*
 
-O **one-time unlock** precisa desbloquear uma experiência que o usuário veja e use. As funcionalidades inovadoras propostas ajudam exatamente nisso: elas criam valor tangível e recorrente.
+> Esta seção descrevia a lógica de gating do modelo anterior. No modelo atual (`MONETIZATION-PAID-U0-DOCS`), todos os recursos abaixo ficam disponíveis desde a instalação — não há mais "grátis" vs. "desbloqueado".
 
-| Recurso inovador | Fica gratuito? | Fica desbloqueado? | Justificativa |
+| Recurso inovador | Fica gratuito? *(histórico)* | Fica desbloqueado? *(histórico)* | Justificativa *(histórica)* |
 |---|---|---|---|
 | Ritual básico | Sim | Ritual completo premium | O free demonstra valor; o unlock encanta. |
 | Result simples | Sim | Result Card premium e share | A compra melhora recompensa visual. |
@@ -833,7 +839,7 @@ As funcionalidades mais inovadoras e menos exploradas pelos concorrentes são **
 
 # ANEXO DE RASTREABILIDADE — Matriz de Lacunas Competitivas incorporada
 
-> O conteúdo abaixo é mantido como referência interna de rastreabilidade da consolidação. Ele não revoga nem substitui as seções anteriores; apenas preserva a fonte competitiva que motivou os acréscimos.
+> O conteúdo abaixo é mantido como referência interna de rastreabilidade da consolidação. Ele não revoga nem substitui as seções anteriores; apenas preserva a fonte competitiva que motivou os acréscimos. **[HISTÓRICO — 30/07/2026]** Suas menções a "free install + one-time unlock" refletem o modelo comercial anterior, substituído por `MONETIZATION-PAID-U0-DOCS` (app pago para download).
 
 # Matriz de Lacunas Competitivas — APEX BOOSTER+
 
@@ -897,10 +903,12 @@ A oportunidade é transformar o botão de abrir jogo em um momento de marca. Em 
 
 # ADENDO 2026-06-10 — Apex Social Capture & Share Layer
 
+> **[HISTÓRICO — 30/07/2026]** O modelo comercial citado neste adendo (**free install + one-time unlock**) foi substituído por `MONETIZATION-PAID-U0-DOCS`. A camada Apex Social Capture & Share Layer descrita abaixo continua válida como especificação funcional; suas referências a free/unlock ficam disponíveis integralmente desde a instalação no modelo atual de app pago para download.
+
 **Autor do adendo:** Manus AI  
 **Natureza do adendo:** acréscimo complementar ao PRD Definitivo consolidado, sem remoção, reescrita ou invalidação de qualquer seção anterior.  
 **Escopo do adendo:** criar uma camada de captura, composição visual, evolução gamer e compartilhamento social para aumentar aquisição orgânica, retenção e valor percebido do APEX BOOSTER+.  
-**Modelo comercial preservado:** **free install + one-time unlock**.
+**Modelo comercial preservado:** ~~free install + one-time unlock~~ *(histórico — ver nota acima; modelo atual é app pago para download)*.
 
 Este adendo deve ser lido como extensão append-only do PRD. Todo o conteúdo anterior permanece válido. A camada **Apex Social Capture & Share Layer** não altera o posicionamento honesto do produto: o APEX BOOSTER+ continua sendo um app de preparação, organização, personalização visual e experiência gamer, sem prometer aumento real de FPS, redução real de ping, otimização real de CPU/GPU/RAM ou alteração técnica de jogos terceiros.
 
@@ -1042,11 +1050,11 @@ A camada social deve ser construída com privacidade por padrão. Qualquer captu
 
 ---
 
-## 37. Matriz Free versus One-time Unlock atualizada com camada social
+## 37. Matriz Free versus One-time Unlock atualizada com camada social *(HISTÓRICO — substituída, não se aplica mais)*
 
-A camada social reforça o modelo **free install + one-time unlock** porque permite demonstrar valor imediatamente e reservar a experiência visual completa para o desbloqueio único.
+> Esta matriz foi substituída por `MONETIZATION-PAID-U0-DOCS` (30/07/2026). Toda a camada social (Share Studio, Evolution Card, exportação, Floating Capture Button, temas) fica disponível integralmente desde a primeira instalação, sem distinção free/unlock — o app é pago para download.
 
-| Área social | Free install | One-time unlock |
+| Área social | Free install *(histórico)* | One-time unlock *(histórico)* |
 |---|---|---|
 | Share Studio | Criar card básico com uma moldura padrão | Molduras premium, temas Apex, estilos contextuais e rascunhos locais. |
 | Evolution Card | Card simples com sessões e jogo favorito | Badges, streaks, resumo semanal visual e variações premium. |

@@ -2,6 +2,8 @@
 
 > Arquivo auxiliar de `CLAUDE.md`. Não revoga nem substitui regras do arquivo principal.
 
+> **Atualização de modelo comercial (MONETIZATION-PAID-U0-DOCS, 30/07/2026):** o modelo comercial deixou de ser "free install + one-time unlock". O APEX BOOSTER+ é um **app pago para download**, compra única na Google Play, todos os recursos disponíveis desde a instalação, sem anúncios, assinatura, compras internas ou desbloqueio posterior. A fase histórica `BILL-U1` (implementar one-time unlock) fica substituída pela sequência: **MONETIZATION-PAID-U0-DOCS** (este documento, concluída) → **MONETIZATION-PAID-U1** (remover o Billing interno legado) → **auditoria final pré-listing** → **listing pago, manual e assets da loja**.
+
 Cada fase exige declaração prévia de arquivos prováveis, riscos, testes e evidências visuais quando houver UI. Não declarar fase como concluída sem evidência.
 
 ---
@@ -18,8 +20,12 @@ Cada fase exige declaração prévia de arquivos prováveis, riscos, testes e ev
 | 6 | RESULT-U1 | Criar Prep Result e card compartilhável, se aprovado. | Média |
 | 7 | DATA-U1 | Decidir Hive vs `shared_preferences` para MVP. | Alta |
 | 8 | OBS-U1 | Decidir Crashlytics/Remote Config. | Alta |
-| 9 | BILL-U1 | Implementar one-time unlock, restore e startup check. | Crítica para monetização |
-| 10 | RELEASE-U1 | Build release, checklist Play Store, screenshots e submissão. | Crítica |
+| 9 | MONETIZATION-PAID-U0-DOCS | Formalizar o modelo de app pago nos documentos de governança. | Crítica (concluída em 30/07/2026) |
+| 10 | MONETIZATION-PAID-U1 | Remover Billing interno legado (`in_app_purchase`, `apex_full_unlock`); app 100% liberado desde a instalação. | Crítica para monetização |
+| 11 | AUDIT-U-FINAL | Auditoria final pré-listing. | Crítica |
+| 12 | RELEASE-U1 | Build release, checklist Play Store, listing pago, manual/assets e submissão. | Crítica |
+
+*(Histórico: a fase `BILL-U1` — "implementar one-time unlock, restore e startup check" — está substituída pela sequência acima; ver nota de atualização de modelo comercial no topo deste documento.)*
 
 ---
 
@@ -70,8 +76,9 @@ A ordem abaixo deve ser respeitada, salvo aprovação humana explícita. Cada fa
 | Resultado | Criar Prep Result e card compartilhável, se aprovado | Média |
 | Persistência | Decidir Hive vs `shared_preferences` para MVP | Alta |
 | Firebase | Decidir Crashlytics/Remote Config sem Analytics | Alta |
-| Billing | Implementar one-time unlock, restore e startup check | Crítica para monetização |
-| Release | AAB release, obfuscation, checklist Play Store, screenshots e testes | Crítica |
+| Monetização | Publicar o app como pago para download na Google Play, todos os recursos incluídos desde a instalação | Crítica (docs concluídos em `MONETIZATION-PAID-U0-DOCS`) |
+| Billing | Remover Billing interno legado (`in_app_purchase`, `apex_full_unlock`) — `MONETIZATION-PAID-U1` | Crítica para monetização |
+| Release | AAB release, obfuscation, checklist Play Store, listing pago, screenshots e testes | Crítica |
 | Premium | Apex Visual System com Core, Ring, Pulse, Grid e Chips | Alta |
 | Premium | Apex Ritual Cinematográfico como refinamento do Boost Apex | Alta |
 | Premium | Apex Result Card e Share Card Seguro | Alta/Média |
@@ -100,4 +107,4 @@ A ordem abaixo deve ser respeitada, salvo aprovação humana explícita. Cada fa
 | 7 | Widget e Quick Actions | Conveniência premium. |
 | 8 | Share Studio e Evolution Card | Divulgação orgânica. |
 | 9 | Temas contextuais | Valor premium adicional. |
-| 10 | Store polish, release e billing | Conversão e monetização. |
+| 10 | Store polish, remoção do Billing legado e release pago | Conversão e monetização como app pago para download. |
