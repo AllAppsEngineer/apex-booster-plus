@@ -16,10 +16,11 @@ import 'package:apex_booster_plus/core/i18n/app_strings.dart';
 // (structural refactor only — no visual, textual, behavioral or animation
 // change versus PREP-PANEL-VISUAL-U1).
 //
-// KNOWN LIMITATION (pre-existing, not introduced or fixed here): the module
-// chip's Row (icon + label) overflows at textScale 1.3 on narrow viewports
-// (320x640, 360x800) — see preparation_panel_test.dart. Tracked as
-// PREP-PANEL-ACCESSIBILITY-U2A1; not started.
+// PREP-PANEL-ACCESSIBILITY-U2A1: the chip/badge Row (icon + label) used to
+// overflow at textScale 1.3 on narrow viewports (320x640, 360x800) — root
+// cause was the label Text having no Flexible, so it could not wrap. Fixed
+// by wrapping the label in Flexible (softWrap, maxLines: 2) in both
+// _ModuleChip and _ConfirmBadge; textScale 1.0 appearance is unchanged.
 
 const _kChipEntranceDurMs = 220;
 
@@ -194,16 +195,21 @@ class _ModuleChip extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           iconWidget,
           const SizedBox(width: 5),
-          Text(
-            label,
-            style: const TextStyle(
-              color: AppColors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 11,
-              letterSpacing: 0.6,
+          Flexible(
+            child: Text(
+              label,
+              softWrap: true,
+              maxLines: 2,
+              style: const TextStyle(
+                color: AppColors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+                letterSpacing: 0.6,
+              ),
             ),
           ),
         ],
@@ -306,6 +312,7 @@ class _ConfirmBadge extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const Icon(
             Icons.check_circle_rounded,
@@ -313,13 +320,17 @@ class _ConfirmBadge extends StatelessWidget {
             size: 13,
           ),
           const SizedBox(width: 5),
-          Text(
-            label,
-            style: const TextStyle(
-              color: AppColors.apexGreen,
-              fontWeight: FontWeight.bold,
-              fontSize: 11,
-              letterSpacing: 0.5,
+          Flexible(
+            child: Text(
+              label,
+              softWrap: true,
+              maxLines: 2,
+              style: const TextStyle(
+                color: AppColors.apexGreen,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ],

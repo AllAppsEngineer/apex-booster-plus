@@ -14,6 +14,32 @@ const _sevenLabelsPtBr = [
   'Performance melhorada',
 ];
 
+const _sevenLabelsEn = [
+  'FPS: OK',
+  'RAM: OK',
+  'GPU: OK',
+  'Ping: OK',
+  'Optimization: OK',
+  'Boost applied',
+  'Performance improved',
+];
+
+const _sevenLabelsEs = [
+  'FPS: OK',
+  'RAM: OK',
+  'GPU: OK',
+  'Ping: OK',
+  'Optimización: OK',
+  'Boost aplicado',
+  'Rendimiento mejorado',
+];
+
+const _labelsByLanguage = {
+  AppLanguage.ptBr: _sevenLabelsPtBr,
+  AppLanguage.en: _sevenLabelsEn,
+  AppLanguage.es: _sevenLabelsEs,
+};
+
 Widget _wrap(Widget child, {double textScale = 1.0}) {
   return MaterialApp(
     home: Builder(
@@ -57,13 +83,9 @@ void main() {
     await tester.pumpWidget(_wrap(const PreparationPanel()));
     await tester.pumpAndSettle();
 
-    expect(find.text('FPS: OK'), findsOneWidget);
-    expect(find.text('RAM: OK'), findsOneWidget);
-    expect(find.text('GPU: OK'), findsOneWidget);
-    expect(find.text('Ping: OK'), findsOneWidget);
-    expect(find.text('Optimization: OK'), findsOneWidget);
-    expect(find.text('Boost applied'), findsOneWidget);
-    expect(find.text('Performance improved'), findsOneWidget);
+    for (final label in _sevenLabelsEn) {
+      expect(find.text(label), findsOneWidget, reason: 'missing "$label"');
+    }
     expect(tester.takeException(), isNull);
   });
 
@@ -72,99 +94,61 @@ void main() {
     await tester.pumpWidget(_wrap(const PreparationPanel()));
     await tester.pumpAndSettle();
 
-    expect(find.text('FPS: OK'), findsOneWidget);
-    expect(find.text('RAM: OK'), findsOneWidget);
-    expect(find.text('GPU: OK'), findsOneWidget);
-    expect(find.text('Ping: OK'), findsOneWidget);
-    expect(find.text('Optimización: OK'), findsOneWidget);
-    expect(find.text('Boost aplicado'), findsOneWidget);
-    expect(find.text('Rendimiento mejorado'), findsOneWidget);
+    for (final label in _sevenLabelsEs) {
+      expect(find.text(label), findsOneWidget, reason: 'missing "$label"');
+    }
     expect(tester.takeException(), isNull);
   });
 
-  // Combinations known to render without overflow. textScale 1.3 is included
-  // only for 411x891 — see the dedicated known-limitation block below for
-  // 320x640 and 360x800 at 1.3, which do overflow.
-  const cleanCombinations = [
-    (viewport: Size(320, 640), textScale: 1.0),
-    (viewport: Size(360, 800), textScale: 1.0),
-    (viewport: Size(411, 891), textScale: 1.0),
-    (viewport: Size(411, 891), textScale: 1.3),
-  ];
-
-  for (final combo in cleanCombinations) {
-    testWidgets(
-      'no overflow at ${combo.viewport.width.toInt()}x'
-      '${combo.viewport.height.toInt()}, textScale ${combo.textScale}',
-      (tester) async {
-        tester.view.physicalSize = combo.viewport;
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-
-        await tester.pumpWidget(
-          _wrap(const PreparationPanel(), textScale: combo.textScale),
-        );
-        await tester.pumpAndSettle();
-
-        expect(tester.takeException(), isNull);
-        for (final label in _sevenLabelsPtBr) {
-          expect(find.text(label), findsOneWidget);
-        }
-      },
-    );
-  }
-
-  // ─── KNOWN PRE-EXISTING LIMITATION — inherited verbatim from
-  // PREP-PANEL-VISUAL-U1, NOT introduced or fixed by PREP-PANEL-ISOLATION-U2A.
+  // ─── PREP-PANEL-ACCESSIBILITY-U2A1 — full validation matrix ────────────
   //
-  // The module chip's Row (icon + label, no Flexible/FittedBox) overflows its
-  // Wrap slot at textScale 1.3 on narrow viewports. This is the same widget
-  // tree as U1, moved verbatim; U2A is a structural extraction only and must
-  // not touch Wrap/spacing/typography to "fix" this. These tests assert the
-  // overflow AS-IS (they will fail loudly if the underlying layout changes),
-  // documenting the gap rather than hiding it.
-  //
-  // Tracked follow-up: PREP-PANEL-ACCESSIBILITY-U2A1 (not started).
-  const knownOverflowCombinations = [
-    (viewport: Size(320, 640), textScale: 1.3, overflowPx: 63),
-    (viewport: Size(360, 800), textScale: 1.3, overflowPx: 23),
-  ];
+  // Every viewport x textScale x language combination must render all seven
+  // texts with zero RenderFlex overflow and every label fully contained
+  // within the panel bounds. At textScale 1.0 this also guards the U1
+  // appearance (chip/badge Row stays single-line, since Flexible only
+  // wraps when the single-line width would exceed the available space).
+  const viewports = [Size(320, 640), Size(360, 800), Size(411, 891)];
+  const textScales = [1.0, 1.3];
 
-  for (final combo in knownOverflowCombinations) {
-    testWidgets(
-      'KNOWN LIMITATION (PREP-PANEL-ACCESSIBILITY-U2A1, not fixed here): '
-      'RenderFlex overflow at ${combo.viewport.width.toInt()}x'
-      '${combo.viewport.height.toInt()}, textScale ${combo.textScale}',
-      (tester) async {
-        tester.view.physicalSize = combo.viewport;
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
+  for (final viewport in viewports) {
+    for (final textScale in textScales) {
+      for (final entry in _labelsByLanguage.entries) {
+        testWidgets(
+          'no overflow, seven texts contained in panel — '
+          '${viewport.width.toInt()}x${viewport.height.toInt()}, '
+          'textScale $textScale, ${entry.key.name}',
+          (tester) async {
+            tester.view.physicalSize = viewport;
+            tester.view.devicePixelRatio = 1.0;
+            addTearDown(tester.view.resetPhysicalSize);
+            addTearDown(tester.view.resetDevicePixelRatio);
 
-        await tester.pumpWidget(
-          _wrap(const PreparationPanel(), textScale: combo.textScale),
-        );
-        await tester.pumpAndSettle();
+            languageNotifier.value = entry.key;
+            await tester.pumpWidget(
+              _wrap(const PreparationPanel(), textScale: textScale),
+            );
+            await tester.pumpAndSettle();
 
-        final exception = tester.takeException();
-        expect(
-          exception,
-          isA<FlutterError>(),
-          reason:
-              'Expected the pre-existing RenderFlex overflow inherited from '
-              'PREP-PANEL-VISUAL-U1 to still reproduce at textScale '
-              '${combo.textScale} on ${combo.viewport.width.toInt()}x'
-              '${combo.viewport.height.toInt()}. If this no longer throws, '
-              'the layout was fixed — update this test and close '
-              'PREP-PANEL-ACCESSIBILITY-U2A1 instead of deleting the case.',
+            expect(tester.takeException(), isNull);
+
+            final panelRect = tester.getRect(find.byType(PreparationPanel));
+            for (final label in entry.value) {
+              final finder = find.text(label);
+              expect(finder, findsOneWidget, reason: 'missing "$label"');
+              final textRect = tester.getRect(finder);
+              expect(
+                panelRect.contains(textRect.topLeft) &&
+                    panelRect.contains(textRect.bottomRight),
+                isTrue,
+                reason:
+                    '"$label" at $textRect is not contained in panel '
+                    '$panelRect',
+              );
+            }
+          },
         );
-        expect(
-          exception.toString(),
-          contains('overflowed'),
-        );
-      },
-    );
+      }
+    }
   }
 
   testWidgets('all seven chip/badge texts stay within the panel bounds',
