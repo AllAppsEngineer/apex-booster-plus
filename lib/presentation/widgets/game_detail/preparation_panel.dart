@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:apex_booster_plus/core/accessibility/low_distraction_service.dart';
@@ -21,16 +23,74 @@ import 'package:apex_booster_plus/core/i18n/app_strings.dart';
 // cause was the label Text having no Flexible, so it could not wrap. Fixed
 // by wrapping the label in Flexible (softWrap, maxLines: 2) in both
 // _ModuleChip and _ConfirmBadge; textScale 1.0 appearance is unchanged.
+//
+// PREP-PANEL-VISUAL-U2B: adds a purely decorative, continuous ambient
+// scanner (background tint + breathing glow + horizontal sweep) behind the
+// chips/badges. It never touches their layout, colors, borders or timing —
+// it only becomes visible (via a one-shot flutter_animate fadeIn, not a
+// second controller) once the existing entrance sequence above has actually
+// finished. Exactly one manually-created AnimationController exists in this
+// file (`_scannerController`); it drives both the sweep position and the
+// breathing-glow alpha, is disposed in State.dispose(), and is wrapped in
+// IgnorePointer/ClipRRect so it can never intercept input or paint outside
+// the panel's own bounds.
 
 const _kChipEntranceDurMs = 220;
 
-class PreparationPanel extends StatelessWidget {
+// Scanner cadence — values are fixed midpoints of the ranges requested in
+// PREP-PANEL-VISUAL-U2B (kept as named constants, not re-derived per frame).
+const _kScannerNormalSweepMs = 1900; // range 1600-2200
+const _kScannerNormalPauseMs = 1100; // range 800-1500
+const _kScannerReducedSweepMs = 2500; // range 2200-2800
+const _kScannerReducedPauseMs = 2300; // range 1800-2800
+// Only "Modo normal" specifies an "entrada completa" window in the ticket;
+// Baixa Distração skips that extra flourish and fades the layer in quickly.
+const _kScannerNormalEntranceRampMs = 2100; // range 1800-2400
+const _kScannerReducedEntranceRampMs = 400;
+
+class PreparationPanel extends StatefulWidget {
   const PreparationPanel({super.key});
+
+  @override
+  State<PreparationPanel> createState() => _PreparationPanelState();
+}
+
+class _PreparationPanelState extends State<PreparationPanel>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _scannerController;
+  bool? _scannerReducedMotion;
+
+  @override
+  void initState() {
+    super.initState();
+    _scannerController = AnimationController(vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _scannerController.dispose();
+    super.dispose();
+  }
+
+  // Keeps the single continuous controller's cadence in sync with Low
+  // Distraction Mode without ever creating a second controller.
+  void _syncScannerMotion(bool reducedMotion) {
+    if (_scannerReducedMotion == reducedMotion) return;
+    _scannerReducedMotion = reducedMotion;
+    final sweepMs =
+        reducedMotion ? _kScannerReducedSweepMs : _kScannerNormalSweepMs;
+    final pauseMs =
+        reducedMotion ? _kScannerReducedPauseMs : _kScannerNormalPauseMs;
+    _scannerController.repeat(
+      period: Duration(milliseconds: sweepMs + pauseMs),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final s = AppStrings(languageNotifier.value);
     final reducedMotion = lowDistractionNotifier.value;
+    _syncScannerMotion(reducedMotion);
     final modules = [
       (label: s.detailModuleFps,          color: AppColors.apexGreen,    icon: Icons.speed_rounded),
       (label: s.detailModuleRam,          color: AppColors.cyberBlue,    icon: Icons.memory_rounded),
@@ -62,7 +122,13 @@ class PreparationPanel extends StatelessWidget {
         ? allConfirmedAt + 80
         : cycleBase + 3 * cycleStep + 260;
 
-    return Column(
+    // Req. #4 — the ambient scanner layer only fades in once the existing
+    // entrance sequence above (chips + both badges, incl. their shimmer/
+    // bounce settle) has actually finished; never retimed here.
+    final badge2DelayMs = badgeBaseDelay + (reducedMotion ? 60 : 140);
+    final sequenceCompleteMs = badge2DelayMs + (reducedMotion ? 300 : 570);
+
+    final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -116,7 +182,145 @@ class PreparationPanel extends StatelessWidget {
         .animate()
         .fadeIn(delay: 750.ms, duration: 400.ms)
         .slideY(begin: 0.05, end: 0, delay: 750.ms, duration: 350.ms);
+
+    // Layer order (req. #5): fundo -> glow/respiração -> scanner -> content.
+    // All three decorative sub-layers are painted together by
+    // _ScannerPainter inside a single Positioned.fill so the Stack's size is
+    // driven only by `content` (req. "nenhuma alteração de tamanho").
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned.fill(
+          child: IgnorePointer(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: AnimatedBuilder(
+                animation: _scannerController,
+                builder: (context, _) {
+                  final sweepMs = reducedMotion
+                      ? _kScannerReducedSweepMs
+                      : _kScannerNormalSweepMs;
+                  final pauseMs = reducedMotion
+                      ? _kScannerReducedPauseMs
+                      : _kScannerNormalPauseMs;
+                  return CustomPaint(
+                    painter: _ScannerPainter(
+                      progress: _scannerController.value,
+                      sweepFraction: sweepMs / (sweepMs + pauseMs),
+                      reducedMotion: reducedMotion,
+                    ),
+                  );
+                },
+              ),
+            ),
+          )
+              .animate()
+              .fadeIn(
+                delay: Duration(milliseconds: sequenceCompleteMs),
+                duration: reducedMotion
+                    ? _kScannerReducedEntranceRampMs.ms
+                    : _kScannerNormalEntranceRampMs.ms,
+              ),
+        ),
+        content,
+      ],
+    );
   }
+}
+
+/// Purely decorative ambient background painted behind the chips/badges:
+/// a faint breathing glow tied to the full cycle, plus a narrow neon core
+/// with a diffuse trail that sweeps horizontally during the sweep phase of
+/// the cycle and stays hidden during the pause phase. Confined to whatever
+/// [Size] it is given by the enclosing ClipRRect — never draws or reports
+/// geometry outside it.
+class _ScannerPainter extends CustomPainter {
+  final double progress;
+  final double sweepFraction;
+  final bool reducedMotion;
+
+  const _ScannerPainter({
+    required this.progress,
+    required this.sweepFraction,
+    required this.reducedMotion,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty || size.width.isInfinite || size.height.isInfinite) {
+      return;
+    }
+    final intensity = reducedMotion ? 0.65 : 1.0;
+    final rect = Offset.zero & size;
+    final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(14));
+
+    canvas.save();
+    canvas.clipRRect(rrect);
+
+    // Glow/respiração — one soft pulse per full sweep+pause cycle.
+    final breath = 0.5 + 0.5 * math.sin(2 * math.pi * progress);
+    final breathAlpha = (0.03 + 0.05 * breath) * intensity;
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = AppColors.apexGreen.withValues(alpha: breathAlpha)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18),
+    );
+
+    if (progress < sweepFraction) {
+      final localT = progress / sweepFraction;
+      const edge = 0.08;
+      final edgeAlpha = localT < edge
+          ? localT / edge
+          : (localT > 1 - edge ? (1 - localT) / edge : 1.0);
+      final eased = Curves.easeInOut.transform(localT);
+      const margin = 26.0;
+      final x = -margin + eased * (size.width + margin * 2);
+
+      const trailWidth = 46.0;
+      final trailRect =
+          Rect.fromLTWH(x - trailWidth, 0, trailWidth, size.height);
+      canvas.drawRect(
+        trailRect,
+        Paint()
+          ..shader = LinearGradient(
+            colors: [
+              AppColors.cyberBlue.withValues(alpha: 0),
+              AppColors.cyberBlue.withValues(alpha: 0.22 * edgeAlpha * intensity),
+            ],
+          ).createShader(trailRect),
+      );
+
+      canvas.drawRect(
+        Rect.fromLTWH(x - 1.5, 0, 3, size.height),
+        Paint()
+          ..color = AppColors.cyberBlue
+              .withValues(alpha: 0.55 * edgeAlpha * intensity)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+      );
+
+      // Brilho refletido, discreto, nas bordas superior/inferior.
+      final edgeGlowAlpha = 0.16 * edgeAlpha * intensity;
+      for (final y in [1.5, size.height - 1.5]) {
+        canvas.drawLine(
+          Offset(x - 14, y),
+          Offset(x + 14, y),
+          Paint()
+            ..color = AppColors.cyberBlue.withValues(alpha: edgeGlowAlpha)
+            ..strokeWidth = 2
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+        );
+      }
+    }
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _ScannerPainter oldDelegate) =>
+      oldDelegate.progress != progress ||
+      oldDelegate.sweepFraction != sweepFraction ||
+      oldDelegate.reducedMotion != reducedMotion;
 }
 
 class _ModuleChip extends StatelessWidget {
