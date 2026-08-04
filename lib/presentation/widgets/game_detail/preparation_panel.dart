@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -34,6 +35,22 @@ import 'package:apex_booster_plus/core/i18n/app_strings.dart';
 // breathing-glow alpha, is disposed in State.dispose(), and is wrapped in
 // IgnorePointer/ClipRRect so it can never intercept input or paint outside
 // the panel's own bounds.
+//
+// PREP-PANEL-SCANNER-LIFECYCLE-U2C-A: `_scannerController` is stopped
+// (never disposed/recreated) when the panel drops below 5% visible in its
+// ancestor Scrollable, or while the app is not `resumed`, and resumed only
+// once both conditions clear — with a 5%/15% hysteresis band plus a 200ms
+// debounce to avoid flicker right at the boundary. AnimationController.
+// repeat() seeds its next phase from the controller's *current* value
+// (Flutter's `_RepeatingSimulation` uses it as `_initialT`), so pausing and
+// resuming never restarts the sweep from zero and never touches the
+// one-shot chip/badge entrance animations above, which are unrelated to
+// this controller. This phase intentionally relies only on the ambient
+// `TickerMode` Flutter already provides — empirically it does NOT mute this
+// controller when a plain route is pushed on top (see the routing PoC in
+// preparation_panel_test.dart), so PREP-PANEL-SCANNER-LIFECYCLE-U2C-B
+// (a RouteObserver) remains a separate, not-yet-approved follow-up for that
+// specific case.
 
 const _kChipEntranceDurMs = 220;
 
@@ -56,34 +73,146 @@ class PreparationPanel extends StatefulWidget {
 }
 
 class _PreparationPanelState extends State<PreparationPanel>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _scannerController;
   bool? _scannerReducedMotion;
+  Duration? _scannerPeriod;
+
+  // PREP-PANEL-SCANNER-LIFECYCLE-U2C-A — viewport visibility. Hysteresis
+  // (different on/off thresholds) plus a debounce stop flicker right at the
+  // boundary from toggling the scanner on/off repeatedly.
+  static const _kVisibleOnThreshold = 0.15;
+  static const _kVisibleOffThreshold = 0.05;
+  static const _kVisibilityDebounceMs = 200;
+
+  ScrollPosition? _scrollPosition;
+  bool _isVisible = true; // assumed visible until the first real measurement
+  Timer? _visibilityDebounceTimer;
+
+  AppLifecycleState _lifecycleState = AppLifecycleState.resumed;
+
+  bool get _shouldAnimateScanner =>
+      _isVisible && _lifecycleState == AppLifecycleState.resumed;
 
   @override
   void initState() {
     super.initState();
     _scannerController = AnimationController(vsync: this);
+    _lifecycleState =
+        WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed;
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _scheduleVisibilityCheck(),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final newPosition = Scrollable.maybeOf(context)?.position;
+    if (newPosition != _scrollPosition) {
+      _scrollPosition?.removeListener(_onScrollChanged);
+      _scrollPosition = newPosition;
+      _scrollPosition?.addListener(_onScrollChanged);
+      _scheduleVisibilityCheck();
+    }
   }
 
   @override
   void dispose() {
+    _visibilityDebounceTimer?.cancel();
+    _scrollPosition?.removeListener(_onScrollChanged);
+    WidgetsBinding.instance.removeObserver(this);
     _scannerController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _lifecycleState = state;
+    _applyScannerRunningState();
+  }
+
+  void _onScrollChanged() => _scheduleVisibilityCheck();
+
+  void _scheduleVisibilityCheck() {
+    // Deferred to a post-frame callback so layout is guaranteed up to date
+    // before measuring — geometry read mid-scroll-notification can be stale.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _debounceVisibilityUpdate(_measureVisibleFraction());
+    });
+  }
+
+  // Fraction of the panel's own height currently within its ancestor
+  // Scrollable's viewport bounds, computed via RenderBox geometry — no
+  // extra dependency needed. Defaults to fully visible when there is no
+  // ancestor Scrollable or geometry isn't ready yet.
+  double _measureVisibleFraction() {
+    final panelBox = context.findRenderObject();
+    if (panelBox is! RenderBox || !panelBox.attached || !panelBox.hasSize) {
+      return 1.0;
+    }
+    final viewportBox =
+        Scrollable.maybeOf(context)?.context.findRenderObject();
+    if (viewportBox is! RenderBox || !viewportBox.attached) return 1.0;
+
+    final panelHeight = panelBox.size.height;
+    if (panelHeight <= 0) return 0.0;
+    final panelTop = panelBox.localToGlobal(Offset.zero, ancestor: viewportBox).dy;
+    final viewportHeight = viewportBox.size.height;
+
+    final visibleTop = math.max(0.0, panelTop);
+    final visibleBottom = math.min(viewportHeight, panelTop + panelHeight);
+    final visibleHeight = math.max(0.0, visibleBottom - visibleTop);
+    return (visibleHeight / panelHeight).clamp(0.0, 1.0);
+  }
+
+  void _debounceVisibilityUpdate(double fraction) {
+    final wantsVisible = fraction >= _kVisibleOnThreshold
+        ? true
+        : (fraction < _kVisibleOffThreshold ? false : _isVisible);
+    _visibilityDebounceTimer?.cancel();
+    if (wantsVisible == _isVisible) return;
+    _visibilityDebounceTimer = Timer(
+      const Duration(milliseconds: _kVisibilityDebounceMs),
+      () {
+        if (!mounted) return;
+        _isVisible = wantsVisible;
+        _applyScannerRunningState();
+      },
+    );
   }
 
   // Keeps the single continuous controller's cadence in sync with Low
   // Distraction Mode without ever creating a second controller.
   void _syncScannerMotion(bool reducedMotion) {
-    if (_scannerReducedMotion == reducedMotion) return;
+    final motionChanged = _scannerReducedMotion != reducedMotion;
     _scannerReducedMotion = reducedMotion;
-    final sweepMs =
-        reducedMotion ? _kScannerReducedSweepMs : _kScannerNormalSweepMs;
-    final pauseMs =
-        reducedMotion ? _kScannerReducedPauseMs : _kScannerNormalPauseMs;
-    _scannerController.repeat(
-      period: Duration(milliseconds: sweepMs + pauseMs),
-    );
+    if (motionChanged || _scannerPeriod == null) {
+      final sweepMs =
+          reducedMotion ? _kScannerReducedSweepMs : _kScannerNormalSweepMs;
+      final pauseMs =
+          reducedMotion ? _kScannerReducedPauseMs : _kScannerNormalPauseMs;
+      _scannerPeriod = Duration(milliseconds: sweepMs + pauseMs);
+    }
+    _applyScannerRunningState(restart: motionChanged);
+  }
+
+  // PREP-PANEL-SCANNER-LIFECYCLE-U2C-A — starts/stops `_scannerController`
+  // based on viewport visibility and app lifecycle without ever disposing
+  // or recreating it, preserving its current phase across pauses (see the
+  // file-level doc comment on AnimationController.repeat()'s phase seeding).
+  void _applyScannerRunningState({bool restart = false}) {
+    final period = _scannerPeriod;
+    if (period == null) return;
+    if (_shouldAnimateScanner) {
+      if (restart || !_scannerController.isAnimating) {
+        _scannerController.repeat(period: period);
+      }
+    } else if (_scannerController.isAnimating) {
+      _scannerController.stop();
+    }
   }
 
   @override

@@ -105,9 +105,14 @@ Widget _wrap(Widget child, {double textScale = 1.0}) {
 /// public member and remains reachable at runtime without exposing the
 /// type itself.
 double _scannerProgress(WidgetTester tester) {
+  // skipOffstage: false — PREP-PANEL-SCANNER-LIFECYCLE-U2C-A's routing PoC
+  // reads this while the panel's route is covered (and therefore offstage
+  // per Flutter's Navigator/Overlay), where the widget/state still exist
+  // but the default offstage-skipping Finder would otherwise miss them.
   final finder = find.descendant(
-    of: find.byType(PreparationPanel),
-    matching: find.byType(CustomPaint),
+    of: find.byType(PreparationPanel, skipOffstage: false),
+    matching: find.byType(CustomPaint, skipOffstage: false),
+    skipOffstage: false,
   );
   expect(finder, findsOneWidget);
   // ignore: avoid_dynamic_calls
@@ -128,6 +133,40 @@ void _expectNoZeroOpacityAncestors(WidgetTester tester, Finder textFinder,
       reason: '"$label" faded to zero opacity $context',
     );
   }
+}
+
+// ─── PREP-PANEL-SCANNER-LIFECYCLE-U2C-A helpers ────────────────────────────
+//
+// Wraps the panel in a real Scrollable (with a controller we can jump
+// precisely) plus enough trailing scroll extent to push the panel fully
+// past the top of the viewport, so tests can compute exact scroll offsets
+// for a target visible fraction.
+Widget _wrapScrollable(Widget child, ScrollController controller) {
+  return MaterialApp(
+    home: Scaffold(
+      body: SingleChildScrollView(
+        controller: controller,
+        physics: const ClampingScrollPhysics(),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              child: child,
+            ),
+            const SizedBox(height: 1200),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+// One frame so the ScrollPosition listener's postFrameCallback can measure
+// the panel's fresh geometry, then comfortably past the 150-250ms debounce
+// window used to decide whether the visibility state actually flipped.
+Future<void> _settleAfterScroll(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 260));
 }
 
 void main() {
@@ -416,4 +455,463 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+
+  // ─── PREP-PANEL-SCANNER-LIFECYCLE-U2C-A — viewport visibility ──────────
+
+  testWidgets(
+    'pauses the ambient scanner when the panel scrolls below 5% visible',
+    (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        _wrapScrollable(const PreparationPanel(), controller),
+      );
+      await _pumpEntranceSettle(tester);
+
+      final panelRect = tester.getRect(find.byType(PreparationPanel));
+      double offsetForFraction(double f) =>
+          panelRect.top + (1 - f) * panelRect.height;
+
+      controller.jumpTo(offsetForFraction(0.0));
+      await _settleAfterScroll(tester);
+
+      final frozenA = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 600));
+      final frozenB = _scannerProgress(tester);
+
+      expect(
+        frozenA,
+        frozenB,
+        reason: 'scanner should freeze once the panel drops below 5% visible',
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'resumes the ambient scanner without resetting phase when back above '
+    '15% visible',
+    (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        _wrapScrollable(const PreparationPanel(), controller),
+      );
+      await _pumpEntranceSettle(tester);
+
+      final panelRect = tester.getRect(find.byType(PreparationPanel));
+      double offsetForFraction(double f) =>
+          panelRect.top + (1 - f) * panelRect.height;
+
+      controller.jumpTo(offsetForFraction(0.0));
+      await _settleAfterScroll(tester);
+      final frozen = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(_scannerProgress(tester), frozen);
+
+      controller.jumpTo(offsetForFraction(0.30));
+      await _settleAfterScroll(tester);
+
+      // AnimationController.repeat() seeds its new simulation's phase from
+      // the controller's current value (Flutter's _RepeatingSimulation uses
+      // it as _initialT), so resuming must continue forward from `frozen`
+      // instead of snapping back near zero.
+      final resumedFirstSample = _scannerProgress(tester);
+      expect(
+        resumedFirstSample,
+        greaterThanOrEqualTo(frozen),
+        reason:
+            'scanner phase should continue from where it froze ($frozen), '
+            'not restart at the beginning of the sweep',
+      );
+
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(_scannerProgress(tester), isNot(equals(resumedFirstSample)));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'keeps the prior scanner state while the visible fraction sits in the '
+    '5%-15% hysteresis band',
+    (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        _wrapScrollable(const PreparationPanel(), controller),
+      );
+      await _pumpEntranceSettle(tester);
+
+      final panelRect = tester.getRect(find.byType(PreparationPanel));
+      double offsetForFraction(double f) =>
+          panelRect.top + (1 - f) * panelRect.height;
+
+      // Coming from fully visible (animating): dip into the dead zone and
+      // confirm it keeps animating instead of pausing just for being < 15%.
+      controller.jumpTo(offsetForFraction(0.10));
+      await _settleAfterScroll(tester);
+      final s1 = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 500));
+      final s2 = _scannerProgress(tester);
+      expect(
+        s1,
+        isNot(equals(s2)),
+        reason: 'scanner paused inside the 5%-15% band coming from visible',
+      );
+
+      // Push it fully out of view so it actually pauses...
+      controller.jumpTo(offsetForFraction(0.0));
+      await _settleAfterScroll(tester);
+      final frozen = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(_scannerProgress(tester), frozen);
+
+      // ...then bring it back only into the dead zone and confirm it stays
+      // paused instead of resuming just for being >= 5%.
+      controller.jumpTo(offsetForFraction(0.10));
+      await _settleAfterScroll(tester);
+      final f1 = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 500));
+      final f2 = _scannerProgress(tester);
+      expect(
+        f1,
+        f2,
+        reason: 'scanner resumed inside the 5%-15% band coming from hidden',
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'keeps panel size unchanged while scrolling in and out of view',
+    (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        _wrapScrollable(const PreparationPanel(), controller),
+      );
+      await _pumpEntranceSettle(tester);
+
+      final panelRect = tester.getRect(find.byType(PreparationPanel));
+      final baselineSize = panelRect.size;
+      double offsetForFraction(double f) =>
+          panelRect.top + (1 - f) * panelRect.height;
+
+      for (final f in [0.0, 0.10, 0.30]) {
+        controller.jumpTo(offsetForFraction(f));
+        await _settleAfterScroll(tester);
+        expect(
+          tester.getRect(find.byType(PreparationPanel)).size,
+          baselineSize,
+          reason: 'panel size changed while scrolling to fraction $f',
+        );
+      }
+      controller.jumpTo(0);
+      await _settleAfterScroll(tester);
+      expect(
+        tester.getRect(find.byType(PreparationPanel)).size,
+        baselineSize,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  // ─── PREP-PANEL-SCANNER-LIFECYCLE-U2C-A — app lifecycle ────────────────
+
+  testWidgets(
+    'pauses the ambient scanner when the app goes to background',
+    (tester) async {
+      await tester.pumpWidget(_wrap(const PreparationPanel()));
+      await _pumpEntranceSettle(tester);
+
+      for (final state in [
+        AppLifecycleState.inactive,
+        AppLifecycleState.paused,
+        AppLifecycleState.hidden,
+        AppLifecycleState.detached,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(state);
+        await tester.pump();
+        final frozenA = _scannerProgress(tester);
+        await tester.pump(const Duration(milliseconds: 500));
+        final frozenB = _scannerProgress(tester);
+        expect(frozenA, frozenB, reason: 'scanner kept animating in $state');
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pump();
+      }
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'resumes the ambient scanner on AppLifecycleState.resumed only if the '
+    'panel is visible',
+    (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        _wrapScrollable(const PreparationPanel(), controller),
+      );
+      await _pumpEntranceSettle(tester);
+
+      final panelRect = tester.getRect(find.byType(PreparationPanel));
+      double offsetForFraction(double f) =>
+          panelRect.top + (1 - f) * panelRect.height;
+
+      controller.jumpTo(offsetForFraction(0.0));
+      await _settleAfterScroll(tester);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+
+      final frozen = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(_scannerProgress(tester), frozen);
+
+      // Foreground again while the panel is STILL off-screen — must stay
+      // paused.
+      tester.binding.handleAppLifecycleStateChanged(
+        AppLifecycleState.resumed,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(
+        _scannerProgress(tester),
+        frozen,
+        reason:
+            'scanner resumed on app foreground even though the panel is '
+            'not visible',
+      );
+
+      // Now scroll it back into view (app already resumed) — should resume.
+      controller.jumpTo(offsetForFraction(0.30));
+      await _settleAfterScroll(tester);
+      final afterResume = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(_scannerProgress(tester), isNot(equals(afterResume)));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'does not replay the chip/badge entrance sequence across a pause/resume '
+    'cycle',
+    (tester) async {
+      await tester.pumpWidget(_wrap(const PreparationPanel()));
+      await _pumpEntranceSettle(tester);
+
+      for (final label in _sevenLabelsPtBr) {
+        _expectNoZeroOpacityAncestors(
+          tester,
+          find.text(label),
+          label,
+          'before pause',
+        );
+      }
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump(const Duration(milliseconds: 500));
+      tester.binding.handleAppLifecycleStateChanged(
+        AppLifecycleState.resumed,
+      );
+      await tester.pump();
+
+      // If the entrance sequence had replayed, chips/badges would be back
+      // in their initial (fully transparent) fadeIn state right here.
+      for (final label in _sevenLabelsPtBr) {
+        _expectNoZeroOpacityAncestors(
+          tester,
+          find.text(label),
+          label,
+          'immediately after resume',
+        );
+      }
+      await tester.pump(const Duration(milliseconds: 500));
+      for (final label in _sevenLabelsPtBr) {
+        _expectNoZeroOpacityAncestors(
+          tester,
+          find.text(label),
+          label,
+          'after resume settle',
+        );
+      }
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'keeps seven texts present through scroll-away, background and resume',
+    (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        _wrapScrollable(const PreparationPanel(), controller),
+      );
+      await _pumpEntranceSettle(tester);
+
+      final panelRect = tester.getRect(find.byType(PreparationPanel));
+      double offsetForFraction(double f) =>
+          panelRect.top + (1 - f) * panelRect.height;
+
+      controller.jumpTo(offsetForFraction(0.0));
+      await _settleAfterScroll(tester);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump(const Duration(milliseconds: 300));
+      tester.binding.handleAppLifecycleStateChanged(
+        AppLifecycleState.resumed,
+      );
+      await tester.pump();
+      controller.jumpTo(offsetForFraction(0.30));
+      await _settleAfterScroll(tester);
+
+      for (final label in _sevenLabelsPtBr) {
+        expect(find.text(label), findsOneWidget, reason: 'missing "$label"');
+      }
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  // ─── PREP-PANEL-SCANNER-LIFECYCLE-U2C-A — dispose safety ───────────────
+
+  testWidgets(
+    'cancels pending scroll/debounce work on dispose without leaking a '
+    'Timer',
+    (tester) async {
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        _wrapScrollable(const PreparationPanel(), controller),
+      );
+      await _pumpEntranceSettle(tester);
+
+      final panelRect = tester.getRect(find.byType(PreparationPanel));
+      controller.jumpTo(panelRect.top + panelRect.height);
+      // One frame lets the scroll listener schedule its debounce timer, but
+      // we deliberately do NOT wait it out before disposing.
+      await tester.pump();
+
+      await tester.pumpWidget(const SizedBox());
+      // If dispose leaked the debounce Timer, or a postFrameCallback still
+      // touched the disposed State, this pump (or flutter_test's automatic
+      // pending-timer check at tearDown) would fail.
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  // ─── PREP-PANEL-SCANNER-LIFECYCLE-U2C-A — routing / TickerMode PoC ─────
+  //
+  // FINDING (documented, not assumed — see debugDumpApp() trace captured
+  // while building this PoC): pushing a plain MaterialPageRoute on top of
+  // PreparationPanel's route does NOT mute its ticker. The dumped tree
+  // showed `_EffectiveTickerMode(effective mode: enabled)` and
+  // `_PreparationPanelState(... ticker active)` still active for the
+  // covered route after the push transition fully completed. Overlay's
+  // onstage/tickerEnabled scan (see overlay.dart OverlayState.build) keys
+  // off each OverlayEntry's own `opaque` flag, and ModalRoute only ever
+  // sets that flag on its *barrier* entry (`overlayEntries.first.opaque =
+  // opaque`, in TransitionRoute._handleStatusChanged/install — see
+  // routes.dart), never on the `_modalScope` content entry itself; in this
+  // plain-push scenario that was not enough to flip the covered route
+  // offstage. Per PREP-PANEL-SCANNER-LIFECYCLE-U2C-AUDIT item 4, this
+  // means Flutter's built-in TickerMode does NOT cover the "route pushed
+  // on top" case here — PREP-PANEL-SCANNER-LIFECYCLE-U2C-B (RouteObserver)
+  // is required to pause the scanner while covered by another route. No
+  // RouteObserver is introduced in this phase; this test only records the
+  // real, observed behavior so U2C-B has an accurate starting point.
+  testWidgets(
+    'documents that a plain pushed route does NOT mute the scanner via '
+    'TickerMode alone — PREP-PANEL-SCANNER-LIFECYCLE-U2C-B is needed for '
+    'that case',
+    (tester) async {
+      final navigatorKey = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigatorKey,
+          home: const Scaffold(
+            body: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: PreparationPanel(),
+              ),
+            ),
+          ),
+        ),
+      );
+      await _pumpEntranceSettle(tester);
+
+      final before = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(
+        _scannerProgress(tester),
+        isNot(equals(before)),
+        reason: 'sanity check: scanner should be running before the push',
+      );
+
+      navigatorKey.currentState!.push(
+        MaterialPageRoute<void>(builder: (_) => const Scaffold(body: SizedBox())),
+      );
+      // Bounded pump (not pumpAndSettle — the scanner's own controller
+      // repeats forever) covering the default push transition.
+      await _pumpFor(tester, const Duration(milliseconds: 400));
+
+      final coveredA = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 600));
+      final coveredB = _scannerProgress(tester);
+      expect(
+        coveredA,
+        isNot(equals(coveredB)),
+        reason:
+            'this documents the current, real Flutter behavior: the '
+            'scanner keeps animating while covered by a plain pushed '
+            'route, because TickerMode alone does not disable it here — '
+            'if this assertion ever starts failing (i.e. it becomes '
+            'equal), Flutter changed this behavior and U2C-B may no '
+            'longer be necessary; re-verify before assuming so',
+      );
+
+      navigatorKey.currentState!.pop();
+      await _pumpFor(tester, const Duration(milliseconds: 400));
+      final afterPopA = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(
+        _scannerProgress(tester),
+        isNot(equals(afterPopA)),
+        reason: 'scanner did not keep animating after popping back',
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
