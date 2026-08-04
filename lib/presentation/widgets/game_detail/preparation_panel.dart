@@ -7,6 +7,7 @@ import 'package:apex_booster_plus/core/accessibility/low_distraction_service.dar
 import 'package:apex_booster_plus/core/constants/app_colors.dart';
 import 'package:apex_booster_plus/core/i18n/app_language.dart';
 import 'package:apex_booster_plus/core/i18n/app_strings.dart';
+import 'package:apex_booster_plus/core/routing/app_route_observer.dart';
 
 // ─── Preparation panel section (UX-P1.1 / PREP-PANEL-VISUAL-U1) ─────────────
 //
@@ -48,9 +49,14 @@ import 'package:apex_booster_plus/core/i18n/app_strings.dart';
 // this controller. This phase intentionally relies only on the ambient
 // `TickerMode` Flutter already provides — empirically it does NOT mute this
 // controller when a plain route is pushed on top (see the routing PoC in
-// preparation_panel_test.dart), so PREP-PANEL-SCANNER-LIFECYCLE-U2C-B
-// (a RouteObserver) remains a separate, not-yet-approved follow-up for that
-// specific case.
+// preparation_panel_test.dart).
+//
+// PREP-PANEL-SCANNER-LIFECYCLE-U2C-B: covers exactly that gap via
+// `RouteAware`, subscribing to the shared `appRouteObserver` (registered on
+// `appRouter`'s `observers`). `didPushNext()`/`didPop()`'s counterparts
+// (`didPush()`/`didPopNext()`) flip `_isRouteCovered`, a third input to the
+// same `_shouldAnimateScanner` gate/`_applyScannerRunningState()` used by
+// U2C-A — no second pause mechanism, no AnimationController recreation.
 
 const _kChipEntranceDurMs = 220;
 
@@ -73,7 +79,7 @@ class PreparationPanel extends StatefulWidget {
 }
 
 class _PreparationPanelState extends State<PreparationPanel>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver, RouteAware {
   late final AnimationController _scannerController;
   bool? _scannerReducedMotion;
   Duration? _scannerPeriod;
@@ -91,8 +97,16 @@ class _PreparationPanelState extends State<PreparationPanel>
 
   AppLifecycleState _lifecycleState = AppLifecycleState.resumed;
 
+  // PREP-PANEL-SCANNER-LIFECYCLE-U2C-B — route coverage. Assumed uncovered
+  // until `didPushNext()` says otherwise, mirroring `_isVisible`'s
+  // assumed-visible default above (both wait for a real signal to flip).
+  PageRoute<dynamic>? _subscribedRoute;
+  bool _isRouteCovered = false;
+
   bool get _shouldAnimateScanner =>
-      _isVisible && _lifecycleState == AppLifecycleState.resumed;
+      _isVisible &&
+      _lifecycleState == AppLifecycleState.resumed &&
+      !_isRouteCovered;
 
   @override
   void initState() {
@@ -116,6 +130,18 @@ class _PreparationPanelState extends State<PreparationPanel>
       _scrollPosition?.addListener(_onScrollChanged);
       _scheduleVisibilityCheck();
     }
+
+    final route = ModalRoute.of(context);
+    final newRoute = route is PageRoute<dynamic> ? route : null;
+    if (newRoute != _subscribedRoute) {
+      if (_subscribedRoute != null) {
+        appRouteObserver.unsubscribe(this);
+      }
+      _subscribedRoute = newRoute;
+      if (newRoute != null) {
+        appRouteObserver.subscribe(this, newRoute);
+      }
+    }
   }
 
   @override
@@ -123,6 +149,7 @@ class _PreparationPanelState extends State<PreparationPanel>
     _visibilityDebounceTimer?.cancel();
     _scrollPosition?.removeListener(_onScrollChanged);
     WidgetsBinding.instance.removeObserver(this);
+    appRouteObserver.unsubscribe(this);
     _scannerController.dispose();
     super.dispose();
   }
@@ -130,6 +157,28 @@ class _PreparationPanelState extends State<PreparationPanel>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _lifecycleState = state;
+    _applyScannerRunningState();
+  }
+
+  // PREP-PANEL-SCANNER-LIFECYCLE-U2C-B — RouteAware. `didPush`/`didPopNext`
+  // mean this route is on top (uncovered); `didPushNext` means another route
+  // now covers it. `didPop` (this route itself being popped) needs no
+  // action — the widget is on its way to `dispose()` regardless.
+  @override
+  void didPush() {
+    _isRouteCovered = false;
+    _applyScannerRunningState();
+  }
+
+  @override
+  void didPopNext() {
+    _isRouteCovered = false;
+    _applyScannerRunningState();
+  }
+
+  @override
+  void didPushNext() {
+    _isRouteCovered = true;
     _applyScannerRunningState();
   }
 

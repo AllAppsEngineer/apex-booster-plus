@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'app_route_observer.dart';
 import '../../domain/entities/apex_game.dart';
 import '../../presentation/screens/splash/splash_screen.dart';
 import '../../presentation/screens/welcome/welcome_screen.dart';
@@ -14,6 +15,7 @@ import '../../domain/entities/session_record.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
+  observers: [appRouteObserver],
   routes: [
     GoRoute(
       path: '/',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:apex_booster_plus/core/accessibility/low_distraction_service.dart';
 import 'package:apex_booster_plus/core/i18n/app_language.dart';
+import 'package:apex_booster_plus/core/routing/app_route_observer.dart';
 import 'package:apex_booster_plus/presentation/widgets/game_detail/preparation_panel.dart';
 
 const _sevenLabelsPtBr = [
@@ -167,6 +168,45 @@ Widget _wrapScrollable(Widget child, ScrollController controller) {
 Future<void> _settleAfterScroll(WidgetTester tester) async {
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 260));
+}
+
+// ─── PREP-PANEL-SCANNER-LIFECYCLE-U2C-B helpers ────────────────────────────
+//
+// Wires `appRouteObserver` into a real Navigator (via `navigatorObservers`),
+// which the pre-existing "routing PoC" test above deliberately does NOT do —
+// that test documents the gap this phase closes. `navigatorKey` lets tests
+// push/pop routes directly, the same pattern the PoC test already uses.
+Widget _wrapWithRouteObserver(GlobalKey<NavigatorState> navigatorKey) {
+  return MaterialApp(
+    navigatorKey: navigatorKey,
+    navigatorObservers: [appRouteObserver],
+    home: const Scaffold(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: PreparationPanel(),
+        ),
+      ),
+    ),
+  );
+}
+
+Future<void> _pushCoveringRoute(
+  WidgetTester tester,
+  GlobalKey<NavigatorState> navigatorKey,
+) async {
+  navigatorKey.currentState!.push(
+    MaterialPageRoute<void>(builder: (_) => const Scaffold(body: SizedBox())),
+  );
+  await _pumpFor(tester, const Duration(milliseconds: 400));
+}
+
+Future<void> _popCoveringRoute(
+  WidgetTester tester,
+  GlobalKey<NavigatorState> navigatorKey,
+) async {
+  navigatorKey.currentState!.pop();
+  await _pumpFor(tester, const Duration(milliseconds: 400));
 }
 
 void main() {
@@ -911,6 +951,270 @@ void main() {
         isNot(equals(afterPopA)),
         reason: 'scanner did not keep animating after popping back',
       );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  // ─── PREP-PANEL-SCANNER-LIFECYCLE-U2C-B — route awareness ──────────────
+  //
+  // Same scenario as the PoC above, but now wired through `appRouteObserver`
+  // (registered as a real `navigatorObservers` entry), which is exactly what
+  // the PoC documented as missing.
+
+  testWidgets('pushing a route on top pauses the ambient scanner',
+      (tester) async {
+    final navigatorKey = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(_wrapWithRouteObserver(navigatorKey));
+    await _pumpEntranceSettle(tester);
+
+    final before = _scannerProgress(tester);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(
+      _scannerProgress(tester),
+      isNot(equals(before)),
+      reason: 'sanity check: scanner should be running before the push',
+    );
+
+    await _pushCoveringRoute(tester, navigatorKey);
+
+    final coveredA = _scannerProgress(tester);
+    await tester.pump(const Duration(milliseconds: 600));
+    final coveredB = _scannerProgress(tester);
+    expect(
+      coveredA,
+      coveredB,
+      reason:
+          'scanner should freeze once another route covers Game Detail',
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'popping the covering route resumes the scanner from its preserved '
+    'phase',
+    (tester) async {
+      final navigatorKey = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(_wrapWithRouteObserver(navigatorKey));
+      await _pumpEntranceSettle(tester);
+
+      await _pushCoveringRoute(tester, navigatorKey);
+      final frozen = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(_scannerProgress(tester), frozen);
+
+      await _popCoveringRoute(tester, navigatorKey);
+
+      // Same phase-preservation guarantee as U2C-A's viewport resume: the
+      // controller's repeat() reseeds from its current value, so this must
+      // continue forward from `frozen`, never snap back near zero.
+      final resumedFirstSample = _scannerProgress(tester);
+      expect(
+        resumedFirstSample,
+        greaterThanOrEqualTo(frozen),
+        reason:
+            'scanner phase should continue from where it froze ($frozen), '
+            'not restart at the beginning of the sweep',
+      );
+
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(_scannerProgress(tester), isNot(equals(resumedFirstSample)));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'does not replay the chip/badge entrance sequence across a route '
+    'push/pop cycle',
+    (tester) async {
+      final navigatorKey = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(_wrapWithRouteObserver(navigatorKey));
+      await _pumpEntranceSettle(tester);
+
+      for (final label in _sevenLabelsPtBr) {
+        _expectNoZeroOpacityAncestors(
+          tester,
+          find.text(label),
+          label,
+          'before push',
+        );
+      }
+
+      await _pushCoveringRoute(tester, navigatorKey);
+      await _popCoveringRoute(tester, navigatorKey);
+
+      // If the entrance sequence had replayed, chips/badges would be back
+      // in their initial (fully transparent) fadeIn state right here.
+      for (final label in _sevenLabelsPtBr) {
+        expect(find.text(label), findsOneWidget,
+            reason: 'missing "$label" after pop');
+        _expectNoZeroOpacityAncestors(
+          tester,
+          find.text(label),
+          label,
+          'after pop',
+        );
+      }
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'scanner resumes only once route, viewport and lifecycle conditions '
+    'all clear',
+    (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final navigatorKey = GlobalKey<NavigatorState>();
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigatorKey,
+          navigatorObservers: [appRouteObserver],
+          home: Scaffold(
+            body: SingleChildScrollView(
+              controller: controller,
+              physics: const ClampingScrollPhysics(),
+              child: Column(
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 12, 16, 16),
+                    child: PreparationPanel(),
+                  ),
+                  const SizedBox(height: 1200),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await _pumpEntranceSettle(tester);
+
+      final panelRect = tester.getRect(find.byType(PreparationPanel));
+      double offsetForFraction(double f) =>
+          panelRect.top + (1 - f) * panelRect.height;
+
+      // Sanity: running while all three conditions are good.
+      final running1 = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(_scannerProgress(tester), isNot(equals(running1)));
+
+      // Break the viewport condition only.
+      controller.jumpTo(offsetForFraction(0.0));
+      await _settleAfterScroll(tester);
+      final frozenViewport = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(_scannerProgress(tester), frozenViewport);
+
+      // Break the route condition too (viewport + route both bad).
+      await _pushCoveringRoute(tester, navigatorKey);
+      final frozenRoute = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(_scannerProgress(tester), frozenRoute);
+
+      // Break the lifecycle condition too (all three bad).
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      final frozenAll = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(_scannerProgress(tester), frozenAll);
+
+      // Clear lifecycle — must stay frozen (route + viewport still bad).
+      tester.binding.handleAppLifecycleStateChanged(
+        AppLifecycleState.resumed,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(
+        _scannerProgress(tester),
+        frozenAll,
+        reason: 'route still covers and viewport is still out of view',
+      );
+
+      // Clear route — must stay frozen (viewport still bad).
+      await _popCoveringRoute(tester, navigatorKey);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(
+        _scannerProgress(tester),
+        frozenAll,
+        reason: 'viewport is still out of view',
+      );
+
+      // Clear the last condition (viewport) — only now does it resume.
+      controller.jumpTo(offsetForFraction(0.30));
+      await _settleAfterScroll(tester);
+      final afterResume = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(
+        _scannerProgress(tester),
+        isNot(equals(afterResume)),
+        reason: 'scanner should resume once all three conditions clear',
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'stacks correctly across repeated pushes and unsubscribes cleanly on '
+    'dispose',
+    (tester) async {
+      final navigatorKey = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(_wrapWithRouteObserver(navigatorKey));
+      await _pumpEntranceSettle(tester);
+
+      // Two routes stacked on top of Game Detail.
+      await _pushCoveringRoute(tester, navigatorKey);
+      await _pushCoveringRoute(tester, navigatorKey);
+      final frozenUnderTwo = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(_scannerProgress(tester), frozenUnderTwo);
+
+      // Popping only ONE of the two must NOT resume it yet — a miscounted
+      // or duplicated subscription is exactly what would make this resume
+      // one pop too early.
+      await _popCoveringRoute(tester, navigatorKey);
+      final stillFrozen = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(
+        _scannerProgress(tester),
+        stillFrozen,
+        reason:
+            'still covered by the second pushed route — must stay paused',
+      );
+
+      // Popping the last one resumes it.
+      await _popCoveringRoute(tester, navigatorKey);
+      final afterResume = _scannerProgress(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(_scannerProgress(tester), isNot(equals(afterResume)));
+
+      // Clean unsubscribe: once removed from the tree, the shared observer
+      // must no longer be tracking this panel's route at all.
+      final route = ModalRoute.of(
+        tester.element(find.byType(PreparationPanel)),
+      )! as PageRoute<dynamic>;
+      await tester.pumpWidget(const SizedBox());
+      expect(appRouteObserver.debugObservingRoute(route), isFalse);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'unsubscribes safely on dispose while still covered by a pushed route',
+    (tester) async {
+      final navigatorKey = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(_wrapWithRouteObserver(navigatorKey));
+      await _pumpEntranceSettle(tester);
+
+      await _pushCoveringRoute(tester, navigatorKey);
+
+      // Tear down the whole tree (panel + covering route + Navigator) while
+      // the panel's route is still covered/offstage and still subscribed.
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(milliseconds: 400));
       expect(tester.takeException(), isNull);
     },
   );
