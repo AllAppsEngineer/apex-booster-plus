@@ -5,6 +5,7 @@ import 'core/i18n/app_language.dart';
 import 'core/i18n/language_service.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'data/services/startup_sound_service.dart';
 
 Future<void> main() async {
   final t0 = DateTime.now().millisecondsSinceEpoch;
@@ -14,10 +15,12 @@ Future<void> main() async {
   debugPrint('[PERF-STARTUP] SP loaded: ${DateTime.now().millisecondsSinceEpoch - t0}ms');
   languageNotifier.value = LanguageService(prefs).load();
   lowDistractionNotifier.value = LowDistractionService(prefs).load();
+  final startupSoundService = StartupSoundService();
   debugPrint('[PERF-STARTUP] runApp called: ${DateTime.now().millisecondsSinceEpoch - t0}ms');
   runApp(const ApexBoosterApp());
   WidgetsBinding.instance.addPostFrameCallback((_) {
     debugPrint('[PERF-STARTUP] first frame rendered: ${DateTime.now().millisecondsSinceEpoch - t0}ms');
+    startupSoundService.playOnce();
   });
 }
 
