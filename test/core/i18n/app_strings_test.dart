@@ -1411,6 +1411,19 @@ void main() {
       expect(es.detailModulePing, 'Ping: OK');
     });
 
+    // PREP-PANEL-ACTIVATION-U3 — manual activation button
+    test('detailPreparePanelCta ptBr is CLIQUE PARA PREPARAR', () {
+      expect(ptBr.detailPreparePanelCta, 'CLIQUE PARA PREPARAR');
+    });
+
+    test('detailPreparePanelCta en is TAP TO PREPARE', () {
+      expect(en.detailPreparePanelCta, 'TAP TO PREPARE');
+    });
+
+    test('detailPreparePanelCta es is TOCA PARA PREPARAR', () {
+      expect(es.detailPreparePanelCta, 'TOCA PARA PREPARAR');
+    });
+
   });
 
   // ─── detailScanCheckMessage — LANG-U1.5B ────────────────────────────────────

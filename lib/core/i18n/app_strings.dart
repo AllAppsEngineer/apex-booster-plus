@@ -2046,6 +2046,13 @@ class AppStrings {
     AppLanguage.es   => 'Rendimiento mejorado',
   };
 
+  // PREP-PANEL-ACTIVATION-U3 — manual activation button
+  String get detailPreparePanelCta => switch (lang) {
+    AppLanguage.ptBr => 'CLIQUE PARA PREPARAR',
+    AppLanguage.en   => 'TAP TO PREPARE',
+    AppLanguage.es   => 'TOCA PARA PREPARAR',
+  };
+
   // Real metrics section
   String get detailMetricsTitle => switch (lang) {
     AppLanguage.ptBr => 'MÉTRICAS REAIS',

@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:apex_booster_plus/core/accessibility/low_distraction_service.dart';
+import 'package:apex_booster_plus/core/constants/app_colors.dart';
 import 'package:apex_booster_plus/core/i18n/app_language.dart';
 import 'package:apex_booster_plus/core/routing/app_route_observer.dart';
 import 'package:apex_booster_plus/presentation/widgets/game_detail/preparation_panel.dart';
+
+// PREP-PANEL-ACTIVATION-U3-FIX1 — mirrors the production stagger/tail
+// constants in preparation_panel.dart (private to that file, so duplicated
+// here) for tests that assert on exact per-indicator timing.
+const _kIndicatorBaseDelayMs = 300;
+const _kIndicatorStaggerMs = 410;
+const _kIndicatorTailNormalMs = 570;
+int _indicatorDelayMs(int i) =>
+    _kIndicatorBaseDelayMs + i * _kIndicatorStaggerMs;
 
 const _sevenLabelsPtBr = [
   'FPS: OK',
@@ -46,13 +56,31 @@ const _labelsByLanguage = {
 // hang forever waiting for a frame that never stops being scheduled. Every
 // test below advances the fake clock by a fixed, generous duration instead.
 // 3500ms comfortably clears the slowest pre-existing entrance sequence
-// (~2.96s in normal motion; ~1.5s in Low Distraction Mode) without ever
-// trying to "settle" the now-infinite scanner loop.
+// (PREP-PANEL-ACTIVATION-U3-FIX1: ~3.33s in normal motion — 7th indicator's
+// own 2760ms delay + its 570ms confirmation tail; ~3.06s in Baixa Distração
+// — same 2760ms delay + a 300ms tail) without ever trying to "settle" the
+// now-infinite scanner loop.
 const _kEntranceSettleMs = 3500;
+
+// PREP-PANEL-ACTIVATION-U3 — flutter_animate's `Animate` widget schedules its
+// own playback via `Future.delayed(widget.delay, ...)` (see
+// flutter_animate's animate.dart), which is a real `dart:async` Timer even
+// when `delay` is `Duration.zero` (the idle button's pulse uses no explicit
+// delay). `WidgetTester.pump()` with no duration never advances the fake
+// clock, so that Timer is still "pending" when a test ends right after a
+// bare pump — tripping flutter_test's `!timersPending` invariant. Any pump
+// with a real, non-zero duration flushes it; this constant documents why one
+// is always used instead of a bare `pump()` as the last step before such a
+// test's assertions.
+const _kFlushMs = Duration(milliseconds: 50);
 
 // Mirrors the fixed scanner cadence documented in PREP-PANEL-VISUAL-U2B
 // (sweep+pause midpoints of the requested ranges) so tests can advance
-// through whole cycles deliberately.
+// through whole legs deliberately. PREP-PANEL-ACTIVATION-U3-FIX1: the
+// controller's own repeat() period is now double one of these (a full
+// sweep-right + pause + sweep-left + pause round trip — see
+// _syncScannerMotion) but these constants still represent a single one-way
+// leg's timing, which is all the tests below that use them actually need.
 const _kNormalCycleMs = 1900 + 1100;
 const _kReducedCycleMs = 2500 + 2300;
 
@@ -75,7 +103,13 @@ Future<void> _pumpFor(
   }
 }
 
+// PREP-PANEL-ACTIVATION-U3 — the panel now starts `idle`: every caller of
+// this helper wants the full chip/badge/scanner sequence, so it now taps the
+// "CLIQUE PARA PREPARAR" button first, exactly as a real user would, before
+// settling through the (unchanged) entrance timings.
 Future<void> _pumpEntranceSettle(WidgetTester tester) async {
+  await tester.pump();
+  await tester.tap(find.byKey(preparationPanelPrepareButtonKey));
   await tester.pump();
   await _pumpFor(tester, const Duration(milliseconds: _kEntranceSettleMs));
 }
@@ -134,6 +168,29 @@ void _expectNoZeroOpacityAncestors(WidgetTester tester, Finder textFinder,
       reason: '"$label" faded to zero opacity $context',
     );
   }
+}
+
+// PREP-PANEL-ACTIVATION-U3-FIX1 — the chip/badge subtree mounts in full the
+// instant the panel enters `preparing` (see `_buildActiveContent`); each
+// indicator's own `entranceDelayMs` only holds its `FadeTransition`'s
+// opacity at 0 until its instant, it does not delay the widget's presence
+// in the tree. So "has this indicator appeared yet" must be read from its
+// FadeTransition ancestor's live opacity (as `_expectNoZeroOpacityAncestors`
+// already does for a different assertion direction), never from
+// `find.text(label)`'s findsOneWidget/findsNothing, which would be
+// findsOneWidget the whole time regardless of its instant.
+double _labelOpacity(WidgetTester tester, String label) {
+  final textFinder = find.text(label);
+  expect(textFinder, findsOneWidget, reason: '"$label" missing from the tree');
+  final fadeFinder = find.ancestor(
+    of: textFinder,
+    matching: find.byType(FadeTransition),
+  );
+  var minOpacity = 1.0;
+  for (final fade in tester.widgetList<FadeTransition>(fadeFinder)) {
+    if (fade.opacity.value < minOpacity) minOpacity = fade.opacity.value;
+  }
+  return minOpacity;
 }
 
 // ─── PREP-PANEL-SCANNER-LIFECYCLE-U2C-A helpers ────────────────────────────
@@ -215,6 +272,510 @@ void main() {
     lowDistractionNotifier.value = false;
     languageNotifier.value = AppLanguage.ptBr;
   });
+
+  // ─── PREP-PANEL-ACTIVATION-U3 — manual activation ──────────────────────
+
+  double? scannerProgressOrNull(WidgetTester tester) {
+    final finder = find.descendant(
+      of: find.byType(PreparationPanel, skipOffstage: false),
+      matching: find.byType(CustomPaint, skipOffstage: false),
+      skipOffstage: false,
+    );
+    if (finder.evaluate().isEmpty) return null;
+    expect(finder, findsOneWidget);
+    // ignore: avoid_dynamic_calls
+    final dynamic painter = tester.widget<CustomPaint>(finder).painter;
+    return painter.progress as double;
+  }
+
+  // PREP-PANEL-ACTIVATION-U3-FIX1 — reads the scanner painter's public-named
+  // `beamXFraction` getter (0.0 leftmost .. 1.0 rightmost, null while paused
+  // at either edge) via the same dynamic-dispatch trick as
+  // `scannerProgressOrNull`, so directionality can be asserted without
+  // duplicating the painter's own segment math in the test.
+  double? beamXFraction(WidgetTester tester) {
+    final finder = find.descendant(
+      of: find.byType(PreparationPanel, skipOffstage: false),
+      matching: find.byType(CustomPaint, skipOffstage: false),
+      skipOffstage: false,
+    );
+    expect(finder, findsOneWidget);
+    // ignore: avoid_dynamic_calls
+    final dynamic painter = tester.widget<CustomPaint>(finder).painter;
+    return painter.beamXFraction as double?;
+  }
+
+  Rect buttonRect(WidgetTester tester) =>
+      tester.getRect(find.byKey(preparationPanelPrepareButtonKey));
+
+  testWidgets('starts idle: title visible, button visible, no indicators, '
+      'no scanner built', (tester) async {
+    languageNotifier.value = AppLanguage.ptBr;
+    await tester.pumpWidget(_wrap(const PreparationPanel()));
+    // A non-zero duration (not a bare pump()) so flutter_animate's internal
+    // `Future.delayed` housekeeping Timer for the idle button's pulse
+    // actually fires before the test ends — see the note on `_kFlushMs`.
+    await tester.pump(_kFlushMs);
+
+    expect(find.text('PAINEL DE PREPARAÇÃO'), findsOneWidget);
+    expect(find.byKey(preparationPanelPrepareButtonKey), findsOneWidget);
+    expect(find.text('CLIQUE PARA PREPARAR'), findsOneWidget);
+    for (final label in _sevenLabelsPtBr) {
+      expect(find.text(label), findsNothing, reason: '"$label" leaked before tap');
+    }
+    expect(
+      scannerProgressOrNull(tester),
+      isNull,
+      reason: 'scanner CustomPaint must not exist before the panel is tapped',
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('tapping the button removes it and starts the sequence',
+      (tester) async {
+    await tester.pumpWidget(_wrap(const PreparationPanel()));
+    await tester.pump(_kFlushMs);
+
+    await tester.tap(find.byKey(preparationPanelPrepareButtonKey));
+    await tester.pump(_kFlushMs);
+
+    expect(find.byKey(preparationPanelPrepareButtonKey), findsNothing);
+    expect(tester.takeException(), isNull);
+
+    // Drain every chip/badge `Future.delayed` the freshly-mounted sequence
+    // just scheduled (see `_kFlushMs`'s note) before the test ends.
+    await _pumpFor(tester, const Duration(milliseconds: _kEntranceSettleMs));
+  });
+
+  testWidgets(
+    'scanner stays frozen through preparing and only advances once ready',
+    (tester) async {
+      lowDistractionNotifier.value = false;
+      await tester.pumpWidget(_wrap(const PreparationPanel()));
+      await tester.pump(_kFlushMs);
+      await tester.tap(find.byKey(preparationPanelPrepareButtonKey));
+      await tester.pump(_kFlushMs);
+
+      // Still well inside the ~3.33s normal-motion sequence
+      // (PREP-PANEL-ACTIVATION-U3-FIX1: 7th indicator delay 2760ms + 570ms
+      // tail): scanner exists (subtree already mounted) but must not have
+      // started yet.
+      await _pumpFor(tester, const Duration(milliseconds: 1000));
+      final duringPreparing = scannerProgressOrNull(tester);
+      expect(duringPreparing, isNotNull);
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(
+        scannerProgressOrNull(tester),
+        duringPreparing,
+        reason: 'scanner must not run before the last indicator confirms',
+      );
+
+      // Past sequenceCompleteMs (~3.33s from tap) — now it must be running.
+      await _pumpFor(tester, const Duration(milliseconds: 2500));
+      final afterReady = scannerProgressOrNull(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(
+        scannerProgressOrNull(tester),
+        isNot(equals(afterReady)),
+        reason: 'scanner should be running once ready',
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('a second tap while preparing/ready is a no-op', (tester) async {
+    await tester.pumpWidget(_wrap(const PreparationPanel()));
+    await tester.pump();
+
+    // Two taps fired back-to-back, before any rebuild reconciles the tree —
+    // exercises the `_panelState != idle` guard directly.
+    await tester.tap(find.byKey(preparationPanelPrepareButtonKey));
+    await tester.tap(find.byKey(preparationPanelPrepareButtonKey));
+    await _pumpFor(tester, const Duration(milliseconds: _kEntranceSettleMs));
+
+    for (final label in _sevenLabelsPtBr) {
+      expect(find.text(label), findsOneWidget, reason: 'missing "$label"');
+    }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a fresh Game Detail instance starts idle again', (tester) async {
+    await tester.pumpWidget(_wrap(const PreparationPanel()));
+    await _pumpEntranceSettle(tester);
+    expect(find.byKey(preparationPanelPrepareButtonKey), findsNothing);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(_kFlushMs);
+    await tester.pumpWidget(_wrap(const PreparationPanel()));
+    await tester.pump(_kFlushMs);
+
+    expect(find.byKey(preparationPanelPrepareButtonKey), findsOneWidget);
+    for (final label in _sevenLabelsPtBr) {
+      expect(find.text(label), findsNothing,
+          reason: '"$label" leaked into the new instance\'s idle state');
+    }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('button pulses in normal motion', (tester) async {
+    lowDistractionNotifier.value = false;
+    await tester.pumpWidget(_wrap(const PreparationPanel()));
+    await tester.pump(_kFlushMs);
+
+    final samples = <Rect>{buttonRect(tester)};
+    for (var i = 0; i < 3; i++) {
+      await tester.pump(const Duration(milliseconds: 350));
+      samples.add(buttonRect(tester));
+    }
+    expect(samples.length, greaterThan(1),
+        reason: 'button never changed size/position — pulse looks frozen');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('button still pulses in Baixa Distração, with smaller amplitude',
+      (tester) async {
+    Future<double> maxWidthDelta(bool reduced, Duration span) async {
+      lowDistractionNotifier.value = reduced;
+      await tester.pumpWidget(_wrap(const PreparationPanel()));
+      await tester.pump(_kFlushMs);
+      final baseline = buttonRect(tester).width;
+      var maxDelta = 0.0;
+      var elapsed = Duration.zero;
+      const step = Duration(milliseconds: 80);
+      while (elapsed < span) {
+        await tester.pump(step);
+        elapsed += step;
+        final delta = (buttonRect(tester).width - baseline).abs();
+        if (delta > maxDelta) maxDelta = delta;
+      }
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(_kFlushMs);
+      return maxDelta;
+    }
+
+    // Cover slightly more than a full period in each mode so the sampled
+    // peak reflects the mode's own amplitude, not an unlucky sampling phase.
+    final reducedDelta =
+        await maxWidthDelta(true, const Duration(milliseconds: 2300));
+    final normalDelta =
+        await maxWidthDelta(false, const Duration(milliseconds: 1500));
+
+    expect(reducedDelta, greaterThan(0),
+        reason: 'button must keep pulsing in Baixa Distração, just smaller');
+    expect(
+      reducedDelta,
+      lessThan(normalDelta),
+      reason: 'Baixa Distração pulse should be noticeably smaller than normal',
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('button stays static when disableAnimations is set',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: Scaffold(
+              body: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  child: const PreparationPanel(),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final baseline = buttonRect(tester);
+    for (var i = 0; i < 3; i++) {
+      await tester.pump(const Duration(milliseconds: 350));
+      expect(buttonRect(tester), baseline,
+          reason: 'button must not animate when disableAnimations is set');
+    }
+    expect(tester.takeException(), isNull);
+  });
+
+  const idleViewports = [Size(320, 640), Size(360, 800)];
+  const idleTextScales = [1.0, 1.3];
+
+  for (final viewport in idleViewports) {
+    for (final textScale in idleTextScales) {
+      testWidgets(
+        'idle button has no overflow — '
+        '${viewport.width.toInt()}x${viewport.height.toInt()}, '
+        'textScale $textScale',
+        (tester) async {
+          tester.view.physicalSize = viewport;
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+
+          await tester.pumpWidget(
+            _wrap(const PreparationPanel(), textScale: textScale),
+          );
+          await tester.pump(_kFlushMs);
+
+          expect(tester.takeException(), isNull);
+          final panelRect = tester.getRect(find.byType(PreparationPanel));
+          final labelRect =
+              tester.getRect(find.text('CLIQUE PARA PREPARAR'));
+          expect(
+            panelRect.contains(labelRect.topLeft) &&
+                panelRect.contains(labelRect.bottomRight),
+            isTrue,
+            reason:
+                'button label at $labelRect is not contained in panel $panelRect',
+          );
+        },
+      );
+    }
+  }
+
+  // ─── PREP-PANEL-ACTIVATION-U3-FIX1 — physical-validation fix ───────────
+
+  for (final reduced in [false, true]) {
+    final modeLabel = reduced ? 'Baixa Distração' : 'normal';
+    testWidgets(
+      'each of the seven indicators appears strictly in order, never before '
+      'its own instant, and stays visible once shown ($modeLabel mode)',
+      (tester) async {
+        lowDistractionNotifier.value = reduced;
+        languageNotifier.value = AppLanguage.ptBr;
+        await tester.pumpWidget(_wrap(const PreparationPanel()));
+        await tester.pump();
+        await tester.tap(find.byKey(preparationPanelPrepareButtonKey));
+        await tester.pump();
+
+        var elapsedMs = 0;
+        for (var i = 0; i < _sevenLabelsPtBr.length; i++) {
+          final dueAtMs = _indicatorDelayMs(i);
+
+          // Just before this indicator's own instant: its own opacity must
+          // still be zero, while every earlier one must already be visible
+          // (opacity > 0) and stay that way.
+          final justBeforeMs = dueAtMs - 60;
+          await _pumpFor(
+            tester,
+            Duration(milliseconds: justBeforeMs - elapsedMs),
+          );
+          elapsedMs = justBeforeMs;
+          expect(
+            _labelOpacity(tester, _sevenLabelsPtBr[i]),
+            0.0,
+            reason: '"${_sevenLabelsPtBr[i]}" appeared before its own '
+                'instant ($dueAtMs ms) in $modeLabel mode',
+          );
+          for (var j = 0; j < i; j++) {
+            expect(
+              _labelOpacity(tester, _sevenLabelsPtBr[j]),
+              greaterThan(0.0),
+              reason: '"${_sevenLabelsPtBr[j]}" is no longer visible after '
+                  'having appeared, in $modeLabel mode',
+            );
+          }
+
+          // Just after: it must now be visible.
+          final justAfterMs = dueAtMs + 120;
+          await _pumpFor(
+            tester,
+            Duration(milliseconds: justAfterMs - elapsedMs),
+          );
+          elapsedMs = justAfterMs;
+          expect(
+            _labelOpacity(tester, _sevenLabelsPtBr[i]),
+            greaterThan(0.0),
+            reason: '"${_sevenLabelsPtBr[i]}" did not appear at its own '
+                'instant ($dueAtMs ms) in $modeLabel mode',
+          );
+        }
+        expect(tester.takeException(), isNull);
+
+        // Drain any remaining scheduled `Future.delayed` housekeeping
+        // before the test ends (see `_kFlushMs`'s note).
+        await _pumpFor(tester, const Duration(milliseconds: _kEntranceSettleMs));
+      },
+    );
+  }
+
+  testWidgets('all seven indicators use seven distinct, non-red colors',
+      (tester) async {
+    await tester.pumpWidget(_wrap(const PreparationPanel()));
+    await _pumpEntranceSettle(tester);
+
+    final icons = tester
+        .widgetList<Icon>(
+          find.descendant(
+            of: find.byType(PreparationPanel),
+            matching: find.byType(Icon),
+          ),
+        )
+        .toList();
+    expect(icons.length, 7,
+        reason: 'expected exactly 7 indicator icons once ready');
+
+    final colors = icons.map((icon) => icon.color).toSet();
+    expect(colors.length, 7,
+        reason: 'indicator colors are not all distinct');
+    expect(colors, {
+      AppColors.apexGreen,
+      AppColors.cyberBlue,
+      AppColors.energyOrange,
+      AppColors.neonCyan,
+      AppColors.neonViolet,
+      AppColors.neonLime,
+      AppColors.neonMagenta,
+    });
+    expect(colors.contains(AppColors.apexNeonRed), isFalse,
+        reason: 'red must never be used on the indicators themselves');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'scanner beam sweeps left-to-right then pauses, then sweeps back '
+    'right-to-left and pauses, within one round-trip cycle',
+    (tester) async {
+      lowDistractionNotifier.value = false;
+      await tester.pumpWidget(_wrap(const PreparationPanel()));
+      await _pumpEntranceSettle(tester);
+
+      const stepMs = 100;
+      // One full round trip is 2*(1900+1100)=6000ms; stay safely inside it
+      // so a second cycle's rise doesn't get folded into this sample set.
+      const spanMs = 5800;
+      final samples = <double?>[];
+      for (var elapsed = 0; elapsed <= spanMs; elapsed += stepMs) {
+        samples.add(beamXFraction(tester));
+        await tester.pump(const Duration(milliseconds: stepMs));
+      }
+
+      final visible = <double>[];
+      for (final v in samples) {
+        if (v != null) visible.add(v);
+      }
+      expect(visible, isNotEmpty, reason: 'beam was never visible');
+
+      var peakIndex = 0;
+      var peakValue = -1.0;
+      for (var i = 0; i < visible.length; i++) {
+        if (visible[i] > peakValue) {
+          peakValue = visible[i];
+          peakIndex = i;
+        }
+      }
+      expect(peakValue, greaterThan(0.9),
+          reason: 'beam never reached near the right edge');
+
+      const tolerance = 0.05;
+      for (var i = 1; i <= peakIndex; i++) {
+        expect(
+          visible[i],
+          greaterThanOrEqualTo(visible[i - 1] - tolerance),
+          reason: 'beam moved backward while sweeping right (sample $i)',
+        );
+      }
+      for (var i = peakIndex + 1; i < visible.length; i++) {
+        expect(
+          visible[i],
+          lessThanOrEqualTo(visible[i - 1] + tolerance),
+          reason: 'beam moved forward while sweeping left (sample $i)',
+        );
+      }
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'scanner does not jump or restart mid-sweep when a round-trip cycle '
+    'wraps',
+    (tester) async {
+      lowDistractionNotifier.value = false;
+      await tester.pumpWidget(_wrap(const PreparationPanel()));
+      await _pumpEntranceSettle(tester);
+
+      // The controller's own repeat() cycle began the instant `ready` was
+      // reached (sequenceCompleteMs = 2760 + 570 = 3330ms in normal
+      // motion), and `_pumpEntranceSettle` already advanced a fixed
+      // _kEntranceSettleMs (3500ms) past the tap — so by now the scanner is
+      // already (3500-3330)=170ms into its own first round-trip cycle. One
+      // full round trip is 2*(1900+1100)=6000ms, so the wrap lands
+      // 6000-170=5830ms from here.
+      final sequenceCompleteMs = _indicatorDelayMs(6) + _kIndicatorTailNormalMs;
+      final alreadyIntoCycleMs = _kEntranceSettleMs - sequenceCompleteMs;
+      const totalCycleMs = 2 * (1900 + 1100);
+      final msUntilWrap = totalCycleMs - alreadyIntoCycleMs;
+
+      await _pumpFor(
+        tester,
+        Duration(milliseconds: msUntilWrap - 80),
+      );
+      final justBeforeWrap = beamXFraction(tester);
+
+      await tester.pump(const Duration(milliseconds: 160));
+      final justAfterWrap = beamXFraction(tester);
+
+      // Right around the wrap the beam is at/near the left edge on both
+      // sides — paused-left just before it, the very start of a fresh
+      // rightward sweep just after — never a sudden mid-travel value.
+      if (justBeforeWrap != null) {
+        expect(justBeforeWrap, lessThan(0.1),
+            reason: 'beam was not near the left edge just before the wrap');
+      }
+      if (justAfterWrap != null) {
+        expect(justAfterWrap, lessThan(0.15),
+            reason: 'beam jumped to a mid-travel position right after the '
+                'wrap instead of restarting from the left edge');
+      }
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'scanner only starts animating once the 7th indicator has appeared',
+    (tester) async {
+      lowDistractionNotifier.value = false;
+      languageNotifier.value = AppLanguage.ptBr;
+      await tester.pumpWidget(_wrap(const PreparationPanel()));
+      await tester.pump();
+      await tester.tap(find.byKey(preparationPanelPrepareButtonKey));
+      await tester.pump();
+
+      // Just before the 7th indicator's own instant (300 + 6*410 = 2760ms):
+      // its opacity must still be zero, and the scanner must still be
+      // frozen.
+      await _pumpFor(tester, const Duration(milliseconds: 2700));
+      expect(_labelOpacity(tester, 'Performance melhorada'), 0.0);
+      final frozenBefore = scannerProgressOrNull(tester);
+      expect(frozenBefore, isNotNull);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(
+        scannerProgressOrNull(tester),
+        frozenBefore,
+        reason: 'scanner moved before the 7th indicator appeared',
+      );
+
+      // Past the 7th indicator's own entrance and its confirmation tail
+      // (~570ms in normal motion) — now it must be visible and the scanner
+      // must be running.
+      await _pumpFor(tester, const Duration(milliseconds: 700));
+      expect(
+        _labelOpacity(tester, 'Performance melhorada'),
+        greaterThan(0.0),
+      );
+      final afterReady = scannerProgressOrNull(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(
+        scannerProgressOrNull(tester),
+        isNot(equals(afterReady)),
+        reason: 'scanner did not start once the 7th indicator was ready',
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('renders all seven indicator texts (pt-BR)', (tester) async {
     languageNotifier.value = AppLanguage.ptBr;
@@ -460,14 +1021,23 @@ void main() {
     );
     expect(clipFinder, findsOneWidget);
 
+    // PREP-PANEL-ACTIVATION-U3 — the title now sits above the animated
+    // content area (outside the scanner's clip), so the clip is compared
+    // against the `AnimatedSize` region it lives in rather than the whole
+    // panel (which also includes the always-visible title).
+    final contentAreaFinder = find.descendant(
+      of: find.byType(PreparationPanel),
+      matching: find.byType(AnimatedSize),
+    );
+
     for (var i = 0; i < 3; i++) {
       await _pumpFor(tester, const Duration(milliseconds: 900));
-      final panelRect = tester.getRect(find.byType(PreparationPanel));
+      final contentRect = tester.getRect(contentAreaFinder);
       final clipRect = tester.getRect(clipFinder);
       expect(
         clipRect,
-        rectMoreOrLessEquals(panelRect, epsilon: 0.5),
-        reason: 'scanner clip $clipRect escaped panel bounds $panelRect',
+        rectMoreOrLessEquals(contentRect, epsilon: 0.5),
+        reason: 'scanner clip $clipRect escaped content bounds $contentRect',
       );
     }
     expect(tester.takeException(), isNull);
