@@ -2122,6 +2122,12 @@ class AppStrings {
     AppLanguage.es   => 'App no encontrado en apps instaladas',
   };
 
+  String get detailScanAcessoInfo => switch (lang) {
+    AppLanguage.ptBr => 'App vinculado ao cadastro',
+    AppLanguage.en   => 'App linked to this entry',
+    AppLanguage.es   => 'App vinculada al registro',
+  };
+
   String get detailScanConsistenciaOk => switch (lang) {
     AppLanguage.ptBr => 'Cadastro consistente',
     AppLanguage.en   => 'Profile consistent',
@@ -2149,7 +2155,7 @@ class AppStrings {
           ScanCheckStatus.ok   => detailScanAcessoOk,
           ScanCheckStatus.warn => detailScanAcessoWarn,
           ScanCheckStatus.fail => detailScanAcessoFail,
-          _                    => check.message,
+          ScanCheckStatus.info => detailScanAcessoInfo,
         };
       case 'perfil':
         if (check.status == ScanCheckStatus.ok) {

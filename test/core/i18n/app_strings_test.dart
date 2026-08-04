@@ -1336,12 +1336,14 @@ void main() {
     expectNonEmptyAll((s) => s.detailScanAcessoOk, 'detailScanAcessoOk');
     expectNonEmptyAll((s) => s.detailScanAcessoWarn, 'detailScanAcessoWarn');
     expectNonEmptyAll((s) => s.detailScanAcessoFail, 'detailScanAcessoFail');
+    expectNonEmptyAll((s) => s.detailScanAcessoInfo, 'detailScanAcessoInfo');
     expectNonEmptyAll((s) => s.detailScanConsistenciaOk, 'detailScanConsistenciaOk');
     expectNonEmptyAll((s) => s.detailScanConsistenciaInfo, 'detailScanConsistenciaInfo');
 
     expectDiffers((s) => s.detailScanVinculoOk, 'detailScanVinculoOk');
     expectDiffers((s) => s.detailScanAcessoOk, 'detailScanAcessoOk');
     expectDiffers((s) => s.detailScanAcessoFail, 'detailScanAcessoFail');
+    expectDiffers((s) => s.detailScanAcessoInfo, 'detailScanAcessoInfo');
     expectDiffers((s) => s.detailScanConsistenciaOk, 'detailScanConsistenciaOk');
     expectDiffers((s) => s.detailScanConsistenciaInfo, 'detailScanConsistenciaInfo');
 
@@ -1367,6 +1369,18 @@ void main() {
 
     test('detailScanAcessoFail en contains "not found"', () {
       expect(en.detailScanAcessoFail.toLowerCase(), contains('not found'));
+    });
+
+    test('detailScanAcessoInfo ptBr matches original PT-BR', () {
+      expect(ptBr.detailScanAcessoInfo, 'App vinculado ao cadastro');
+    });
+
+    test('detailScanAcessoInfo en contains "linked"', () {
+      expect(en.detailScanAcessoInfo.toLowerCase(), contains('linked'));
+    });
+
+    test('detailScanAcessoInfo es contains "vinculada"', () {
+      expect(es.detailScanAcessoInfo.toLowerCase(), contains('vinculada'));
     });
   });
 
@@ -1518,6 +1532,49 @@ void main() {
       final c = check('unknown_check', ScanCheckStatus.ok);
       expect(ptBr.detailScanCheckMessage(c), 'original_pt_br');
       expect(en.detailScanCheckMessage(c), 'original_pt_br');
+    });
+
+    // ─── acesso/info — GAME-DETAIL-I18N-FIX-U1 ────────────────────────────────
+    // Reached during the initial verification window (isLaunchable still
+    // null) or permanently if getInstalledApps() fails — must never surface
+    // check.message (apex_scan_service.dart's hardcoded PT-BR fallback).
+
+    test('acesso/info ptBr returns detailScanAcessoInfo', () {
+      final c = check('acesso', ScanCheckStatus.info);
+      expect(ptBr.detailScanCheckMessage(c), ptBr.detailScanAcessoInfo);
+    });
+
+    test('acesso/info en returns detailScanAcessoInfo', () {
+      final c = check('acesso', ScanCheckStatus.info);
+      expect(en.detailScanCheckMessage(c), en.detailScanAcessoInfo);
+    });
+
+    test('acesso/info es returns detailScanAcessoInfo', () {
+      final c = check('acesso', ScanCheckStatus.info);
+      expect(es.detailScanCheckMessage(c), es.detailScanAcessoInfo);
+    });
+
+    test('acesso/info never falls back to check.message', () {
+      final c = check('acesso', ScanCheckStatus.info);
+      expect(ptBr.detailScanCheckMessage(c), isNot(equals('original_pt_br')));
+      expect(en.detailScanCheckMessage(c), isNot(equals('original_pt_br')));
+      expect(es.detailScanCheckMessage(c), isNot(equals('original_pt_br')));
+    });
+
+    test('en acesso/info differs from ptBr', () {
+      final c = check('acesso', ScanCheckStatus.info);
+      expect(
+        ptBr.detailScanCheckMessage(c),
+        isNot(equals(en.detailScanCheckMessage(c))),
+      );
+    });
+
+    test('es acesso/info differs from ptBr', () {
+      final c = check('acesso', ScanCheckStatus.info);
+      expect(
+        ptBr.detailScanCheckMessage(c),
+        isNot(equals(es.detailScanCheckMessage(c))),
+      );
     });
 
     test('en vinculo/ok differs from ptBr', () {
