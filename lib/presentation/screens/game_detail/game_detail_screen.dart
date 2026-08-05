@@ -105,7 +105,12 @@ class _GameDetailScreenState extends State<GameDetailScreen>
     }
   }
 
-  Future<void> _loadGame() async {
+  // refreshMetrics controls whether this load re-runs _loadMetrics() (RAM
+  // read + latency probe). It defaults to true for the initial load; callers
+  // that only need fresh game/profile data — e.g. returning from GFX
+  // Profile, which doesn't touch device metrics at all — pass false to
+  // avoid an unrelated spinner/re-measurement on the Real Metrics section.
+  Future<void> _loadGame({bool refreshMetrics = true}) async {
     debugPrint('[DETAIL-NAV] T+${_tms}ms data load started');
     final bool providedInitially = widget.initialGame != null;
     if (widget.gameId.isEmpty) {
@@ -128,7 +133,7 @@ class _GameDetailScreenState extends State<GameDetailScreen>
         if (!providedInitially) _loading = false;
       });
       final resolvedGame = game ?? (providedInitially ? widget.initialGame : null);
-      if (resolvedGame != null) {
+      if (resolvedGame != null && refreshMetrics) {
         _loadMetrics();
       }
     }
@@ -367,7 +372,9 @@ class _GameDetailScreenState extends State<GameDetailScreen>
       await context.push('/gfx-profile/${game.id}');
 
       if (!mounted) return;
-      await _loadGame();
+      // GFX Profile only changes local preference/profile data — device
+      // metrics are unrelated and already displayed; don't re-measure them.
+      await _loadGame(refreshMetrics: false);
     } finally {
       _activeAction = null;
     }
