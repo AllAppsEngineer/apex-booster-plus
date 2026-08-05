@@ -39,6 +39,8 @@ class GameDetailScreen extends StatefulWidget {
   State<GameDetailScreen> createState() => _GameDetailScreenState();
 }
 
+enum _GameDetailAction { launch, edit, gfxProfile, createCard }
+
 class _GameDetailScreenState extends State<GameDetailScreen>
     with WidgetsBindingObserver {
   ApexGame? _game;
@@ -49,6 +51,12 @@ class _GameDetailScreenState extends State<GameDetailScreen>
   bool _metricsError = false;
   final _focusService = FocusModeServiceImpl();
   bool _focusWasEnabled = false;
+
+  // GAME-DETAIL-GUARD-U1 — exclusive guard against overlapping CTA taps.
+  // Set synchronously as the first statement of each guarded handler (before
+  // any await) so a second rapid tap sees it already occupied; cleared in a
+  // finally block so an early return or a thrown exception both release it.
+  _GameDetailAction? _activeAction;
 
   // Reference point for T+ timing logs.
   final int _t0 = DateTime.now().millisecondsSinceEpoch;
@@ -158,104 +166,116 @@ class _GameDetailScreenState extends State<GameDetailScreen>
   }
 
   Future<void> _openEditDialog() async {
-    final game = _game;
-    final repo = _repo;
-    if (game == null || repo == null) return;
-
-    List<InstalledApp> installedApps;
+    if (_activeAction != null) return;
+    _activeAction = _GameDetailAction.edit;
     try {
-      installedApps = await InstalledAppsDatasource().getInstalledApps();
-    } catch (_) {
-      installedApps = const [];
+      final game = _game;
+      final repo = _repo;
+      if (game == null || repo == null) return;
+
+      List<InstalledApp> installedApps;
+      try {
+        installedApps = await InstalledAppsDatasource().getInstalledApps();
+      } catch (_) {
+        installedApps = const [];
+      }
+
+      final allGames = await repo.getGames();
+      final otherPackages = allGames
+          .where((g) => g.id != game.id && g.packageName != null)
+          .map((g) => g.packageName!)
+          .toSet();
+
+      if (!mounted) return;
+
+      final result = await showDialog<(String, String)>(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.75),
+        builder: (_) => _EditGameDialog(
+          initialName: game.name,
+          initialPackageName: game.packageName ?? '',
+          installedApps: installedApps,
+          otherGamePackages: otherPackages,
+        ),
+      );
+
+      if (result == null) return;
+      if (!mounted) return;
+
+      final (newName, newPkg) = result;
+      final trimmedPkg = newPkg.trim();
+
+      final updated = game.copyWith(
+        name: newName,
+        packageName: trimmedPkg.isEmpty ? null : trimmedPkg,
+        clearPackageName: trimmedPkg.isEmpty,
+        updatedAt: DateTime.now(),
+      );
+
+      await repo.updateGame(updated);
+      if (mounted) setState(() { _game = updated; });
+    } finally {
+      _activeAction = null;
     }
-
-    final allGames = await repo.getGames();
-    final otherPackages = allGames
-        .where((g) => g.id != game.id && g.packageName != null)
-        .map((g) => g.packageName!)
-        .toSet();
-
-    if (!mounted) return;
-
-    final result = await showDialog<(String, String)>(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.75),
-      builder: (_) => _EditGameDialog(
-        initialName: game.name,
-        initialPackageName: game.packageName ?? '',
-        installedApps: installedApps,
-        otherGamePackages: otherPackages,
-      ),
-    );
-
-    if (result == null) return;
-    if (!mounted) return;
-
-    final (newName, newPkg) = result;
-    final trimmedPkg = newPkg.trim();
-
-    final updated = game.copyWith(
-      name: newName,
-      packageName: trimmedPkg.isEmpty ? null : trimmedPkg,
-      clearPackageName: trimmedPkg.isEmpty,
-      updatedAt: DateTime.now(),
-    );
-
-    await repo.updateGame(updated);
-    if (mounted) setState(() { _game = updated; });
   }
 
   Future<void> _launchGame() async {
-    final pkg = _game?.packageName;
-    if (pkg == null || pkg.isEmpty) return;
+    if (_activeAction != null) return;
+    _activeAction = _GameDetailAction.launch;
+    try {
+      final pkg = _game?.packageName;
+      if (pkg == null || pkg.isEmpty) return;
 
-    final launchedAt = DateTime.now();
+      final launchedAt = DateTime.now();
 
-    final focusResult = await _focusService.saveAndEnable();
-    if (mounted && focusResult == FocusModeResult.success) {
-      _focusWasEnabled = true;
+      final focusResult = await _focusService.saveAndEnable();
+      if (mounted && focusResult == FocusModeResult.success) {
+        _focusWasEnabled = true;
+      }
+      if (!mounted) return;
+
+      final error = await showModalBottomSheet<Object?>(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isDismissible: false,
+        enableDrag: false,
+        builder: (_) => _PrepLaunchSheet(
+          packageName: pkg,
+          profileName: _game?.localProfileName,
+        ),
+      );
+
+      if (!mounted) return;
+
+      // Build record synchronously — launchStatus known before any await.
+      final launchStatus = error == null ? 'success' : 'failed';
+      final record = _buildSessionRecord(
+        focusResult: focusResult,
+        launchStatus: launchStatus,
+        launchedAt: launchedAt,
+      );
+      if (record != null) unawaited(_saveSessionRecord(record));
+
+      if (error == null) {
+        if (record != null) _showSessionReadySnack(record);
+        return;
+      }
+
+      final s = AppStrings(languageNotifier.value);
+      final message = error is PlatformException && error.code == 'APP_NOT_FOUND'
+          ? s.detailAppNotFound
+          : s.detailOpenFailed;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: AppColors.energyOrange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      _activeAction = null;
     }
-    if (!mounted) return;
-
-    final error = await showModalBottomSheet<Object?>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isDismissible: false,
-      enableDrag: false,
-      builder: (_) => _PrepLaunchSheet(
-        packageName: pkg,
-        profileName: _game?.localProfileName,
-      ),
-    );
-
-    if (!mounted) return;
-
-    // Build record synchronously — launchStatus known before any await.
-    final launchStatus = error == null ? 'success' : 'failed';
-    final record = _buildSessionRecord(
-      focusResult: focusResult,
-      launchStatus: launchStatus,
-      launchedAt: launchedAt,
-    );
-    if (record != null) unawaited(_saveSessionRecord(record));
-
-    if (error == null) {
-      if (record != null) _showSessionReadySnack(record);
-      return;
-    }
-
-    final s = AppStrings(languageNotifier.value);
-    final message = error is PlatformException && error.code == 'APP_NOT_FOUND'
-        ? s.detailAppNotFound
-        : s.detailOpenFailed;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.energyOrange,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
   void _showSessionReadySnack(SessionRecord record) {
@@ -338,13 +358,30 @@ class _GameDetailScreenState extends State<GameDetailScreen>
   }
 
   Future<void> _openProfileSelector() async {
-    final game = _game;
-    if (game == null) return;
+    if (_activeAction != null) return;
+    _activeAction = _GameDetailAction.gfxProfile;
+    try {
+      final game = _game;
+      if (game == null) return;
 
-    await context.push('/gfx-profile/${game.id}');
+      await context.push('/gfx-profile/${game.id}');
 
-    if (!mounted) return;
-    await _loadGame();
+      if (!mounted) return;
+      await _loadGame();
+    } finally {
+      _activeAction = null;
+    }
+  }
+
+  Future<void> _openCreateCard() async {
+    if (_activeAction != null) return;
+    _activeAction = _GameDetailAction.createCard;
+    try {
+      debugPrint('[ApexStudio] studio tapped');
+      await context.push('/share-studio/${widget.gameId}');
+    } finally {
+      _activeAction = null;
+    }
   }
 
   @override
@@ -386,7 +423,7 @@ class _GameDetailScreenState extends State<GameDetailScreen>
                   onTap: _launchGame,
                 ),
               if (!_loading && _game != null)
-                _CreateCardButton(gameId: widget.gameId),
+                _CreateCardButton(onTap: _openCreateCard),
             ],
           ),
         ),
@@ -1275,8 +1312,8 @@ class _LaunchGameButton extends StatelessWidget {
 // ─── Create card button (Share Studio entry point) ───────────────────────────
 
 class _CreateCardButton extends StatelessWidget {
-  final String gameId;
-  const _CreateCardButton({required this.gameId});
+  final VoidCallback? onTap;
+  const _CreateCardButton({this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1289,10 +1326,7 @@ class _CreateCardButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           splashColor: AppColors.apexGreen.withValues(alpha: 0.12),
           highlightColor: AppColors.apexGreen.withValues(alpha: 0.06),
-          onTap: () {
-            debugPrint('[ApexStudio] studio tapped');
-            context.push('/share-studio/$gameId');
-          },
+          onTap: onTap,
           child: Ink(
             decoration: BoxDecoration(
               gradient: LinearGradient(
