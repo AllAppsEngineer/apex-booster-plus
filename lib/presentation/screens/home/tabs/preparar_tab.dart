@@ -680,50 +680,49 @@ class _PrepScanCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.cyberBlue.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                        color: AppColors.cyberBlue.withValues(alpha: 0.30),
-                        width: 1,
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.track_changes_rounded,
-                      size: 14,
-                      color: AppColors.cyberBlue,
-                    ),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.cyberBlue.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: AppColors.cyberBlue.withValues(alpha: 0.30),
+                    width: 1,
                   ),
-                  const SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        s.prepScanTitle.toUpperCase(),
-                        style: TextStyle(
-                          color: AppColors.cyberBlue,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.4,
-                        ),
-                      ),
-                      Text(
-                        s.prepScanSubtitle,
-                        style: TextStyle(
-                          color: AppColors.textGray.withValues(alpha: 0.70),
-                          fontSize: 10,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
+                child: const Icon(
+                  Icons.track_changes_rounded,
+                  size: 14,
+                  color: AppColors.cyberBlue,
+                ),
               ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.prepScanTitle.toUpperCase(),
+                      style: TextStyle(
+                        color: AppColors.cyberBlue,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.4,
+                      ),
+                    ),
+                    Text(
+                      s.prepScanSubtitle,
+                      style: TextStyle(
+                        color: AppColors.textGray.withValues(alpha: 0.70),
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -955,26 +954,28 @@ class _DeviceSnapshotCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    s.snapshotTitle.toUpperCase(),
-                    style: TextStyle(
-                      color: AppColors.energyOrange,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.4,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.snapshotTitle.toUpperCase(),
+                      style: TextStyle(
+                        color: AppColors.energyOrange,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.4,
+                      ),
                     ),
-                  ),
-                  Text(
-                    s.snapshotLocalReading,
-                    style: TextStyle(
-                      color: AppColors.textGray.withValues(alpha: 0.70),
-                      fontSize: 10,
+                    Text(
+                      s.snapshotLocalReading,
+                      style: TextStyle(
+                        color: AppColors.textGray.withValues(alpha: 0.70),
+                        fontSize: 10,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),

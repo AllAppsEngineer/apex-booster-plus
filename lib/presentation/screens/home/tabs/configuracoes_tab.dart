@@ -907,6 +907,7 @@ class _AboutCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
                 Icons.lock_open_rounded,
@@ -914,12 +915,14 @@ class _AboutCard extends StatelessWidget {
                 color: AppColors.textGray.withValues(alpha: 0.7),
               ),
               const SizedBox(width: 6),
-              Text(
-                s.appModel,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textGray,
-                      fontSize: 12,
-                    ),
+              Expanded(
+                child: Text(
+                  s.appModel,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textGray,
+                        fontSize: 12,
+                      ),
+                ),
               ),
             ],
           ),
