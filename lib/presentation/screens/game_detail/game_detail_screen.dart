@@ -394,6 +394,10 @@ class _GameDetailScreenState extends State<GameDetailScreen>
   @override
   Widget build(BuildContext context) {
     final canEdit = !_loading && _game != null;
+    // GAME-DETAIL-MOTION-U1 — single source of truth for this build; passed
+    // down as parameters instead of re-read inside each private widget.
+    final reducedMotion = lowDistractionNotifier.value;
+    final disableAnimations = MediaQuery.of(context).disableAnimations;
 
     return Scaffold(
       backgroundColor: const Color(0xFF050505),
@@ -415,19 +419,27 @@ class _GameDetailScreenState extends State<GameDetailScreen>
                         ),
                       )
                     : _game == null
-                        ? _GameNotFound(onBack: () => context.pop())
+                        ? _GameNotFound(
+                            onBack: () => context.pop(),
+                            reducedMotion: reducedMotion,
+                            disableAnimations: disableAnimations,
+                          )
                         : _GameDetailContent(
                             game: _game!,
                             onSelectProfile: _openProfileSelector,
                             deviceMetrics: _deviceMetrics,
                             metricsLoading: _metricsLoading,
                             metricsError: _metricsError,
+                            reducedMotion: reducedMotion,
+                            disableAnimations: disableAnimations,
                           ),
               ),
               if (!_loading && _game != null)
                 _LaunchGameButton(
                   hasPackage: _game!.packageName?.isNotEmpty == true,
                   onTap: _launchGame,
+                  reducedMotion: reducedMotion,
+                  disableAnimations: disableAnimations,
                 ),
               if (!_loading && _game != null)
                 _CreateCardButton(onTap: _openCreateCard),
@@ -491,13 +503,19 @@ class _BackHeader extends StatelessWidget {
 
 class _GameNotFound extends StatelessWidget {
   final VoidCallback onBack;
+  final bool reducedMotion;
+  final bool disableAnimations;
 
-  const _GameNotFound({required this.onBack});
+  const _GameNotFound({
+    required this.onBack,
+    this.reducedMotion = false,
+    this.disableAnimations = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final s = AppStrings(languageNotifier.value);
-    return Center(
+    final content = Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Column(
@@ -553,7 +571,11 @@ class _GameNotFound extends StatelessWidget {
           ],
         ),
       ),
-    ).animate().fadeIn(duration: 400.ms);
+    );
+    if (disableAnimations) return content;
+    return content
+        .animate()
+        .fadeIn(duration: reducedMotion ? 200.ms : 400.ms);
   }
 }
 
@@ -565,6 +587,8 @@ class _GameDetailContent extends StatelessWidget {
   final DeviceMetrics? deviceMetrics;
   final bool metricsLoading;
   final bool metricsError;
+  final bool reducedMotion;
+  final bool disableAnimations;
 
   const _GameDetailContent({
     required this.game,
@@ -572,6 +596,8 @@ class _GameDetailContent extends StatelessWidget {
     this.deviceMetrics,
     this.metricsLoading = false,
     this.metricsError = false,
+    this.reducedMotion = false,
+    this.disableAnimations = false,
   });
 
   String _formatDate(DateTime dt) {
@@ -592,7 +618,11 @@ class _GameDetailContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _GameHeaderCard(game: game),
+          _GameHeaderCard(
+            game: game,
+            reducedMotion: reducedMotion,
+            disableAnimations: disableAnimations,
+          ),
           const SizedBox(height: 16),
           _InfoRow(
             title: s.detailPackageLabel,
@@ -601,11 +631,15 @@ class _GameDetailContent extends StatelessWidget {
             emptyMessage: s.detailNotConfigured,
             accentColor: AppColors.cyberBlue,
             delay: 100.ms,
+            reducedMotion: reducedMotion,
+            disableAnimations: disableAnimations,
           ),
           const SizedBox(height: 10),
           _GfxProfileActionCard(
             profileName: game.localProfileName,
             onTap: onSelectProfile,
+            reducedMotion: reducedMotion,
+            disableAnimations: disableAnimations,
           ),
           const SizedBox(height: 10),
           _InfoRow(
@@ -614,6 +648,8 @@ class _GameDetailContent extends StatelessWidget {
             value: _formatDate(game.createdAt),
             accentColor: AppColors.apexGreen,
             delay: 260.ms,
+            reducedMotion: reducedMotion,
+            disableAnimations: disableAnimations,
           ),
           const SizedBox(height: 10),
           _InfoRow(
@@ -622,6 +658,8 @@ class _GameDetailContent extends StatelessWidget {
             value: _formatDate(game.updatedAt),
             accentColor: AppColors.textGray,
             delay: 320.ms,
+            reducedMotion: reducedMotion,
+            disableAnimations: disableAnimations,
           ),
           const SizedBox(height: 20),
           _ScanSection(
@@ -629,6 +667,8 @@ class _GameDetailContent extends StatelessWidget {
             deviceMetrics: deviceMetrics,
             metricsLoading: metricsLoading,
             metricsError: metricsError,
+            reducedMotion: reducedMotion,
+            disableAnimations: disableAnimations,
           ),
         ],
       ),
@@ -643,12 +683,16 @@ class _ScanSection extends StatefulWidget {
   final DeviceMetrics? deviceMetrics;
   final bool metricsLoading;
   final bool metricsError;
+  final bool reducedMotion;
+  final bool disableAnimations;
 
   const _ScanSection({
     required this.game,
     this.deviceMetrics,
     this.metricsLoading = false,
     this.metricsError = false,
+    this.reducedMotion = false,
+    this.disableAnimations = false,
   });
 
   @override
@@ -713,6 +757,8 @@ class _ScanSectionState extends State<_ScanSection> {
       metricsLoading: widget.metricsLoading,
       metricsError: widget.metricsError,
       profileName: widget.game.localProfileName,
+      reducedMotion: widget.reducedMotion,
+      disableAnimations: widget.disableAnimations,
     );
   }
 }
@@ -721,13 +767,19 @@ class _ScanSectionState extends State<_ScanSection> {
 
 class _GameHeaderCard extends StatelessWidget {
   final ApexGame game;
+  final bool reducedMotion;
+  final bool disableAnimations;
 
-  const _GameHeaderCard({required this.game});
+  const _GameHeaderCard({
+    required this.game,
+    this.reducedMotion = false,
+    this.disableAnimations = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final s = AppStrings(languageNotifier.value);
-    return Container(
+    final content = Container(
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -779,10 +831,16 @@ class _GameHeaderCard extends StatelessWidget {
           ),
         ],
       ),
-    )
+    );
+    if (disableAnimations) return content;
+    return content
         .animate()
-        .fadeIn(duration: 500.ms)
-        .slideY(begin: 0.04, end: 0, duration: 400.ms);
+        .fadeIn(duration: reducedMotion ? 260.ms : 500.ms)
+        .slideY(
+          begin: reducedMotion ? 0.015 : 0.04,
+          end: 0,
+          duration: reducedMotion ? 200.ms : 400.ms,
+        );
   }
 }
 
@@ -857,6 +915,8 @@ class _InfoRow extends StatelessWidget {
   final String? emptyMessage;
   final Color accentColor;
   final Duration delay;
+  final bool reducedMotion;
+  final bool disableAnimations;
 
   const _InfoRow({
     required this.title,
@@ -865,6 +925,8 @@ class _InfoRow extends StatelessWidget {
     this.emptyMessage,
     required this.accentColor,
     this.delay = Duration.zero,
+    this.reducedMotion = false,
+    this.disableAnimations = false,
   });
 
   @override
@@ -872,7 +934,7 @@ class _InfoRow extends StatelessWidget {
     final hasValue = value != null && value!.isNotEmpty;
     final displayValue = hasValue ? value! : (emptyMessage ?? '—');
 
-    return Container(
+    final content = Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.white.withValues(alpha: 0.04),
@@ -924,10 +986,17 @@ class _InfoRow extends StatelessWidget {
           ),
         ],
       ),
-    )
+    );
+    if (disableAnimations) return content;
+    return content
         .animate()
-        .fadeIn(delay: delay, duration: 400.ms)
-        .slideX(begin: 0.03, end: 0, delay: delay, duration: 300.ms);
+        .fadeIn(delay: delay, duration: reducedMotion ? 220.ms : 400.ms)
+        .slideX(
+          begin: reducedMotion ? 0.012 : 0.03,
+          end: 0,
+          delay: delay,
+          duration: reducedMotion ? 160.ms : 300.ms,
+        );
   }
 }
 
@@ -936,8 +1005,15 @@ class _InfoRow extends StatelessWidget {
 class _GfxProfileActionCard extends StatelessWidget {
   final String? profileName;
   final VoidCallback? onTap;
+  final bool reducedMotion;
+  final bool disableAnimations;
 
-  const _GfxProfileActionCard({this.profileName, this.onTap});
+  const _GfxProfileActionCard({
+    this.profileName,
+    this.onTap,
+    this.reducedMotion = false,
+    this.disableAnimations = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -948,7 +1024,7 @@ class _GfxProfileActionCard extends StatelessWidget {
         ? s.gfxProfileLabel(resolvedProfile)
         : s.detailGfxNoProfileDefined;
 
-    return Ink(
+    final content = Ink(
       width: double.infinity,
       decoration: BoxDecoration(
         color: const Color(0xFF0D1016),
@@ -1061,10 +1137,17 @@ class _GfxProfileActionCard extends StatelessWidget {
           ),
         ),
       ),
-    )
+    );
+    if (disableAnimations) return content;
+    return content
         .animate()
-        .fadeIn(delay: 180.ms, duration: 400.ms)
-        .slideX(begin: 0.03, end: 0, delay: 180.ms, duration: 300.ms);
+        .fadeIn(delay: 180.ms, duration: reducedMotion ? 220.ms : 400.ms)
+        .slideX(
+          begin: reducedMotion ? 0.012 : 0.03,
+          end: 0,
+          delay: 180.ms,
+          duration: reducedMotion ? 160.ms : 300.ms,
+        );
   }
 }
 
@@ -1266,8 +1349,15 @@ class _DialogField extends StatelessWidget {
 class _LaunchGameButton extends StatelessWidget {
   final bool hasPackage;
   final VoidCallback onTap;
+  final bool reducedMotion;
+  final bool disableAnimations;
 
-  const _LaunchGameButton({required this.hasPackage, required this.onTap});
+  const _LaunchGameButton({
+    required this.hasPackage,
+    required this.onTap,
+    this.reducedMotion = false,
+    this.disableAnimations = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1305,6 +1395,17 @@ class _LaunchGameButton extends StatelessWidget {
     );
 
     if (!hasPackage) return button;
+    // GAME-DETAIL-MOTION-U1 — the shimmer is a decorative infinite loop; it
+    // must never run under disableAnimations, and Baixa Distração keeps it
+    // to a single discreet pass instead of an endless repeat.
+    if (disableAnimations) return button;
+    if (reducedMotion) {
+      return button.animate().shimmer(
+            duration: 900.ms,
+            color: Colors.white.withValues(alpha: 0.18),
+            angle: 0.0,
+          );
+    }
 
     return button
         .animate(onPlay: (c) => c.repeat())
@@ -1661,6 +1762,8 @@ class _ApexScanCard extends StatelessWidget {
   final bool metricsLoading;
   final bool metricsError;
   final String? profileName;
+  final bool reducedMotion;
+  final bool disableAnimations;
 
   const _ApexScanCard({
     required this.result,
@@ -1668,6 +1771,8 @@ class _ApexScanCard extends StatelessWidget {
     this.metricsLoading = false,
     this.metricsError = false,
     this.profileName,
+    this.reducedMotion = false,
+    this.disableAnimations = false,
   });
 
   String _statusLabel(AppStrings s) {
@@ -1695,11 +1800,54 @@ class _ApexScanCard extends StatelessWidget {
         ScanScore.incompleto => Icons.warning_amber_rounded,
       };
 
+  Widget _buildStatusBadge(AppStrings s, Color statusColor) {
+    final badge = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: statusColor.withValues(alpha: 0.35),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(_statusIcon(), color: statusColor, size: 12),
+          const SizedBox(width: 5),
+          Text(
+            _statusLabel(s),
+            style: TextStyle(
+              color: statusColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 10,
+              letterSpacing: 0.6,
+            ),
+          ),
+        ],
+      ),
+    );
+    if (disableAnimations) return badge;
+    return badge
+        .animate()
+        .fadeIn(delay: 550.ms, duration: reducedMotion ? 160.ms : 300.ms)
+        .scale(
+          begin: reducedMotion
+              ? const Offset(0.94, 0.94)
+              : const Offset(0.86, 0.86),
+          end: const Offset(1.0, 1.0),
+          delay: 550.ms,
+          duration: reducedMotion ? 150.ms : 280.ms,
+          curve: Curves.easeOutBack,
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = AppStrings(languageNotifier.value);
     final statusColor = _statusColor();
-    return Container(
+    final content = Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: const Color(0xFF0D1016),
@@ -1752,43 +1900,7 @@ class _ApexScanCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: statusColor.withValues(alpha: 0.35),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(_statusIcon(), color: statusColor, size: 12),
-                      const SizedBox(width: 5),
-                      Text(
-                        _statusLabel(s),
-                        style: TextStyle(
-                          color: statusColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10,
-                          letterSpacing: 0.6,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-                    .animate()
-                    .fadeIn(delay: 550.ms, duration: 300.ms)
-                    .scale(
-                      begin: const Offset(0.86, 0.86),
-                      end: const Offset(1.0, 1.0),
-                      delay: 550.ms,
-                      duration: 280.ms,
-                      curve: Curves.easeOutBack,
-                    ),
+                _buildStatusBadge(s, statusColor),
               ],
             ),
           ),
@@ -1808,6 +1920,8 @@ class _ApexScanCard extends StatelessWidget {
                       result.checks[i],
                       profileLabel: profileName,
                     ),
+                    reducedMotion: reducedMotion,
+                    disableAnimations: disableAnimations,
                   ),
               ],
             ),
@@ -1830,18 +1944,22 @@ class _ApexScanCard extends StatelessWidget {
               metrics: deviceMetrics,
               loading: metricsLoading,
               hasError: metricsError,
+              reducedMotion: reducedMotion,
+              disableAnimations: disableAnimations,
             ),
           ),
         ],
       ),
-    )
+    );
+    if (disableAnimations) return content;
+    return content
         .animate()
-        .fadeIn(delay: 380.ms, duration: 500.ms)
+        .fadeIn(delay: 380.ms, duration: reducedMotion ? 260.ms : 500.ms)
         .slideY(
-          begin: 0.06,
+          begin: reducedMotion ? 0.02 : 0.06,
           end: 0,
           delay: 380.ms,
-          duration: 420.ms,
+          duration: reducedMotion ? 220.ms : 420.ms,
           curve: Curves.easeOut,
         );
   }
@@ -1853,11 +1971,15 @@ class _ScanCheckRow extends StatelessWidget {
   final ScanCheck check;
   final int index;
   final String? translatedMessage;
+  final bool reducedMotion;
+  final bool disableAnimations;
 
   const _ScanCheckRow({
     required this.check,
     required this.index,
     this.translatedMessage,
+    this.reducedMotion = false,
+    this.disableAnimations = false,
   });
 
   (IconData, Color) _iconAndColor() {
@@ -1876,7 +1998,7 @@ class _ScanCheckRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final (icon, color) = _iconAndColor();
     final delay = Duration(milliseconds: 600 + index * 70);
-    return Padding(
+    final content = Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1897,10 +2019,17 @@ class _ScanCheckRow extends StatelessWidget {
           ),
         ],
       ),
-    )
+    );
+    if (disableAnimations) return content;
+    return content
         .animate()
-        .fadeIn(delay: delay, duration: 300.ms)
-        .slideX(begin: -0.04, end: 0, delay: delay, duration: 250.ms);
+        .fadeIn(delay: delay, duration: reducedMotion ? 150.ms : 300.ms)
+        .slideX(
+          begin: reducedMotion ? -0.016 : -0.04,
+          end: 0,
+          delay: delay,
+          duration: reducedMotion ? 130.ms : 250.ms,
+        );
   }
 }
 
@@ -1910,11 +2039,15 @@ class _RealMetricsSection extends StatelessWidget {
   final DeviceMetrics? metrics;
   final bool loading;
   final bool hasError;
+  final bool reducedMotion;
+  final bool disableAnimations;
 
   const _RealMetricsSection({
     required this.metrics,
     required this.loading,
     required this.hasError,
+    this.reducedMotion = false,
+    this.disableAnimations = false,
   });
 
   String _formatMb(int bytes, AppStrings s) {
@@ -1950,7 +2083,7 @@ class _RealMetricsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = AppStrings(languageNotifier.value);
-    return Column(
+    final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
@@ -2006,10 +2139,17 @@ class _RealMetricsSection extends StatelessWidget {
           ),
         ],
       ],
-    )
+    );
+    if (disableAnimations) return content;
+    return content
         .animate()
-        .fadeIn(delay: 900.ms, duration: 400.ms)
-        .slideY(begin: 0.04, end: 0, delay: 900.ms, duration: 350.ms);
+        .fadeIn(delay: 900.ms, duration: reducedMotion ? 200.ms : 400.ms)
+        .slideY(
+          begin: reducedMotion ? 0.016 : 0.04,
+          end: 0,
+          delay: 900.ms,
+          duration: reducedMotion ? 170.ms : 350.ms,
+        );
   }
 }
 
